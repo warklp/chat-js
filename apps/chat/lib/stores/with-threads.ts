@@ -131,13 +131,30 @@ export const withThreads =
       },
 
       setAllMessages: (messages: UI_MESSAGE[]) => {
-        const currentVisibleMessages = get().messages;
-        const existingTreeMessages = get().allMessages;
+        const state = get();
+        const currentVisibleMessages = state.messages;
+        const existingTreeMessages = state.allMessages;
         const mergedMessages = mergeTreeMessages(
           messages,
           existingTreeMessages,
           currentVisibleMessages
         );
+
+        // While the SDK is actively streaming, updating the visible thread with
+        // server data would mix the SDK's client-generated message ID with the
+        // server's assistantMessageId. The mismatch causes the SDK to push a
+        // second assistant message on the next chunk, bumping the epoch and
+        // remounting ChatSync mid-stream. Only update the tree index here and
+        // let the normal post-stream invalidation apply the full visible update.
+        if (state.status === "streaming" || state.status === "submitted") {
+          set((prev) => ({
+            ...prev,
+            allMessages: mergedMessages,
+            childrenMap: rebuildMap(mergedMessages),
+          }));
+          return;
+        }
+
         const currentLeafId = currentVisibleMessages.at(-1)?.id;
         const nextVisibleThread = currentLeafId
           ? (buildThreadFromLeaf(
@@ -147,8 +164,8 @@ export const withThreads =
           : currentVisibleMessages;
 
         originalSetMessages(nextVisibleThread);
-        set((state) => ({
-          ...state,
+        set((prev) => ({
+          ...prev,
           messages: nextVisibleThread,
           threadInitialMessages: nextVisibleThread,
           allMessages: mergedMessages,
