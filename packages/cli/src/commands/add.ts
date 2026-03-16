@@ -1,14 +1,14 @@
-import { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { confirm, intro, outro, isCancel, log } from "@clack/prompts";
-import { handleError } from "../utils/handle-error";
-import { spinner } from "../utils/spinner";
+import { confirm, intro, isCancel, log, outro } from "@clack/prompts";
+import { Command } from "commander";
 import { fetchRegistryItem } from "../registry/fetch";
 import { loadProjectConfig, resolveToolsPath } from "../utils/get-config";
-import { writeToolFiles } from "../utils/write-files";
+import { handleError } from "../utils/handle-error";
+import { createEmptyIndexTemplate, injectTool } from "../utils/inject-tool";
 import { installDependencies } from "../utils/install-deps";
-import { injectTool, createEmptyIndexTemplate } from "../utils/inject-tool";
+import { spinner } from "../utils/spinner";
+import { writeToolFiles } from "../utils/write-files";
 
 export const add = new Command()
   .name("add")
@@ -96,8 +96,9 @@ export const add = new Command()
           // First pass: skip existing files unless --overwrite
           const writeSpinner = spinner("Writing files...");
           writeSpinner.start();
-          const { written, existing } = await writeToolFiles(cwd, item.files, {
+          const { written, existing } = await writeToolFiles(item.files, {
             overwrite,
+            toolsDir,
           });
           writeSpinner.stop();
 
@@ -110,8 +111,9 @@ export const add = new Command()
               continue;
             }
             // Write the files that were skipped
-            const { written: rest } = await writeToolFiles(cwd, item.files, {
+            const { written: rest } = await writeToolFiles(item.files, {
               overwrite: true,
+              toolsDir,
             });
             written.push(...rest);
           }

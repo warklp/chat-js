@@ -17,6 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const srcDir = new URL("./src", import.meta.url).pathname;
+const appToolsDir = new URL("../../apps/chat/tools", import.meta.url).pathname;
 const itemsDir = new URL("./items", import.meta.url).pathname;
 const indexPath = new URL("./index.json", import.meta.url).pathname;
 
@@ -47,7 +48,8 @@ function extractNpmImports(source: string): string[] {
       if (
         spec.startsWith(".") ||    // relative
         spec.startsWith("/") ||    // absolute path
-        spec.startsWith("node:")   // explicit node: protocol
+        spec.startsWith("node:") || // explicit node: protocol
+        spec.startsWith("@/")      // app path alias
       ) continue;
 
       // Extract the package name (handles scoped packages like @org/pkg)
@@ -86,9 +88,10 @@ for (const name of dirs) {
   const meta: Meta = JSON.parse(
     await fs.readFile(path.join(dir, "meta.json"), "utf8")
   );
-  const toolContent = await fs.readFile(path.join(dir, "tool.ts"), "utf8");
+  const appDir = path.join(appToolsDir, name);
+  const toolContent = await fs.readFile(path.join(appDir, "tool.ts"), "utf8");
   const rendererContent = await fs.readFile(
-    path.join(dir, "renderer.tsx"),
+    path.join(appDir, "renderer.tsx"),
     "utf8"
   );
 
@@ -108,13 +111,13 @@ for (const name of dirs) {
       {
         path: "tool.ts",
         type: "tool",
-        target: `tools/${name}/tool.ts`,
+        target: `${name}/tool.ts`,
         content: toolContent,
       },
       {
         path: "renderer.tsx",
         type: "renderer",
-        target: `tools/${name}/renderer.tsx`,
+        target: `${name}/renderer.tsx`,
         content: rendererContent,
       },
     ],

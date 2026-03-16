@@ -172,6 +172,10 @@
         "@types/bun": "latest",
       },
     },
+    "packages/registry": {
+      "name": "@chat-js/registry",
+      "version": "0.1.0",
+    },
   },
   "overrides": {
     "@lobehub/ui": "~2.24.3",
@@ -274,6 +278,8 @@
     "@changesets/write": ["@changesets/write@0.4.0", "", { "dependencies": { "@changesets/types": "^6.1.0", "fs-extra": "^7.0.1", "human-id": "^4.1.1", "prettier": "^2.7.1" } }, "sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q=="],
 
     "@chat-js/cli": ["@chat-js/cli@workspace:packages/cli"],
+
+    "@chat-js/registry": ["@chat-js/registry@workspace:packages/registry"],
 
     "@chatjs/chat": ["@chatjs/chat@workspace:apps/chat"],
 
