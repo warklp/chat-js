@@ -70,6 +70,10 @@ export function isSelectedModelCounts(
     return false;
   }
 
+  if (Object.keys(value).length === 0) {
+    return false;
+  }
+
   return Object.entries(value).every(
     ([modelId, count]) =>
       typeof modelId === "string" &&

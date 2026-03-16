@@ -34,15 +34,14 @@ export function RetryButton({
       return;
     }
 
-    const parentMessageId = currentMessage.metadata?.parentMessageId ?? null;
-    if (!parentMessageId) {
-      toast.error("Cannot find the user message to retry");
-      return;
-    }
-
-    const parentMessageIdx = currentMessages.findIndex(
-      (msg) => msg.id === parentMessageId
+    const currentMessageIdx = currentMessages.findIndex(
+      (msg) => msg.id === messageId
     );
+    const parentMessageId = currentMessage.metadata?.parentMessageId ?? null;
+    const parentMessageIdx = parentMessageId
+      ? currentMessages.findIndex((msg) => msg.id === parentMessageId)
+      : currentMessageIdx - 1;
+
     if (parentMessageIdx < 0) {
       toast.error("Cannot find the user message to retry");
       return;

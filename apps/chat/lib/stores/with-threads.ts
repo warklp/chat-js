@@ -235,12 +235,11 @@ export const withThreads =
           return null;
         }
 
-        const currentLeafId = state.messages.at(-1)?.id ?? null;
-        const selectedMessageId = groupMessages.some(
-          (candidate) => candidate.id === currentLeafId
-        )
-          ? currentLeafId
-          : null;
+        const visibleMessageIds = new Set(state.messages.map((m) => m.id));
+        const selectedMessageId =
+          groupMessages.find((candidate) =>
+            visibleMessageIds.has(candidate.id)
+          )?.id ?? null;
 
         return {
           messages: groupMessages,

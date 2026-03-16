@@ -40,7 +40,7 @@ export async function GET(
   const messageId = request.nextUrl.searchParams.get("messageId");
 
   if (!messageId) {
-    return new Response(null, { status: 204 });
+    return new ChatSDKError("bad_request:api").toResponse();
   }
 
   const [messageWithParts, session, chat] = await Promise.all([

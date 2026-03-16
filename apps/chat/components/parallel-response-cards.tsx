@@ -13,6 +13,7 @@ import { useParallelGroupInfo } from "@/lib/stores/hooks-threads";
 import { useChatModels } from "@/providers/chat-models-provider";
 import { cn } from "@/lib/utils";
 import { useNavigateToMessage } from "@/hooks/use-navigate-to-message";
+import { useChatInput } from "@/providers/chat-input-provider";
 
 function PureParallelResponseCards({
   messageId,
@@ -22,10 +23,12 @@ function PureParallelResponseCards({
   const message = useMessageById<ChatMessage>(messageId);
   const parallelGroupInfo = useParallelGroupInfo(messageId);
   const navigateToMessage = useNavigateToMessage();
+  const { handleModelChange } = useChatInput();
   const { getModelById, models } = useChatModels();
 
   const cardSlots = useMemo(() => {
     if (
+      !message ||
       message.role !== "user" ||
       !message.metadata.parallelGroupId ||
       typeof message.metadata.selectedModel === "string"
@@ -95,7 +98,7 @@ function PureParallelResponseCards({
     return cardSlots.length > 0 ? 0 : null;
   }, [cardSlots.length, parallelGroupInfo]);
 
-  if (sortedCardSlots.length <= 1) {
+  if (!message || sortedCardSlots.length <= 1) {
     return null;
   }
 
@@ -128,6 +131,9 @@ function PureParallelResponseCards({
             onClick={() => {
               if (slot.message) {
                 navigateToMessage(slot.message.id);
+                if (modelId) {
+                  handleModelChange(modelId);
+                }
               }
             }}
             type="button"

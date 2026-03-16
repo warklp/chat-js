@@ -499,7 +499,7 @@ function PureMultimodalInput({
       trimMessagesInEditMode(parentMessageId);
     }
 
-    const isParallelRequest = requestedModelIds.length > 1;
+    const isParallelRequest = parallelResponsesEnabled && requestedModelIds.length > 1;
     const parallelGroupId = isParallelRequest ? generateUUID() : null;
     const requestSpecs = isParallelRequest
       ? requestedModelIds.map(
@@ -608,6 +608,7 @@ function PureMultimodalInput({
     editorRef,
     lastMessageId,
     onSendMessage,
+    parallelResponsesEnabled,
     requestedModelIds,
     runParallelSecondaryRequests,
     sendMessage,

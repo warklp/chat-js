@@ -66,7 +66,7 @@ export function MessageEditor(
       key={`edit-${props.message.id}`}
       localStorageEnabled={false}
       overrideModelId={primaryModelId || undefined}
-      overrideModelSelection={messageSelectedModel}
+      overrideModelSelection={messageSelectedModel || undefined}
     >
       <MessageEditorContent
         {...rest}

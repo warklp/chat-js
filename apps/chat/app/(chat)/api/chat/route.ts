@@ -227,6 +227,7 @@ function resolveSelectedModelId({
   }
 
   if (requestSelectedModelId) {
+    if (!selectedModel || typeof selectedModel !== "object") return null;
     const requestedCount = selectedModel[requestSelectedModelId];
     return requestedCount && requestedCount > 0 ? requestSelectedModelId : null;
   }

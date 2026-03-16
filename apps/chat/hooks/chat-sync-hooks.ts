@@ -324,16 +324,22 @@ export function useSaveMessageMutation() {
             qc.invalidateQueries({
               queryKey: trpc.chat.getChatById.queryKey({ chatId }),
             }),
-            // Refetch the full message tree so parallel response siblings get
-            // their updated activeStreamId from the server (not just the selected one).
-            qc.invalidateQueries({
-              queryKey: trpc.chat.getChatMessages.queryKey({ chatId }),
-            }),
           ]);
         } else {
           // Refresh anonymous credits from cookie
           qc.invalidateQueries({ queryKey: ANONYMOUS_CREDITS_KEY });
         }
+      }
+    },
+    onSettled: (_data, _error, { message, chatId }) => {
+      if (message.role === "assistant" && isAuthenticated) {
+        // Sync the full message tree after the mutation settles so parallel
+        // response siblings get their updated activeStreamId from the server.
+        // Placed in onSettled (not onSuccess) so this runs after the real
+        // backend write when the mutationFn is eventually made server-side.
+        qc.invalidateQueries({
+          queryKey: trpc.chat.getChatMessages.queryKey({ chatId }),
+        });
       }
     },
   });

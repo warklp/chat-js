@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import {
   getChatById,
   getMessageById,
+  getProjectById,
   getUserById,
   saveChatIfNotExists,
   saveMessageIfNotExists,
@@ -53,6 +54,14 @@ export async function POST(request: NextRequest) {
       }
     } else {
       isNewChat = true;
+
+      if (projectId) {
+        const project = await getProjectById({ id: projectId });
+        if (!project || project.userId !== userId) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+      }
+
       const title = await generateTitleFromUserMessage({
         message: userMessage,
       });
