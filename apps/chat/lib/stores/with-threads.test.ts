@@ -3,7 +3,7 @@ import type { StoreState as BaseChatStoreState } from "@ai-sdk-tools/store";
 import { describe, it } from "vitest";
 import { createStore } from "zustand/vanilla";
 import type { ChatMessage } from "../ai/types";
-import { withThreads } from "./with-threads";
+import { withThreads, type ThreadAugmentedState } from "./with-threads";
 
 function createMessage({
   id,
@@ -40,7 +40,7 @@ function createMessage({
 }
 
 function createThreadStore(initialMessages: ChatMessage[]) {
-  return createStore<BaseChatStoreState<ChatMessage>>()(
+  return createStore<ThreadAugmentedState<ChatMessage>>()(
     withThreads<ChatMessage, BaseChatStoreState<ChatMessage>>(
       (set) =>
         ({
