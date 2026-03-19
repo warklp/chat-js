@@ -4,16 +4,16 @@ import { useMessageById } from "@ai-sdk-tools/store";
 import { LoaderCircle } from "lucide-react";
 import { memo, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigateToMessage } from "@/hooks/use-navigate-to-message";
 import {
+  type ChatMessage,
   expandSelectedModelValue,
   getPrimarySelectedModelId,
-  type ChatMessage,
 } from "@/lib/ai/types";
 import { useParallelGroupInfo } from "@/lib/stores/hooks-threads";
-import { useChatModels } from "@/providers/chat-models-provider";
 import { cn } from "@/lib/utils";
-import { useNavigateToMessage } from "@/hooks/use-navigate-to-message";
 import { useChatInput } from "@/providers/chat-input-provider";
+import { useChatModels } from "@/providers/chat-models-provider";
 
 function PureParallelResponseCards({
   messageId,

@@ -557,6 +557,7 @@ function PureMultimodalInput({
       });
 
       addMessageToTree(message);
+      handleModelChange(primaryRequest.modelId);
       for (const requestSpec of requestSpecs) {
         addMessageToTree({
           id: requestSpec.assistantMessageId,
@@ -599,6 +600,7 @@ function PureMultimodalInput({
     attachments,
     isMobile,
     chatId,
+    handleModelChange,
     invalidatePersistedMessages,
     selectedTool,
     isEditMode,
