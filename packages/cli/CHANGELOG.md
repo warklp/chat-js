@@ -1,5 +1,11 @@
 # @chat-js/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- [#107](https://github.com/FranciscoMoretti/chat-js/pull/107) [`bd8bd35`](https://github.com/FranciscoMoretti/chat-js/commit/bd8bd351ea4775bd505cb1d45090a8c12df76d7f) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Parallel responses (Use multiple models)
+
 ## 0.3.0
 
 ### Minor Changes
