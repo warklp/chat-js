@@ -104,28 +104,26 @@ export function buildChildrenMap<T extends MessageNode>(
     map.get(parentId)?.push(message);
   }
   for (const siblings of map.values()) {
-    siblings.sort(
-      (a, b) => {
-        const aParallelIndex = a.metadata?.parallelIndex;
-        const bParallelIndex = b.metadata?.parallelIndex;
-        const sameParallelGroup =
-          a.metadata?.parallelGroupId &&
-          a.metadata?.parallelGroupId === b.metadata?.parallelGroupId;
+    siblings.sort((a, b) => {
+      const aParallelIndex = a.metadata?.parallelIndex;
+      const bParallelIndex = b.metadata?.parallelIndex;
+      const sameParallelGroup =
+        a.metadata?.parallelGroupId &&
+        a.metadata?.parallelGroupId === b.metadata?.parallelGroupId;
 
-        if (
-          sameParallelGroup &&
-          typeof aParallelIndex === "number" &&
-          typeof bParallelIndex === "number" &&
-          aParallelIndex !== bParallelIndex
-        ) {
-          return aParallelIndex - bParallelIndex;
-        }
-
-        return (
-          toTimestamp(a.metadata?.createdAt) - toTimestamp(b.metadata?.createdAt)
-        );
+      if (
+        sameParallelGroup &&
+        typeof aParallelIndex === "number" &&
+        typeof bParallelIndex === "number" &&
+        aParallelIndex !== bParallelIndex
+      ) {
+        return aParallelIndex - bParallelIndex;
       }
-    );
+
+      return (
+        toTimestamp(a.metadata?.createdAt) - toTimestamp(b.metadata?.createdAt)
+      );
+    });
   }
   return map;
 }

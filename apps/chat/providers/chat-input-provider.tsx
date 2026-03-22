@@ -14,8 +14,8 @@ import React, {
 import type { LexicalChatInputRef } from "@/components/lexical-chat-input";
 import type { AppModelId } from "@/lib/ai/app-models";
 import {
-  getPrimarySelectedModelId,
   type Attachment,
+  getPrimarySelectedModelId,
   type SelectedModelValue,
   type UiToolName,
 } from "@/lib/ai/types";

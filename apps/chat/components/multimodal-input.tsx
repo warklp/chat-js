@@ -29,9 +29,9 @@ import { useArtifact } from "@/hooks/use-artifact";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { AppModelId } from "@/lib/ai/app-model-id";
 import {
-  expandSelectedModelValue,
   type Attachment,
   type ChatMessage,
+  expandSelectedModelValue,
   type SelectedModelValue,
   type UiToolName,
 } from "@/lib/ai/types";
@@ -325,7 +325,9 @@ function PureMultimodalInput({
   );
 
   const getCurrentProjectId = useCallback(() => {
-    const projectMatch = window.location.pathname.match(PROJECT_CHAT_ROUTE_REGEX);
+    const projectMatch = window.location.pathname.match(
+      PROJECT_CHAT_ROUTE_REGEX
+    );
     return projectMatch?.[1];
   }, []);
 
@@ -499,7 +501,8 @@ function PureMultimodalInput({
       trimMessagesInEditMode(parentMessageId);
     }
 
-    const isParallelRequest = parallelResponsesEnabled && requestedModelIds.length > 1;
+    const isParallelRequest =
+      parallelResponsesEnabled && requestedModelIds.length > 1;
     const parallelGroupId = isParallelRequest ? generateUUID() : null;
     const requestSpecs = isParallelRequest
       ? requestedModelIds.map(
@@ -1107,9 +1110,9 @@ function PureChatInputBottomControls({
         )}
         <ModelSelector
           className="@[500px]:h-10 h-8 w-fit max-w-none shrink justify-start truncate @[500px]:px-3 px-2 @[500px]:text-sm text-xs"
+          onModelSelectionChangeAction={onModelSelectionChange}
           selectedModelId={selectedModelId}
           selectedModelSelection={selectedModelSelection}
-          onModelSelectionChangeAction={onModelSelectionChange}
         />
         <ConnectorsDropdown />
         <ResponsiveTools

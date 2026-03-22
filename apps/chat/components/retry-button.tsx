@@ -7,7 +7,7 @@ import { RefreshCcw } from "lucide-react";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { Action } from "@/components/ai-elements/actions";
-import { getPrimarySelectedModelId, type ChatMessage } from "@/lib/ai/types";
+import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
 
 export function RetryButton({
   messageId,

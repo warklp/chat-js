@@ -254,9 +254,8 @@ export const withThreads =
 
         const visibleMessageIds = new Set(state.messages.map((m) => m.id));
         const selectedMessageId =
-          groupMessages.find((candidate) =>
-            visibleMessageIds.has(candidate.id)
-          )?.id ?? null;
+          groupMessages.find((candidate) => visibleMessageIds.has(candidate.id))
+            ?.id ?? null;
 
         return {
           messages: groupMessages,

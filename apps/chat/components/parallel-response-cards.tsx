@@ -15,11 +15,7 @@ import { cn } from "@/lib/utils";
 import { useChatInput } from "@/providers/chat-input-provider";
 import { useChatModels } from "@/providers/chat-models-provider";
 
-function PureParallelResponseCards({
-  messageId,
-}: {
-  messageId: string;
-}) {
+function PureParallelResponseCards({ messageId }: { messageId: string }) {
   const message = useMessageById<ChatMessage>(messageId);
   const parallelGroupInfo = useParallelGroupInfo(messageId);
   const navigateToMessage = useNavigateToMessage();
@@ -36,7 +32,9 @@ function PureParallelResponseCards({
       return [];
     }
 
-    const requestedModelIds = expandSelectedModelValue(message.metadata.selectedModel);
+    const requestedModelIds = expandSelectedModelValue(
+      message.metadata.selectedModel
+    );
 
     return requestedModelIds.map((modelId, parallelIndex) => {
       const actualMessage = parallelGroupInfo?.messages.find(
@@ -53,14 +51,12 @@ function PureParallelResponseCards({
 
   const sortedCardSlots = useMemo(() => {
     return [...cardSlots].sort((left, right) => {
-      const leftModelId =
-        left.message?.metadata.selectedModel
-          ? getPrimarySelectedModelId(left.message.metadata.selectedModel)
-          : left.modelId;
-      const rightModelId =
-        right.message?.metadata.selectedModel
-          ? getPrimarySelectedModelId(right.message.metadata.selectedModel)
-          : right.modelId;
+      const leftModelId = left.message?.metadata.selectedModel
+        ? getPrimarySelectedModelId(left.message.metadata.selectedModel)
+        : left.modelId;
+      const rightModelId = right.message?.metadata.selectedModel
+        ? getPrimarySelectedModelId(right.message.metadata.selectedModel)
+        : right.modelId;
 
       const leftIndex = leftModelId
         ? models.findIndex((m) => m.id === leftModelId)
@@ -69,8 +65,9 @@ function PureParallelResponseCards({
         ? models.findIndex((m) => m.id === rightModelId)
         : -1;
 
-      const leftOrder = leftIndex === -1 ? Infinity : leftIndex;
-      const rightOrder = rightIndex === -1 ? Infinity : rightIndex;
+      const leftOrder = leftIndex === -1 ? Number.POSITIVE_INFINITY : leftIndex;
+      const rightOrder =
+        rightIndex === -1 ? Number.POSITIVE_INFINITY : rightIndex;
 
       if (leftOrder !== rightOrder) {
         return leftOrder - rightOrder;
@@ -105,11 +102,12 @@ function PureParallelResponseCards({
   return (
     <div className="mt-3 flex flex-wrap justify-end gap-2">
       {sortedCardSlots.map((slot) => {
-        const modelId =
-          slot.message?.metadata.selectedModel
-            ? getPrimarySelectedModelId(slot.message.metadata.selectedModel)
-            : slot.modelId;
-        const modelName = modelId ? getModelById(modelId)?.name ?? modelId : "Model";
+        const modelId = slot.message?.metadata.selectedModel
+          ? getPrimarySelectedModelId(slot.message.metadata.selectedModel)
+          : slot.modelId;
+        const modelName = modelId
+          ? (getModelById(modelId)?.name ?? modelId)
+          : "Model";
         const isSelected = selectedParallelIndex === slot.parallelIndex;
         const isStreaming = slot.message
           ? slot.message.metadata.activeStreamId !== null
@@ -141,7 +139,9 @@ function PureParallelResponseCards({
           >
             <span className="font-medium text-sm">{modelName}</span>
             <span className="flex items-center gap-1 text-muted-foreground text-xs">
-              {isStreaming ? <LoaderCircle className="size-3 animate-spin" /> : null}
+              {isStreaming ? (
+                <LoaderCircle className="size-3 animate-spin" />
+              ) : null}
               {statusLabel}
             </span>
           </Button>

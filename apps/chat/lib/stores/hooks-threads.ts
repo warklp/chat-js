@@ -117,7 +117,8 @@ export function useParallelGroupInfo(
         a.messages.every(
           (msg, i) =>
             msg.id === b.messages[i]?.id &&
-            msg.metadata?.activeStreamId === b.messages[i]?.metadata?.activeStreamId
+            msg.metadata?.activeStreamId ===
+              b.messages[i]?.metadata?.activeStreamId
         )
       );
     }

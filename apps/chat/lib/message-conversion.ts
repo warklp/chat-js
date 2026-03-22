@@ -2,8 +2,8 @@ import type { ModelId } from "@/lib/ai/app-models";
 import type { Chat, DBMessage } from "@/lib/db/schema";
 import type { UIChat } from "@/lib/types/ui-chat";
 import {
-  isSelectedModelValue,
   type ChatMessage,
+  isSelectedModelValue,
   type UiToolName,
 } from "./ai/types";
 
