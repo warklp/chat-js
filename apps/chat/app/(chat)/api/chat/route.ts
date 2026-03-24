@@ -28,8 +28,8 @@ import { systemPrompt } from "@/lib/ai/prompts";
 import { calculateMessagesTokens } from "@/lib/ai/token-utils";
 import { allTools } from "@/lib/ai/tools/tools-definitions";
 import {
-  getPrimarySelectedModelId,
   type ChatMessage,
+  getPrimarySelectedModelId,
   type ToolName,
 } from "@/lib/ai/types";
 import {
@@ -227,7 +227,9 @@ function resolveSelectedModelId({
   }
 
   if (requestSelectedModelId) {
-    if (!selectedModel || typeof selectedModel !== "object") return null;
+    if (!selectedModel || typeof selectedModel !== "object") {
+      return null;
+    }
     const requestedCount = selectedModel[requestSelectedModelId];
     return requestedCount && requestedCount > 0 ? requestSelectedModelId : null;
   }
@@ -794,7 +796,9 @@ async function finalizeMessageAndCredits({
           metadata: {
             ...assistantMessage.metadata,
             parallelGroupId:
-              parallelGroupId ?? assistantMessage.metadata.parallelGroupId ?? null,
+              parallelGroupId ??
+              assistantMessage.metadata.parallelGroupId ??
+              null,
             parallelIndex:
               parallelIndex ?? assistantMessage.metadata.parallelIndex ?? null,
             isPrimaryParallel:

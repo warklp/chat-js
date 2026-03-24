@@ -2,10 +2,7 @@
 import { useChatStatus } from "@ai-sdk-tools/store";
 import { type Dispatch, type SetStateAction, useCallback } from "react";
 import type { ModelId } from "@/lib/ai/app-models";
-import {
-  getPrimarySelectedModelId,
-  type ChatMessage,
-} from "@/lib/ai/types";
+import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
 import {
   getAttachmentsFromMessage,
   getTextContentFromMessage,
@@ -56,7 +53,9 @@ export function MessageEditor(
 
   // Use selectedModel from the message metadata, or fall back to current selected model
   const messageSelectedModel = props.message.metadata?.selectedModel;
-  const primaryModelId = getPrimarySelectedModelId(messageSelectedModel) as ModelId | null;
+  const primaryModelId = getPrimarySelectedModelId(
+    messageSelectedModel
+  ) as ModelId | null;
   const { parentMessageId: _parentMessageId, ...rest } = props;
   return (
     <ChatInputProvider
