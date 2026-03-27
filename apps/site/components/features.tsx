@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import {
 	BrainCircuit,
 	Code,
@@ -9,18 +10,28 @@ import {
 	Search,
 } from "lucide-react";
 
-const FEATURES = [
+type Feature = {
+	icon: LucideIcon;
+	title: string;
+	description: string;
+	large?: boolean;
+	tags?: string[];
+};
+
+const FEATURES: Feature[] = [
 	{
 		icon: BrainCircuit,
-		title: "Multi-Model",
+		title: "120+ Models",
 		description:
-			"Access hundreds of AI models from OpenAI, Anthropic, Google, and more through a unified interface.",
+			"Access Claude, GPT, Gemini, Grok, Llama, and more through a unified interface. Switch providers mid-conversation without losing context.",
+		large: true,
+		tags: ["Claude", "GPT-4o", "Gemini", "Grok", "Llama", "Mistral"],
 	},
 	{
 		icon: Lock,
 		title: "Authentication",
 		description:
-			"Built-in auth with Google, GitHub, and Vercel OAuth. Ready for production from day one.",
+			"Built-in OAuth with Google, GitHub, and Vercel. Session management, anonymous mode, and rate limiting — production-ready from day one.",
 	},
 	{
 		icon: Search,
@@ -32,56 +43,77 @@ const FEATURES = [
 		icon: Code,
 		title: "Code Execution",
 		description:
-			"Run code in a secure sandbox with support for Python, JavaScript, and more.",
-	},
-	{
-		icon: Image,
-		title: "Image Generation",
-		description:
-			"Generate images inline in conversations with support for multiple generation models.",
-	},
-	{
-		icon: Puzzle,
-		title: "MCP Support",
-		description:
-			"Connect external tools and services through the Model Context Protocol.",
+			"Run Python and JavaScript in secure sandboxes with pre-installed packages like pandas and numpy.",
 	},
 	{
 		icon: Globe,
 		title: "Web Search",
 		description:
-			"Search the web and retrieve URLs to ground conversations in real-time information.",
+			"Real-time web search with citations to ground conversations in current information.",
+	},
+	{
+		icon: Puzzle,
+		title: "MCP Support",
+		description:
+			"Extend capabilities with external tools and services via the Model Context Protocol.",
+	},
+	{
+		icon: Image,
+		title: "Image Generation",
+		description:
+			"AI-powered image creation and editing, inline in conversations.",
 	},
 	{
 		icon: GitBranch,
 		title: "Branching",
 		description:
-			"Branch conversations to explore different directions without losing context.",
+			"Fork conversations to explore different directions without losing context.",
 	},
 ];
 
 export function Features() {
 	return (
-		<section className="mx-auto max-w-5xl px-6 py-16">
-			<h2 className="text-center text-2xl font-semibold sm:text-3xl">
-				Everything you need, out of the box
-			</h2>
-			<p className="mx-auto mt-4 max-w-2xl text-center text-muted-foreground">
-				Production features that would take months to build, ready in minutes.
-			</p>
-			<div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-				{FEATURES.map((feature) => (
-					<div
-						key={feature.title}
-						className="rounded-xl border border-border bg-card p-6 transition-colors hover:bg-secondary/50"
-					>
-						<feature.icon className="h-8 w-8 text-primary" />
-						<h3 className="mt-4 font-medium">{feature.title}</h3>
-						<p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-							{feature.description}
-						</p>
-					</div>
-				))}
+		<section className="py-24 sm:py-32">
+			<div className="mx-auto max-w-6xl px-6">
+				<h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
+					Everything you need,{" "}
+					<span className="text-primary italic">out of the box</span>
+				</h2>
+				<p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
+					Production features that would take months to build, ready
+					in minutes.
+				</p>
+
+				<div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					{FEATURES.map((feature) => (
+						<div
+							key={feature.title}
+							className={`group rounded-2xl border border-border/70 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 ${feature.large ? "sm:col-span-2" : ""}`}
+						>
+							<div className="inline-flex rounded-xl bg-primary/10 p-2.5">
+								<feature.icon className="h-6 w-6 text-primary" />
+							</div>
+							<h3 className="mt-4 text-lg font-semibold tracking-tight">
+								{feature.title}
+							</h3>
+							<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+								{feature.description}
+							</p>
+							{feature.tags && (
+								<div className="mt-4 flex flex-wrap gap-2">
+									{feature.tags.map((tag) => (
+										<span
+											key={tag}
+											className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
+										>
+											{tag}
+										</span>
+									))}
+								</div>
+							)}
+						</div>
+					))}
+				</div>
 			</div>
 		</section>
 	);
