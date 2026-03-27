@@ -9,6 +9,7 @@ export const TextMessagePart = memo(
       animated
       isAnimating={isLoading}
       mode={isLoading ? "streaming" : "static"}
+      linkSafety={{ enabled: false }}
     >
       {text}
     </Response>
