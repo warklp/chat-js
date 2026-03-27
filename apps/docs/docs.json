@@ -139,7 +139,7 @@
         },
         {
           "anchor": "Demo",
-          "href": "https://chatjs.dev",
+          "href": "https://demo.chatjs.dev",
           "icon": "sparkles"
         }
       ]
@@ -153,7 +153,7 @@
     "links": [
       {
         "label": "Demo",
-        "href": "https://chatjs.dev"
+        "href": "https://demo.chatjs.dev"
       }
     ],
     "primary": {

@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+:root {
+  --background: hsl(0 0% 97.0392%);
+  --foreground: hsl(0 0% 20%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 20%);
+  --primary: hsl(217.2193 91.2195% 59.8039%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(220 14.2857% 95.8824%);
+  --secondary-foreground: hsl(215 13.7931% 34.1176%);
+  --muted: hsl(210 20% 98.0392%);
+  --muted-foreground: hsl(220 8.9362% 46.0784%);
+  --accent: hsl(204 93.75% 93.7255%);
+  --accent-foreground: hsl(224.4444 64.2857% 32.9412%);
+  --destructive: hsl(0 84.2365% 60.1961%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(220 13.0435% 90.9804%);
+  --input: hsl(220 13.0435% 90.9804%);
+  --ring: hsl(217.2193 91.2195% 59.8039%);
+  --radius: 0.55rem;
+}
+
+.dark {
+  --background: hsl(0 0% 9.0196%);
+  --foreground: hsl(0 0% 89.8039%);
+  --card: hsl(0 0% 14.902%);
+  --card-foreground: hsl(0 0% 89.8039%);
+  --primary: hsl(217.2193 91.2195% 59.8039%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(0 0% 14.902%);
+  --secondary-foreground: hsl(0 0% 89.8039%);
+  --muted: hsl(0 0% 14.902%);
+  --muted-foreground: hsl(0 0% 63.9216%);
+  --accent: hsl(224.4444 64.2857% 32.9412%);
+  --accent-foreground: hsl(213.3333 96.9231% 87.2549%);
+  --destructive: hsl(0 84.2365% 60.1961%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(0 0% 25.098%);
+  --input: hsl(0 0% 25.098%);
+  --ring: hsl(217.2193 91.2195% 59.8039%);
+  --radius: 0.55rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

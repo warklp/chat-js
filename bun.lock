@@ -155,6 +155,31 @@
     "apps/docs": {
       "name": "@chatjs/docs",
     },
+    "apps/site": {
+      "name": "@chatjs/site",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vercel/analytics": "^1.5.0",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "0.553.0",
+        "next": "16.2.0",
+        "next-themes": "^0.4.6",
+        "react": "19.2.3",
+        "react-dom": "19.2.3",
+        "tailwind-merge": "^3.3.1",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.12",
+        "@types/node": "^22.8.6",
+        "@types/react": "19.2.7",
+        "@types/react-dom": "19.2.3",
+        "postcss": "^8",
+        "tailwindcss": "^4.1.12",
+        "tw-animate-css": "^1.3.7",
+        "typescript": "6.0.2",
+      },
+    },
     "packages/cli": {
       "name": "@chat-js/cli",
       "version": "0.4.0",
@@ -275,6 +300,8 @@
     "@chatjs/chat": ["@chatjs/chat@workspace:apps/chat"],
 
     "@chatjs/docs": ["@chatjs/docs@workspace:apps/docs"],
+
+    "@chatjs/site": ["@chatjs/site@workspace:apps/site"],
 
     "@chevrotain/cst-dts-gen": ["@chevrotain/cst-dts-gen@11.1.1", "", { "dependencies": { "@chevrotain/gast": "11.1.1", "@chevrotain/types": "11.1.1", "lodash-es": "4.17.23" } }, "sha512-fRHyv6/f542qQqiRGalrfJl/evD39mAvbJLCekPazhiextEatq1Jx1K/i9gSd5NNO0ds03ek0Cbo/4uVKmOBcw=="],
 

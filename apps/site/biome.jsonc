@@ -1,0 +1,14 @@
+{
+  "extends": ["ultracite/core", "ultracite/react", "ultracite/next"],
+  "files": {
+    "includes": ["!.next", "!node_modules"]
+  },
+  "css": {
+    "parser": {
+      "cssModules": false
+    },
+    "linter": {
+      "enabled": false
+    }
+  }
+}
