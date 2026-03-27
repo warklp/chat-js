@@ -1,21 +1,64 @@
 import { ArrowRight, BookOpen } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+
+function Sparkle({
+	className,
+	size = 24,
+}: { className?: string; size?: number }) {
+	return (
+		<svg
+			className={className}
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
+			<path d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8Z" />
+		</svg>
+	);
+}
 
 export function Hero() {
 	return (
 		<section className="relative overflow-hidden">
-			{/* Background atmosphere */}
+			{/* Background atmosphere — layered organic gradients */}
 			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute inset-0 bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1px)] bg-size-[32px_32px] opacity-40" />
-				<div className="absolute top-1/2 left-1/2 h-[600px] w-[900px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/10 blur-[140px]" />
+				{/* Top fade from card into bg */}
+				<div className="absolute inset-x-0 top-0 h-[500px] bg-gradient-to-b from-card/40 via-transparent to-transparent" />
+				{/* Warm accent blob — left */}
+				<div className="absolute top-[25%] left-[15%] h-[500px] w-[600px] -rotate-12 rounded-full bg-amber-500/2.5 blur-[120px] dark:bg-amber-400/3" />
+				{/* Cool accent blob — right */}
+				<div className="absolute top-[35%] right-[10%] h-[450px] w-[550px] rotate-12 rounded-full bg-indigo-500/2 blur-[120px] dark:bg-indigo-400/2.5" />
+				{/* Center glow behind mockup */}
+				<div className="absolute bottom-[5%] left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-foreground/2 blur-[120px]" />
 			</div>
+
+			{/* Decorative sparkles */}
+			<Sparkle
+				className="pointer-events-none absolute top-32 left-[12%] text-foreground/7 animate-sparkle hidden sm:block"
+				size={20}
+			/>
+			<Sparkle
+				className="pointer-events-none absolute top-48 right-[18%] text-foreground/5 animate-sparkle hidden sm:block"
+				size={14}
+			/>
+			<Sparkle
+				className="pointer-events-none absolute bottom-[30%] left-[8%] text-foreground/6 animate-sparkle hidden lg:block"
+				size={10}
+			/>
+			<Sparkle
+				className="pointer-events-none absolute top-[60%] right-[8%] text-foreground/4 animate-sparkle hidden lg:block"
+				size={16}
+			/>
 
 			<div className="relative mx-auto max-w-6xl px-6 pt-20 pb-20 sm:pt-28 sm:pb-28">
 				{/* Badge */}
 				<div className="flex justify-center animate-fade-in-up">
 					<a
 						href="https://github.com/franciscomoretti/chat-js"
-						className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/40 hover:text-foreground"
+						className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:border-foreground/20 hover:text-foreground"
 					>
 						<svg
 							className="h-3.5 w-3.5"
@@ -37,8 +80,7 @@ export function Hero() {
 					style={{ animationDelay: "0.1s" }}
 				>
 					Ship AI chat in{" "}
-					<span className="text-primary italic">minutes</span>, not
-					months
+					<span className="italic">minutes</span>, not months
 				</h1>
 
 				{/* Subhead */}
@@ -58,14 +100,14 @@ export function Hero() {
 				>
 					<Link
 						href="/docs/getting-started"
-						className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
+						className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/20"
 					>
 						Get Started
 						<ArrowRight className="h-4 w-4" />
 					</Link>
 					<Link
 						href="https://demo.chatjs.dev"
-						className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:bg-card"
+						className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card"
 					>
 						View Demo
 					</Link>
@@ -78,57 +120,36 @@ export function Hero() {
 					</Link>
 				</div>
 
-				{/* Chat Mockup */}
+				{/* Chat Preview */}
 				<div
-					className="relative mx-auto mt-20 max-w-3xl animate-fade-in-up"
+					className="relative mx-auto mt-20 max-w-3xl animate-fade-in-up perspective-distant"
 					style={{ animationDelay: "0.5s" }}
 				>
-					{/* Glow behind mockup */}
-					<div className="pointer-events-none absolute -inset-8 rounded-3xl bg-primary/8 blur-2xl" />
+					{/* Layered ambient glow */}
+					<div className="pointer-events-none absolute -inset-8 rounded-3xl bg-foreground/[0.07] blur-3xl" />
+					<div className="pointer-events-none absolute -inset-16 rounded-4xl bg-foreground/4 blur-[80px]" />
 
-					<div className="animate-float relative rounded-2xl border border-border/70 bg-card shadow-2xl shadow-black/8 dark:shadow-black/25">
-						{/* Title bar */}
-						<div className="flex items-center gap-2 border-b border-border/50 px-5 py-3.5">
-							<div className="flex gap-2">
-								<div className="h-3 w-3 rounded-full bg-red-400/60" />
-								<div className="h-3 w-3 rounded-full bg-amber-400/60" />
-								<div className="h-3 w-3 rounded-full bg-green-400/60" />
-							</div>
-							<span className="ml-2 text-xs font-medium text-muted-foreground/60">
-								ChatJS
-							</span>
-						</div>
-
-						{/* Chat messages */}
-						<div className="space-y-5 p-6 sm:p-8">
-							{/* User message */}
-							<div className="flex justify-end">
-								<div className="max-w-[75%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-sm leading-relaxed text-primary-foreground">
-									Build me a dashboard with real-time
-									analytics and chart visualizations
-								</div>
-							</div>
-
-							{/* AI response */}
-							<div className="flex justify-start">
-								<div className="max-w-[80%] rounded-2xl rounded-bl-sm bg-secondary px-4 py-3 text-sm leading-relaxed text-secondary-foreground">
-									I&apos;ll create a responsive analytics
-									dashboard with live-updating charts. Let me
-									set up the data layer with WebSocket
-									connections and configure the chart
-									components
-									<span className="ml-1 inline-block h-4 w-1.5 translate-y-0.5 animate-blink rounded-sm bg-foreground/60" />
-								</div>
-							</div>
-						</div>
-
-						{/* Input bar */}
-						<div className="border-t border-border/50 px-5 py-3.5 sm:px-8">
-							<div className="flex items-center rounded-xl bg-secondary/60 px-4 py-2.5">
-								<span className="text-sm text-muted-foreground/40">
-									Ask anything...
-								</span>
-							</div>
+					{/* Screenshot with depth */}
+					<div
+						className="relative animate-float rounded-2xl shadow-[0_20px_70px_-10px_rgba(0,0,0,0.35)] dark:shadow-[0_20px_70px_-10px_rgba(0,0,0,0.7)] ring-1 ring-foreground/[0.08] transition-transform duration-700 hover:[transform:rotateX(0deg)] [transform:rotateX(2deg)]"
+					>
+						<div className="overflow-hidden rounded-2xl">
+							<Image
+								src="/chatjs_preview_light.png"
+								alt="ChatJS — AI chat interface"
+								width={2048}
+								height={1536}
+								className="block w-full h-auto dark:hidden"
+								priority
+							/>
+							<Image
+								src="/chatjs_preview_dark.png"
+								alt="ChatJS — AI chat interface"
+								width={2048}
+								height={1536}
+								className="hidden w-full h-auto dark:block"
+								priority
+							/>
 						</div>
 					</div>
 				</div>

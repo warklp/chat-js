@@ -6,13 +6,14 @@ export function GetStarted() {
 		<section className="relative overflow-hidden py-24 sm:py-32">
 			{/* Background atmosphere */}
 			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 translate-y-1/4 rounded-full bg-primary/8 blur-[120px]" />
+				<div className="absolute bottom-0 left-1/3 h-[400px] w-[500px] -translate-x-1/2 translate-y-1/4 rounded-full bg-amber-500/2 blur-[120px] dark:bg-amber-400/2.5" />
+				<div className="absolute bottom-0 right-1/4 h-[350px] w-[450px] translate-y-1/3 rounded-full bg-indigo-500/1.5 blur-[100px] dark:bg-indigo-400/2" />
 			</div>
 
 			<div className="relative mx-auto max-w-3xl px-6 text-center">
 				<h2 className="font-display text-3xl tracking-tight sm:text-5xl">
 					Get started in under{" "}
-					<span className="text-primary italic">five minutes</span>
+					<span className="italic">five minutes</span>
 				</h2>
 				<p className="mt-6 text-lg text-muted-foreground">
 					Scaffold a new project with a single command. Customize it,
@@ -21,12 +22,12 @@ export function GetStarted() {
 
 				{/* Terminal */}
 				<div className="mx-auto mt-12 max-w-lg">
-					<div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-lg">
-						<div className="flex items-center gap-2 border-b border-border/50 bg-muted/50 px-4 py-2.5">
+					<div className="overflow-hidden rounded-xl border border-border/50 bg-card shadow-lg shadow-foreground/2">
+						<div className="flex items-center gap-2 border-b border-border/40 bg-secondary/40 px-4 py-2.5">
 							<div className="flex gap-1.5">
-								<div className="h-2.5 w-2.5 rounded-full bg-red-400/50" />
-								<div className="h-2.5 w-2.5 rounded-full bg-amber-400/50" />
-								<div className="h-2.5 w-2.5 rounded-full bg-green-400/50" />
+								<div className="h-2.5 w-2.5 rounded-full bg-foreground/10" />
+								<div className="h-2.5 w-2.5 rounded-full bg-foreground/10" />
+								<div className="h-2.5 w-2.5 rounded-full bg-foreground/10" />
 							</div>
 							<span className="ml-2 text-[11px] text-muted-foreground/50">
 								Terminal
@@ -34,7 +35,7 @@ export function GetStarted() {
 						</div>
 						<div className="px-5 py-4">
 							<code className="font-mono text-sm">
-								<span className="text-primary">$</span>{" "}
+								<span className="text-muted-foreground">$</span>{" "}
 								<span className="text-foreground">
 									npx @chat-js/cli@latest create my-app
 								</span>
@@ -47,14 +48,14 @@ export function GetStarted() {
 				<div className="mt-10 flex flex-wrap justify-center gap-4">
 					<Link
 						href="/docs"
-						className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
+						className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/20"
 					>
 						<BookOpen className="h-4 w-4" />
 						Read the Docs
 					</Link>
 					<Link
 						href="https://github.com/franciscomoretti/chat-js"
-						className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground transition-all hover:-translate-y-0.5 hover:bg-card"
+						className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card"
 					>
 						<svg
 							className="h-4 w-4"

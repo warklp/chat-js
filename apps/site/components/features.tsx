@@ -77,7 +77,7 @@ export function Features() {
 			<div className="mx-auto max-w-6xl px-6">
 				<h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
 					Everything you need,{" "}
-					<span className="text-primary italic">out of the box</span>
+					<span className="italic">out of the box</span>
 				</h2>
 				<p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
 					Production features that would take months to build, ready
@@ -88,29 +88,34 @@ export function Features() {
 					{FEATURES.map((feature) => (
 						<div
 							key={feature.title}
-							className={`group rounded-2xl border border-border/70 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 ${feature.large ? "sm:col-span-2" : ""}`}
+							className={`group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-foreground/3 ${feature.large ? "sm:col-span-2" : ""}`}
 						>
-							<div className="inline-flex rounded-xl bg-primary/10 p-2.5">
-								<feature.icon className="h-6 w-6 text-primary" />
-							</div>
-							<h3 className="mt-4 text-lg font-semibold tracking-tight">
-								{feature.title}
-							</h3>
-							<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-								{feature.description}
-							</p>
-							{feature.tags && (
-								<div className="mt-4 flex flex-wrap gap-2">
-									{feature.tags.map((tag) => (
-										<span
-											key={tag}
-											className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
-										>
-											{tag}
-										</span>
-									))}
+							{/* Hover glow */}
+							<div className="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-foreground/2 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+
+							<div className="relative">
+								<div className="inline-flex rounded-xl border border-border/50 bg-secondary/50 p-2.5">
+									<feature.icon className="h-6 w-6 text-foreground/70" />
 								</div>
-							)}
+								<h3 className="mt-4 text-lg font-semibold tracking-tight">
+									{feature.title}
+								</h3>
+								<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+									{feature.description}
+								</p>
+								{feature.tags && (
+									<div className="mt-4 flex flex-wrap gap-2">
+										{feature.tags.map((tag) => (
+											<span
+												key={tag}
+												className="rounded-full border border-border/50 bg-secondary/50 px-3 py-1 text-xs font-medium text-secondary-foreground"
+											>
+												{tag}
+											</span>
+										))}
+									</div>
+								)}
+							</div>
 						</div>
 					))}
 				</div>

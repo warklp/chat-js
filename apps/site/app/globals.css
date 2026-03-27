@@ -33,6 +33,7 @@
 	--animate-fade-in-up: fade-in-up 0.7s ease-out both;
 	--animate-blink: blink 1s steps(1) infinite;
 	--animate-float: float 6s ease-in-out infinite;
+	--animate-sparkle: sparkle 3s ease-in-out infinite;
 }
 
 @keyframes fade-in-up {
@@ -67,6 +68,18 @@
 	}
 }
 
+@keyframes sparkle {
+	0%,
+	100% {
+		opacity: 0.15;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.4;
+		transform: scale(1.1);
+	}
+}
+
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
@@ -87,40 +100,40 @@
 	--foreground: hsl(0 0% 12%);
 	--card: hsl(0 0% 100%);
 	--card-foreground: hsl(0 0% 12%);
-	--primary: hsl(217 92% 60%);
+	--primary: hsl(0 0% 12%);
 	--primary-foreground: hsl(0 0% 100%);
-	--secondary: hsl(220 14% 96%);
-	--secondary-foreground: hsl(215 14% 34%);
-	--muted: hsl(210 20% 98%);
-	--muted-foreground: hsl(220 9% 46%);
-	--accent: hsl(204 94% 94%);
-	--accent-foreground: hsl(224 64% 33%);
+	--secondary: hsl(0 0% 93%);
+	--secondary-foreground: hsl(0 0% 25%);
+	--muted: hsl(0 0% 96%);
+	--muted-foreground: hsl(0 0% 45%);
+	--accent: hsl(0 0% 93%);
+	--accent-foreground: hsl(0 0% 12%);
 	--destructive: hsl(0 84% 60%);
 	--destructive-foreground: hsl(0 0% 100%);
-	--border: hsl(220 13% 91%);
-	--input: hsl(220 13% 91%);
-	--ring: hsl(217 92% 60%);
+	--border: hsl(0 0% 89%);
+	--input: hsl(0 0% 89%);
+	--ring: hsl(0 0% 12%);
 	--radius: 0.625rem;
 }
 
 .dark {
 	--background: hsl(0 0% 4%);
-	--foreground: hsl(0 0% 93%);
+	--foreground: hsl(40 6% 93%);
 	--card: hsl(0 0% 8%);
-	--card-foreground: hsl(0 0% 93%);
-	--primary: hsl(217 92% 65%);
-	--primary-foreground: hsl(0 0% 100%);
+	--card-foreground: hsl(40 6% 93%);
+	--primary: hsl(40 6% 95%);
+	--primary-foreground: hsl(0 0% 4%);
 	--secondary: hsl(0 0% 12%);
-	--secondary-foreground: hsl(0 0% 85%);
+	--secondary-foreground: hsl(40 4% 82%);
 	--muted: hsl(0 0% 12%);
-	--muted-foreground: hsl(0 0% 55%);
-	--accent: hsl(224 64% 20%);
-	--accent-foreground: hsl(213 97% 87%);
+	--muted-foreground: hsl(30 3% 52%);
+	--accent: hsl(0 0% 14%);
+	--accent-foreground: hsl(40 6% 93%);
 	--destructive: hsl(0 65% 55%);
 	--destructive-foreground: hsl(0 0% 100%);
 	--border: hsl(0 0% 16%);
 	--input: hsl(0 0% 16%);
-	--ring: hsl(217 92% 65%);
+	--ring: hsl(40 6% 95%);
 }
 
 @layer base {
