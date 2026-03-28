@@ -145,7 +145,6 @@ export function Hero() {
                 alt="ChatJS — AI chat interface"
                 className="hidden h-auto w-full dark:block"
                 height={1536}
-                priority
                 src="/chatjs_preview_dark.png"
                 width={2048}
               />

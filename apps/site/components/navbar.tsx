@@ -67,6 +67,8 @@ export function Navbar() {
 
         {/* Mobile toggle */}
         <button
+          aria-controls="mobile-nav-menu"
+          aria-expanded={mobileOpen}
           aria-label="Toggle menu"
           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -82,7 +84,10 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-border/40 border-t px-6 py-4 md:hidden">
+        <div
+          className="border-border/40 border-t px-6 py-4 md:hidden"
+          id="mobile-nav-menu"
+        >
           <div className="flex flex-col gap-4">
             {NAV_LINKS.map((link) => (
               <Link

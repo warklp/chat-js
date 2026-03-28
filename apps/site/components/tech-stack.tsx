@@ -1,9 +1,10 @@
 import Image from "next/image";
+import type { CSSProperties, ReactNode } from "react";
 
 interface Tech {
-  name: string;
-  icon: React.ReactNode;
   glowColor: string;
+  icon: ReactNode;
+  name: string;
 }
 
 const TECHS: Tech[] = [
@@ -113,14 +114,7 @@ const TECHS: Tech[] = [
   {
     name: "Zustand",
     glowColor: "#FFCA80",
-    icon: (
-      <Image
-        alt="Zustand"
-        height={28}
-        src="/zustand.svg"
-        width={28}
-      />
-    ),
+    icon: <Image alt="Zustand" height={28} src="/zustand.svg" width={28} />,
   },
   {
     name: "tRPC",
@@ -153,16 +147,15 @@ const TECHS: Tech[] = [
 
 function TechCard({ tech, index }: { tech: Tech; index: number }) {
   const delay = `${0.04 * index}s`;
+  const cardStyle = {
+    animationDelay: delay,
+    "--glow": tech.glowColor,
+  } satisfies CSSProperties & Record<`--${string}`, string>;
 
   return (
     <div
       className="tech-card group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-border/80 hover:bg-accent"
-      style={
-        {
-          animationDelay: delay,
-          "--glow": tech.glowColor,
-        } as React.CSSProperties
-      }
+      style={cardStyle}
     >
       {/* Colored glow on hover */}
       <div
@@ -228,7 +221,7 @@ export function TechStack() {
           </p>
           <h2 className="font-display text-3xl text-foreground tracking-tight sm:text-5xl">
             Built on the{" "}
-            <span className="italic text-muted-foreground">best tools</span>
+            <span className="text-muted-foreground italic">best tools</span>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground leading-relaxed">
             A modern, type-safe stack chosen for developer experience and

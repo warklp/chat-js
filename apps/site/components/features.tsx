@@ -89,8 +89,7 @@ const TOOLS: Feature[] = [
   {
     icon: Image,
     title: "Image Generation",
-    description:
-      "Create and edit images with AI, inline in any conversation.",
+    description: "Create and edit images with AI, inline in any conversation.",
   },
   {
     icon: Video,
@@ -139,12 +138,10 @@ export function Features() {
     <section className="py-24 sm:py-32">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
-          Everything you need,{" "}
-          <span className="italic">out of the box</span>
+          Everything you need, <span className="italic">out of the box</span>
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
-          Production features that would take months to build, ready in
-          minutes.
+          Production features that would take months to build, ready in minutes.
         </p>
 
         {/* ── Platform: 3×2 uniform grid ───────────────────────── */}

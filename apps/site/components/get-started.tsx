@@ -9,10 +9,14 @@ const command = "npx @chat-js/cli@latest create my-app";
 export function GetStarted() {
   const [copied, setCopied] = useState(false);
 
-  function copyCommand() {
-    navigator.clipboard.writeText(command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyCommand() {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard write failed (e.g. permissions denied)
+    }
   }
   return (
     <section className="relative overflow-hidden py-24 sm:py-32">
@@ -50,10 +54,10 @@ export function GetStarted() {
                 <span className="text-foreground">{command}</span>
               </code>
               <button
-                type="button"
-                onClick={copyCommand}
-                className="ml-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 aria-label="Copy command"
+                className="ml-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                onClick={copyCommand}
+                type="button"
               >
                 {copied ? (
                   <Check className="h-4 w-4 text-green-500" />
