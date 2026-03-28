@@ -11,7 +11,7 @@ const TECHS: Tech[] = [
     name: "Next.js",
     glowColor: "#a1a1a1",
     icon: (
-      <svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="black" viewBox="0 0 24 24">
         <path d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z" />
       </svg>
     ),
@@ -27,7 +27,7 @@ const TECHS: Tech[] = [
   },
   {
     name: "AI SDK",
-    glowColor: "#ffffff",
+    glowColor: "#a1a1a1",
     icon: (
       <Image
         alt="AI SDK"
@@ -78,7 +78,7 @@ const TECHS: Tech[] = [
     name: "Vercel Blob",
     glowColor: "#a1a1a1",
     icon: (
-      <svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" fill="black" viewBox="0 0 24 24">
         <path d="m12 1.608 12 20.784H0Z" />
       </svg>
     ),
@@ -87,8 +87,8 @@ const TECHS: Tech[] = [
     name: "shadcn/ui",
     glowColor: "#a1a1a1",
     icon: (
-      <svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M22.219 11.784 11.784 22.219c-.407.407-.407 1.068 0 1.476.407.407 1.068.407 1.476 0L23.695 13.26c.407-.408.407-1.069 0-1.476-.408-.407-1.069-.407-1.476 0ZM20.132.305.305 20.132c-.407.407-.407 1.068 0 1.476.408.407 1.069.407 1.476 0L21.608 1.781c.407-.407.407-1.068 0-1.476-.408-.407-1.069-.407-1.476 0Z" />
+      <svg aria-hidden="true" fill="black" viewBox="0 0 24 24">
+        <path d="m19.01 11.55-7.46 7.46c-.46.46-.46 1.19 0 1.65a1.16 1.16 0 0 0 1.64 0l7.46-7.46c.46-.46.46-1.19 0-1.65s-1.19-.46-1.65 0ZM19.17 3.34c-.46-.46-1.19-.46-1.65 0L3.34 17.52c-.46.46-.46 1.19 0 1.65a1.16 1.16 0 0 0 1.64 0L19.16 4.99c.46-.46.46-1.19 0-1.65Z" />
       </svg>
     ),
   },
@@ -156,7 +156,7 @@ function TechCard({ tech, index }: { tech: Tech; index: number }) {
 
   return (
     <div
-      className="tech-card group relative flex flex-col items-center gap-4 rounded-2xl border border-white/6 bg-white/3 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/14 hover:bg-white/6"
+      className="tech-card group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-border/80 hover:bg-accent"
       style={
         {
           animationDelay: delay,
@@ -193,7 +193,7 @@ function TechCard({ tech, index }: { tech: Tech; index: number }) {
       </div>
 
       {/* Name */}
-      <span className="relative text-center font-medium text-[13px] text-white/70 tracking-tight transition-colors duration-300 group-hover:text-white/95">
+      <span className="relative text-center font-medium text-[13px] text-muted-foreground tracking-tight transition-colors duration-300 group-hover:text-foreground">
         {tech.name}
       </span>
     </div>
@@ -202,35 +202,35 @@ function TechCard({ tech, index }: { tech: Tech; index: number }) {
 
 export function TechStack() {
   return (
-    <section className="relative overflow-hidden bg-[#0a0a0a] py-24 dark:bg-transparent sm:py-32">
+    <section className="relative overflow-hidden bg-secondary py-24 sm:py-32">
       {/* Seamless edge blending */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-background to-transparent dark:from-background" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent dark:from-background" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent" />
 
       {/* Grid pattern */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
+            "linear-gradient(color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
       />
 
       {/* Radial glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05)_0%,transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_5%,transparent)_0%,transparent_60%)]" />
 
       <div className="relative mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="mb-16 text-center">
-          <p className="mb-4 font-mono text-white/25 text-xs uppercase tracking-[0.25em]">
+          <p className="mb-4 font-mono text-muted-foreground text-xs uppercase tracking-[0.25em]">
             Tech Stack
           </p>
-          <h2 className="font-display text-3xl text-white tracking-tight sm:text-5xl">
+          <h2 className="font-display text-3xl text-foreground tracking-tight sm:text-5xl">
             Built on the{" "}
-            <span className="italic text-white/50">best tools</span>
+            <span className="italic text-muted-foreground">best tools</span>
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base text-white/35 leading-relaxed">
+          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground leading-relaxed">
             A modern, type-safe stack chosen for developer experience and
             production reliability.
           </p>

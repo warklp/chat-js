@@ -124,10 +124,10 @@ function FeatureCard({ feature }: { feature: Feature }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-8 flex items-center gap-4">
-      <span className="font-mono text-muted-foreground/60 text-xs uppercase tracking-[0.2em]">
+      <span className="font-mono text-muted-foreground text-xs uppercase tracking-[0.2em]">
         {children}
       </span>
-      <div className="h-px flex-1 bg-border/50" />
+      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }
