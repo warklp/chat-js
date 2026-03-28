@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "bun install",
+  "buildCommand": "bun run build",
+  "rewrites": [
+    {
+      "source": "/docs",
+      "destination": "https://chatjs.mintlify.dev/docs"
+    },
+    {
+      "source": "/docs/:match*",
+      "destination": "https://chatjs.mintlify.dev/docs/:match*"
+    }
+  ]
+}

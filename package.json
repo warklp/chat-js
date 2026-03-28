@@ -10,6 +10,7 @@
 	"scripts": {
 		"dev": "dotenv -e .env.local -- turbo run dev --filter=@chatjs/chat",
 		"dev:docs": "turbo run dev --filter=@chatjs/docs",
+		"dev:site": "turbo run dev --filter=@chatjs/site",
 		"build": "dotenv -e .env.local -- turbo run build",
 		"fetch:models": "dotenv -e .env.local -- turbo run fetch:models --filter=@chatjs/chat",
 		"test:e2e": "dotenv -e .env.local -- turbo run test:e2e --filter=@chatjs/chat",
