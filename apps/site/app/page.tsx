@@ -4,6 +4,7 @@ import { GetStarted } from "@/components/get-started";
 import { Hero } from "@/components/hero";
 import { LogoCloud } from "@/components/logo-cloud";
 import { Navbar } from "@/components/navbar";
+import { TechStack } from "@/components/tech-stack";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <main className="flex-1">
         <Hero />
         <LogoCloud />
+        <TechStack />
         <Features />
         <GetStarted />
       </main>

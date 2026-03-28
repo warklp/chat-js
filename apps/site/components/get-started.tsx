@@ -1,7 +1,19 @@
-import { BookOpen } from "lucide-react";
+"use client";
+
+import { BookOpen, Check, Copy } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+
+const command = "npx @chat-js/cli@latest create my-app";
 
 export function GetStarted() {
+  const [copied, setCopied] = useState(false);
+
+  function copyCommand() {
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
   return (
     <section className="relative overflow-hidden py-24 sm:py-32">
       {/* Background atmosphere */}
@@ -32,13 +44,23 @@ export function GetStarted() {
                 Terminal
               </span>
             </div>
-            <div className="px-5 py-4">
+            <div className="flex items-center justify-between px-5 py-4">
               <code className="font-mono text-sm">
-                <span className="text-muted-foreground">$</span>{" "}
-                <span className="text-foreground">
-                  npx @chat-js/cli@latest create my-app
-                </span>
+                <span className="select-none text-muted-foreground">$ </span>
+                <span className="text-foreground">{command}</span>
               </code>
+              <button
+                type="button"
+                onClick={copyCommand}
+                className="ml-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                aria-label="Copy command"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </div>
         </div>
