@@ -160,3 +160,7 @@
 .tech-card {
   animation: tech-card-in 0.5s ease-out both;
 }
+
+.use-case-card {
+  animation: fade-in-up 0.7s ease-out both;
+}

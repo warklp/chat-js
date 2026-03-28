@@ -62,6 +62,8 @@ export function Hero() {
           <a
             className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 text-muted-foreground text-sm backdrop-blur-sm transition-colors hover:border-foreground/20 hover:text-foreground"
             href="https://github.com/franciscomoretti/chat-js"
+            rel="noreferrer"
+            target="_blank"
           >
             <svg
               aria-hidden="true"
@@ -138,6 +140,7 @@ export function Hero() {
                 className="block h-auto w-full dark:hidden"
                 height={1536}
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
                 src="/chatjs_preview_light.png"
                 width={2048}
               />
@@ -145,6 +148,7 @@ export function Hero() {
                 alt="ChatJS — AI chat interface"
                 className="hidden h-auto w-full dark:block"
                 height={1536}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
                 src="/chatjs_preview_dark.png"
                 width={2048}
               />

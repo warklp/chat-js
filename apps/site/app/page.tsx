@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+
+import { Faq } from "@/components/faq";
 import { Features } from "@/components/features";
 import { Footer } from "@/components/footer";
 import { GetStarted } from "@/components/get-started";
@@ -5,16 +8,74 @@ import { Hero } from "@/components/hero";
 import { LogoCloud } from "@/components/logo-cloud";
 import { Navbar } from "@/components/navbar";
 import { TechStack } from "@/components/tech-stack";
+import { UseCases } from "@/components/use-cases";
+import { siteConfig, siteLinks } from "@/lib/site-config";
+
+export const metadata: Metadata = {
+  title: "Open-Source Next.js AI Chat Starter",
+  description:
+    "Launch a production-ready AI chat app with Next.js, authentication, streaming UI, tool calling, and integrations for 120+ models.",
+  alternates: {
+    canonical: siteLinks.home,
+  },
+  openGraph: {
+    url: siteLinks.home,
+    title: "ChatJS | Open-Source Next.js AI Chat Starter",
+    description:
+      "Launch a production-ready AI chat app with Next.js, authentication, streaming UI, tool calling, and integrations for 120+ models.",
+  },
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: siteConfig.name,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web",
+      url: siteLinks.home,
+      description: siteConfig.description,
+      image: `${siteConfig.url}${siteConfig.ogImage}`,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      softwareHelp: siteLinks.docs,
+      codeRepository: siteLinks.github,
+      screenshot: `${siteConfig.url}${siteConfig.ogImage}`,
+    },
+    {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteLinks.home,
+      logo: `${siteConfig.url}/logo.svg`,
+      sameAs: [siteLinks.github],
+    },
+    {
+      "@type": "WebSite",
+      name: siteConfig.name,
+      url: siteLinks.home,
+      description: siteConfig.description,
+    },
+  ],
+};
 
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
+      <script type="application/ld+json">
+        {JSON.stringify(structuredData)}
+      </script>
       <Navbar />
       <main className="flex-1">
         <Hero />
         <LogoCloud />
         <TechStack />
         <Features />
+        <UseCases />
+        <Faq />
         <GetStarted />
       </main>
       <Footer />

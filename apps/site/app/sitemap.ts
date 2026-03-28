@@ -1,14 +1,26 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://chatjs.dev";
+import { siteLastModified, siteLinks } from "@/lib/site-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: BASE_URL,
-      lastModified: new Date(),
+      url: siteLinks.home,
+      lastModified: siteLastModified,
       changeFrequency: "weekly",
       priority: 1,
+    },
+    {
+      url: siteLinks.docs,
+      lastModified: siteLastModified,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: siteLinks.docsGettingStarted,
+      lastModified: siteLastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
   ];
 }

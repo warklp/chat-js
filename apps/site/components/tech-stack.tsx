@@ -34,6 +34,7 @@ const TECHS: Tech[] = [
         alt="AI SDK"
         className="rounded-full"
         height={28}
+        sizes="28px"
         src="/ai-sdk.jpg"
         width={28}
       />
@@ -114,7 +115,15 @@ const TECHS: Tech[] = [
   {
     name: "Zustand",
     glowColor: "#FFCA80",
-    icon: <Image alt="Zustand" height={28} src="/zustand.svg" width={28} />,
+    icon: (
+      <Image
+        alt="Zustand"
+        height={28}
+        sizes="28px"
+        src="/zustand.svg"
+        width={28}
+      />
+    ),
   },
   {
     name: "tRPC",
