@@ -6,16 +6,16 @@ import { LogoCloud } from "@/components/logo-cloud";
 import { Navbar } from "@/components/navbar";
 
 export default function HomePage() {
-	return (
-		<div className="min-h-screen flex flex-col">
-			<Navbar />
-			<main className="flex-1">
-				<Hero />
-				<LogoCloud />
-				<Features />
-				<GetStarted />
-			</main>
-			<Footer />
-		</div>
-	);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <LogoCloud />
+        <Features />
+        <GetStarted />
+      </main>
+      <Footer />
+    </div>
+  );
 }

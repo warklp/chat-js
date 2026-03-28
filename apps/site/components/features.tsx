@@ -1,125 +1,172 @@
 import type { LucideIcon } from "lucide-react";
 import {
-	BrainCircuit,
-	Code,
-	GitBranch,
-	Globe,
-	Image,
-	Lock,
-	Puzzle,
-	Search,
+  BrainCircuit,
+  Code,
+  Columns,
+  FileText,
+  GitBranch,
+  Globe,
+  Image,
+  Lightbulb,
+  Lock,
+  Puzzle,
+  Search,
+  Video,
 } from "lucide-react";
 
-type Feature = {
-	icon: LucideIcon;
-	title: string;
-	description: string;
-	large?: boolean;
-	tags?: string[];
-};
+interface Feature {
+  description: string;
+  icon: LucideIcon;
+  title: string;
+}
 
-const FEATURES: Feature[] = [
-	{
-		icon: BrainCircuit,
-		title: "120+ Models",
-		description:
-			"Access Claude, GPT, Gemini, Grok, Llama, and more through a unified interface. Switch providers mid-conversation without losing context.",
-		large: true,
-		tags: ["Claude", "GPT-4o", "Gemini", "Grok", "Llama", "Mistral"],
-	},
-	{
-		icon: Lock,
-		title: "Authentication",
-		description:
-			"Built-in OAuth with Google, GitHub, and Vercel. Session management, anonymous mode, and rate limiting — production-ready from day one.",
-	},
-	{
-		icon: Search,
-		title: "Deep Research",
-		description:
-			"Multi-step research agent that searches the web, synthesizes information, and produces comprehensive reports.",
-	},
-	{
-		icon: Code,
-		title: "Code Execution",
-		description:
-			"Run Python and JavaScript in secure sandboxes with pre-installed packages like pandas and numpy.",
-	},
-	{
-		icon: Globe,
-		title: "Web Search",
-		description:
-			"Real-time web search with citations to ground conversations in current information.",
-	},
-	{
-		icon: Puzzle,
-		title: "MCP Support",
-		description:
-			"Extend capabilities with external tools and services via the Model Context Protocol.",
-	},
-	{
-		icon: Image,
-		title: "Image Generation",
-		description:
-			"AI-powered image creation and editing, inline in conversations.",
-	},
-	{
-		icon: GitBranch,
-		title: "Branching",
-		description:
-			"Fork conversations to explore different directions without losing context.",
-	},
+/* ── Platform ─────────────────────────────────────────────────────── */
+const PLATFORM_FEATURES: Feature[] = [
+  {
+    icon: BrainCircuit,
+    title: "120+ Models",
+    description:
+      "Claude, GPT, Gemini, Grok, Llama — one unified interface. Switch providers mid-conversation without losing context.",
+  },
+  {
+    icon: FileText,
+    title: "Canvas",
+    description:
+      "Create and edit rich documents, code files, and spreadsheets with version history, inline diffs, and real-time collaboration.",
+  },
+  {
+    icon: Columns,
+    title: "Parallel Responses",
+    description:
+      "Send one message to multiple models at once. Compare quality, tone, and accuracy across providers side-by-side.",
+  },
+  {
+    icon: Lock,
+    title: "Authentication",
+    description:
+      "Built-in OAuth with Google, GitHub, and Vercel. Session management, anonymous mode, and rate limiting.",
+  },
+  {
+    icon: Puzzle,
+    title: "MCP Support",
+    description:
+      "Extend capabilities with external tools and services via the Model Context Protocol.",
+  },
+  {
+    icon: GitBranch,
+    title: "Branching",
+    description:
+      "Fork any conversation to explore different directions without losing context.",
+  },
 ];
 
+/* ── Built-in Tools ───────────────────────────────────────────────── */
+const TOOLS: Feature[] = [
+  {
+    icon: Search,
+    title: "Deep Research",
+    description:
+      "Multi-step research agent that synthesizes the web into comprehensive reports.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Reasoning",
+    description:
+      "Models that support reasoning can think before answering. Collapsible thinking sections and automatic model splitting.",
+  },
+  {
+    icon: Code,
+    title: "Code Execution",
+    description:
+      "Python in a secure sandbox with pandas, numpy, matplotlib, and more pre-installed.",
+  },
+  {
+    icon: Globe,
+    title: "Web Search",
+    description:
+      "Real-time search with inline citations grounding every conversation.",
+  },
+  {
+    icon: Image,
+    title: "Image Generation",
+    description:
+      "Create and edit images with AI, inline in any conversation.",
+  },
+  {
+    icon: Video,
+    title: "Video Generation",
+    description:
+      "AI-powered videos with configurable aspect ratios and durations.",
+  },
+];
+
+/* ── Shared card component ────────────────────────────────────────── */
+
+function FeatureCard({ feature }: { feature: Feature }) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-foreground/3 hover:shadow-lg">
+      <div className="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-foreground/2 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="relative flex h-full flex-col">
+        <div className="inline-flex w-fit rounded-xl border border-border/50 bg-secondary/50 p-2.5">
+          <feature.icon className="h-5 w-5 text-foreground/70" />
+        </div>
+        <h3 className="mt-4 font-semibold text-lg tracking-tight">
+          {feature.title}
+        </h3>
+        <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+          {feature.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-8 flex items-center gap-4">
+      <span className="font-mono text-muted-foreground/60 text-xs uppercase tracking-[0.2em]">
+        {children}
+      </span>
+      <div className="h-px flex-1 bg-border/50" />
+    </div>
+  );
+}
+
+/* ── Main component ───────────────────────────────────────────────── */
+
 export function Features() {
-	return (
-		<section className="py-24 sm:py-32">
-			<div className="mx-auto max-w-6xl px-6">
-				<h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
-					Everything you need,{" "}
-					<span className="italic">out of the box</span>
-				</h2>
-				<p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
-					Production features that would take months to build, ready
-					in minutes.
-				</p>
+  return (
+    <section className="py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-6">
+        <h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
+          Everything you need,{" "}
+          <span className="italic">out of the box</span>
+        </h2>
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
+          Production features that would take months to build, ready in
+          minutes.
+        </p>
 
-				<div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{FEATURES.map((feature) => (
-						<div
-							key={feature.title}
-							className={`group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-foreground/3 ${feature.large ? "sm:col-span-2" : ""}`}
-						>
-							{/* Hover glow */}
-							<div className="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-foreground/2 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+        {/* ── Platform: 3×2 uniform grid ───────────────────────── */}
+        <div className="mt-20">
+          <SectionLabel>Platform</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PLATFORM_FEATURES.map((f) => (
+              <FeatureCard feature={f} key={f.title} />
+            ))}
+          </div>
+        </div>
 
-							<div className="relative">
-								<div className="inline-flex rounded-xl border border-border/50 bg-secondary/50 p-2.5">
-									<feature.icon className="h-6 w-6 text-foreground/70" />
-								</div>
-								<h3 className="mt-4 text-lg font-semibold tracking-tight">
-									{feature.title}
-								</h3>
-								<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-									{feature.description}
-								</p>
-								{feature.tags && (
-									<div className="mt-4 flex flex-wrap gap-2">
-										{feature.tags.map((tag) => (
-											<span
-												key={tag}
-												className="rounded-full border border-border/50 bg-secondary/50 px-3 py-1 text-xs font-medium text-secondary-foreground"
-											>
-												{tag}
-											</span>
-										))}
-									</div>
-								)}
-							</div>
-						</div>
-					))}
-				</div>
-			</div>
-		</section>
-	);
+        {/* ── Built-in Tools: 3×2 uniform grid ─────────────────── */}
+        <div className="mt-16">
+          <SectionLabel>Built-in Tools</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TOOLS.map((f) => (
+              <FeatureCard feature={f} key={f.title} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
