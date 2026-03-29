@@ -1,5 +1,8 @@
 import { ArrowRight, BookOpen } from "lucide-react";
+import Image, { type ImageProps } from "next/image";
 import Link from "next/link";
+
+import styles from "./theme-image.module.css";
 
 function Sparkle({
   className,
@@ -19,6 +22,28 @@ function Sparkle({
     >
       <path d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8Z" />
     </svg>
+  );
+}
+
+type ThemeImageProps = Omit<ImageProps, "src" | "loading" | "preload"> & {
+  srcDark: string;
+  srcLight: string;
+};
+
+function ThemeImage({ srcDark, srcLight, ...rest }: ThemeImageProps) {
+  return (
+    <>
+      <Image
+        {...rest}
+        className={`${rest.className ?? ""} ${styles.imgLight}`.trim()}
+        src={srcLight}
+      />
+      <Image
+        {...rest}
+        className={`${rest.className ?? ""} ${styles.imgDark}`.trim()}
+        src={srcDark}
+      />
+    </>
   );
 }
 
@@ -134,25 +159,16 @@ export function Hero() {
           {/* Screenshot with depth */}
           <div className="relative animate-float rounded-2xl shadow-[0_20px_70px_-10px_rgba(0,0,0,0.35)] ring-1 ring-foreground/[0.08] transition-transform duration-700 [transform:rotateX(2deg)] dark:shadow-[0_20px_70px_-10px_rgba(0,0,0,0.7)] hover:[transform:rotateX(0deg)]">
             <div className="overflow-hidden rounded-2xl">
-              <picture>
-                <source
-                  media="(prefers-color-scheme: dark)"
-                  srcSet="/chatjs_preview_dark.avif"
-                  type="image/avif"
-                />
-                <source srcSet="/chatjs_preview_light.avif" type="image/avif" />
-                <img
-                  alt="ChatJS — AI chat interface"
-                  className="block h-auto w-full"
-                  decoding="async"
-                  fetchPriority="high"
-                  height="1080"
-                  loading="eager"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
-                  src="/chatjs_preview_light.avif"
-                  width="1440"
-                />
-              </picture>
+              <ThemeImage
+                alt="ChatJS — AI chat interface"
+                className="h-auto w-full"
+                fetchPriority="high"
+                height={1536}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
+                srcDark="/chatjs_preview_dark.png"
+                srcLight="/chatjs_preview_light.png"
+                width={2048}
+              />
             </div>
           </div>
         </div>

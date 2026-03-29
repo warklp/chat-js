@@ -1,0 +1,11 @@
+.imgDark {
+  display: none;
+}
+
+.dark .imgLight {
+  display: none;
+}
+
+.dark .imgDark {
+  display: unset;
+}

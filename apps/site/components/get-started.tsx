@@ -17,7 +17,9 @@ export function GetStarted() {
       window.setTimeout(() => {
         setCopied(false);
       }, 2000);
-    } catch {}
+    } catch {
+      // Ignore clipboard permission failures.
+    }
   }
 
   return (
