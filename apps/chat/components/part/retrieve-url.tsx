@@ -12,17 +12,17 @@ export type RetrieveUrlTool = Extract<
 
 function LoadingState() {
   return (
-    <div className="my-4 rounded-xl border border-neutral-200 bg-linear-to-b from-white to-neutral-50 p-4 dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-900/90">
+    <div className="my-4 rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-4">
         <div className="relative h-10 w-10">
           <div className="absolute inset-0 animate-pulse rounded-full bg-primary/10" />
           <Globe className="absolute inset-0 m-auto h-5 w-5 text-primary/70" />
         </div>
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-36 animate-pulse rounded-md bg-neutral-200 dark:bg-neutral-800" />
+          <div className="h-4 w-36 animate-pulse rounded-md bg-muted-foreground/20" />
           <div className="space-y-1.5">
-            <div className="h-3 w-full animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800/50" />
-            <div className="h-3 w-2/3 animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800/50" />
+            <div className="h-3 w-full animate-pulse rounded-md bg-muted-foreground/15" />
+            <div className="h-3 w-2/3 animate-pulse rounded-md bg-muted-foreground/15" />
           </div>
         </div>
       </div>
@@ -86,10 +86,10 @@ function RetrievedContentHeader({ firstItem }: { firstItem: unknown }) {
           />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
-          <h2 className="truncate font-semibold text-lg text-neutral-900 tracking-tight dark:text-neutral-100">
+          <h2 className="truncate font-semibold text-lg text-foreground tracking-tight">
             {title}
           </h2>
-          <p className="line-clamp-2 text-neutral-600 text-sm dark:text-neutral-400">
+          <p className="line-clamp-2 text-muted-foreground text-sm">
             {description}
           </p>
           <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ function RetrievedContentHeader({ firstItem }: { firstItem: unknown }) {
               {language}
             </span>
             <a
-              className="inline-flex items-center gap-1.5 text-neutral-500 text-xs transition-colors hover:text-primary"
+              className="inline-flex items-center gap-1.5 text-muted-foreground text-xs transition-colors hover:text-primary"
               href={url || "#"}
               rel="noopener noreferrer"
               target="_blank"
@@ -116,16 +116,16 @@ function RetrievedContentDetails({ firstItem }: { firstItem: unknown }) {
   const content = getItemProperty(firstItem, "content", "No content available");
 
   return (
-    <div className="border-neutral-200 border-t dark:border-neutral-800">
+    <div className="border-border border-t">
       <details className="group">
-        <summary className="flex w-full cursor-pointer items-center justify-between px-4 py-2 text-neutral-700 text-sm transition-colors hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800/50">
+        <summary className="flex w-full cursor-pointer items-center justify-between px-4 py-2 text-muted-foreground text-sm transition-colors hover:bg-muted">
           <div className="flex items-center gap-2">
-            <TextIcon className="h-4 w-4 text-neutral-400" />
+            <TextIcon className="h-4 w-4 text-muted-foreground" />
             <span>View content</span>
           </div>
           <ChevronDown className="h-4 w-4 transition-transform duration-200 group-open:rotate-180" />
         </summary>
-        <div className="max-h-[50vh] overflow-y-auto bg-neutral-50/50 p-4 dark:bg-neutral-800/30">
+        <div className="max-h-[50vh] overflow-y-auto bg-muted/50 p-4">
           <div className="prose prose-neutral dark:prose-invert prose-sm max-w-none">
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
@@ -173,7 +173,7 @@ export function RetrieveUrl({ tool }: { tool: RetrieveUrlTool }) {
   }
 
   return (
-    <div className="my-4 overflow-hidden rounded-xl border border-neutral-200 bg-linear-to-b from-white to-neutral-50 dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-900/90">
+    <div className="my-4 overflow-hidden rounded-xl border border-border bg-card">
       <RetrievedContentHeader firstItem={firstItem} />
       <RetrievedContentDetails firstItem={firstItem} />
     </div>
