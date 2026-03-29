@@ -1,8 +1,7 @@
 import { ArrowRight, BookOpen } from "lucide-react";
-import Image, { type ImageProps } from "next/image";
-import Link from "next/link";
+import Image from "next/image";
 
-import styles from "./theme-image.module.css";
+import { siteLinks } from "@/lib/site-config";
 
 function Sparkle({
   className,
@@ -22,28 +21,6 @@ function Sparkle({
     >
       <path d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8Z" />
     </svg>
-  );
-}
-
-type ThemeImageProps = Omit<ImageProps, "src" | "loading" | "preload"> & {
-  srcDark: string;
-  srcLight: string;
-};
-
-function ThemeImage({ srcDark, srcLight, ...rest }: ThemeImageProps) {
-  return (
-    <>
-      <Image
-        {...rest}
-        className={`${rest.className ?? ""} ${styles.imgLight}`.trim()}
-        src={srcLight}
-      />
-      <Image
-        {...rest}
-        className={`${rest.className ?? ""} ${styles.imgDark}`.trim()}
-        src={srcDark}
-      />
-    </>
   );
 }
 
@@ -84,7 +61,7 @@ export function Hero() {
         {/* Badge */}
         <div className="flex animate-fade-in-up justify-center">
           <a
-            className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 text-muted-foreground text-sm backdrop-blur-sm transition-colors hover:border-foreground/20 hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 text-foreground/75 text-sm backdrop-blur-sm transition-colors hover:border-foreground/20 hover:text-foreground"
             href="https://github.com/franciscomoretti/chat-js"
             rel="noreferrer"
             target="_blank"
@@ -113,7 +90,7 @@ export function Hero() {
 
         {/* Subhead */}
         <p
-          className="mx-auto mt-8 max-w-2xl animate-fade-in-up text-center text-lg text-muted-foreground leading-relaxed sm:text-xl"
+          className="mx-auto mt-8 max-w-2xl animate-fade-in-up text-center text-foreground/75 text-lg leading-relaxed sm:text-xl"
           style={{ animationDelay: "0.2s" }}
         >
           An open-source, production-ready AI chat foundation. Authentication,
@@ -125,26 +102,26 @@ export function Hero() {
           className="mt-10 flex animate-fade-in-up flex-wrap items-center justify-center gap-4"
           style={{ animationDelay: "0.3s" }}
         >
-          <Link
+          <a
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-medium text-primary-foreground text-sm shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-primary/20 hover:shadow-xl"
-            href="/docs/getting-started"
+            href={siteLinks.docsGettingStarted}
           >
             Get Started
             <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
+          </a>
+          <a
             className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 font-medium text-foreground text-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card"
-            href="https://demo.chatjs.dev"
+            href={siteLinks.demo}
           >
             View Demo
-          </Link>
-          <Link
-            className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
-            href="/docs"
+          </a>
+          <a
+            className="inline-flex items-center gap-2 text-foreground/75 text-sm transition-colors hover:text-foreground"
+            href={siteLinks.docs}
           >
             <BookOpen className="h-4 w-4" />
             Read the Docs
-          </Link>
+          </a>
         </div>
 
         {/* Chat Preview */}
@@ -159,14 +136,21 @@ export function Hero() {
           {/* Screenshot with depth */}
           <div className="relative animate-float rounded-2xl shadow-[0_20px_70px_-10px_rgba(0,0,0,0.35)] ring-1 ring-foreground/[0.08] transition-transform duration-700 [transform:rotateX(2deg)] dark:shadow-[0_20px_70px_-10px_rgba(0,0,0,0.7)] hover:[transform:rotateX(0deg)]">
             <div className="overflow-hidden rounded-2xl">
-              <ThemeImage
+              <Image
                 alt="ChatJS — AI chat interface"
-                className="h-auto w-full"
+                className="block h-auto w-full dark:hidden"
                 fetchPriority="high"
                 height={1536}
                 sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
-                srcDark="/chatjs_preview_dark.png"
-                srcLight="/chatjs_preview_light.png"
+                src="/chatjs_preview_light.png"
+                width={2048}
+              />
+              <Image
+                alt="ChatJS — AI chat interface"
+                className="hidden h-auto w-full dark:block"
+                height={1536}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
+                src="/chatjs_preview_dark.png"
                 width={2048}
               />
             </div>

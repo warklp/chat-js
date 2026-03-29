@@ -1,13 +1,14 @@
 import Link from "next/link";
 
+import { siteLinks } from "@/lib/site-config";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV_LINKS = [
-  { label: "Demo", href: "https://demo.chatjs.dev" },
-  { label: "Docs", href: "/docs" },
+  { label: "Demo", href: siteLinks.demo },
+  { label: "Docs", href: siteLinks.docs },
   {
     label: "GitHub",
-    href: "https://github.com/franciscomoretti/chat-js",
+    href: siteLinks.github,
   },
 ];
 
@@ -48,20 +49,20 @@ export function Navbar() {
         {/* Desktop nav */}
         <div className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
-            <Link
-              className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+            <a
+              className="text-foreground/75 text-sm transition-colors hover:text-foreground"
               href={link.href}
               key={link.label}
             >
               {link.label}
-            </Link>
+            </a>
           ))}
           <ThemeToggle />
         </div>
 
         {/* Mobile toggle */}
         <details className="relative md:hidden">
-          <summary className="cursor-pointer list-none rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary">
+          <summary className="cursor-pointer list-none rounded-lg p-2 text-foreground/75 transition-colors hover:bg-secondary hover:text-foreground">
             <span className="sr-only">Toggle menu</span>
             <span aria-hidden="true" className="text-sm">
               Menu
@@ -71,13 +72,13 @@ export function Navbar() {
           <div className="absolute inset-x-0 top-full w-[min(18rem,calc(100vw-3rem))] rounded-2xl border border-border/40 bg-background/95 p-4 shadow-xl backdrop-blur-xl">
             <div className="flex flex-col gap-4">
               {NAV_LINKS.map((link) => (
-                <Link
-                  className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                <a
+                  className="text-foreground/75 text-sm transition-colors hover:text-foreground"
                   href={link.href}
                   key={link.label}
                 >
                   {link.label}
-                </Link>
+                </a>
               ))}
               <ThemeToggle />
             </div>

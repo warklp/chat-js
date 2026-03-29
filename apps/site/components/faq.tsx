@@ -29,7 +29,7 @@ export function Faq() {
     >
       <div className="mx-auto max-w-4xl px-6">
         <div className="text-center">
-          <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.25em]">
+          <p className="font-mono text-foreground/70 text-xs uppercase tracking-[0.25em]">
             FAQ
           </p>
           <h2
@@ -38,7 +38,7 @@ export function Faq() {
           >
             Questions developers ask before adopting an AI chat starter
           </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+          <p className="mx-auto mt-6 max-w-2xl text-foreground/75 text-lg leading-relaxed">
             These answers cover the common evaluation points for teams looking
             for a Next.js AI chat template they can extend in production.
           </p>
@@ -53,7 +53,7 @@ export function Faq() {
               <summary className="cursor-pointer list-none font-semibold text-lg tracking-tight marker:hidden">
                 {item.question}
               </summary>
-              <p className="mt-4 text-muted-foreground leading-relaxed">
+              <p className="mt-4 text-foreground/75 leading-relaxed">
                 {item.answer}
               </p>
             </details>

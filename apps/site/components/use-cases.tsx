@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { siteLinks } from "@/lib/site-config";
 
 const USE_CASES = [
   {
@@ -29,7 +29,7 @@ export function UseCases() {
     >
       <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.25em]">
+          <p className="font-mono text-foreground/70 text-xs uppercase tracking-[0.25em]">
             Why developers use ChatJS
           </p>
           <h2
@@ -38,27 +38,27 @@ export function UseCases() {
           >
             A practical starting point for shipping AI chat products
           </h2>
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">
+          <p className="mt-6 max-w-xl text-foreground/75 text-lg leading-relaxed">
             ChatJS gives you a credible baseline for building AI chat apps fast:
             real product infrastructure, flexible model support, and room to
             grow beyond a demo.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link
+            <a
               className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-medium text-sm transition-all duration-300 hover:border-foreground/20 hover:text-foreground"
-              href="/docs/getting-started"
+              href={siteLinks.docsGettingStarted}
             >
               See the setup guide
               <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">
                 &rarr;
               </span>
-            </Link>
-            <Link
+            </a>
+            <a
               className="inline-flex items-center rounded-xl border border-border bg-card px-4 py-2 font-medium text-sm transition-all duration-300 hover:border-foreground/20 hover:text-foreground"
-              href="/docs"
+              href={siteLinks.docs}
             >
               Explore documentation
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -76,14 +76,14 @@ export function UseCases() {
               />
 
               <div className="relative flex items-start gap-4">
-                <span className="mt-1 shrink-0 font-mono text-[10px] text-muted-foreground/40 transition-colors duration-400 group-hover:text-muted-foreground/70">
+                <span className="mt-1 shrink-0 font-mono text-[10px] text-foreground/55 transition-colors duration-400 group-hover:text-foreground/75">
                   {item.number}
                 </span>
                 <div>
                   <h3 className="font-semibold text-xl tracking-tight">
                     {item.title}
                   </h3>
-                  <p className="mt-3 text-muted-foreground leading-relaxed">
+                  <p className="mt-3 text-foreground/75 leading-relaxed">
                     {item.description}
                   </p>
                 </div>

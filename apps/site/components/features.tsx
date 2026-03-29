@@ -112,7 +112,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
         <h3 className="mt-4 font-semibold text-lg tracking-tight">
           {feature.title}
         </h3>
-        <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+        <p className="mt-2 text-foreground/75 text-sm leading-relaxed">
           {feature.description}
         </p>
       </div>
@@ -123,7 +123,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-8 flex items-center gap-4">
-      <span className="font-mono text-muted-foreground text-xs uppercase tracking-[0.2em]">
+      <span className="font-mono text-foreground/70 text-xs uppercase tracking-[0.2em]">
         {children}
       </span>
       <div className="h-px flex-1 bg-border" />
@@ -140,7 +140,7 @@ export function Features() {
         <h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
           Everything you need, <span className="italic">out of the box</span>
         </h2>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-foreground/75 text-lg">
           Production features that would take months to build, ready in minutes.
         </p>
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface Tech {
   glowColor: string;
@@ -12,9 +12,14 @@ const TECHS: Tech[] = [
     name: "Next.js",
     glowColor: "#a1a1a1",
     icon: (
-      <svg aria-hidden="true" fill="black" viewBox="0 0 24 24">
-        <path d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z" />
-      </svg>
+      <Image
+        alt="Next.js"
+        className="rounded-full"
+        height={28}
+        sizes="28px"
+        src="/nextjs-icon-light-background.png"
+        width={28}
+      />
     ),
   },
   {
@@ -156,46 +161,24 @@ const TECHS: Tech[] = [
 
 function TechCard({ tech, index }: { tech: Tech; index: number }) {
   const delay = `${0.04 * index}s`;
-  const cardStyle = {
-    animationDelay: delay,
-    "--glow": tech.glowColor,
-  } satisfies CSSProperties & Record<`--${string}`, string>;
 
   return (
     <div
-      className="tech-card group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-border/80 hover:bg-accent"
-      style={cardStyle}
+      className="tech-card group relative flex items-center gap-3.5 rounded-2xl border border-border/50 bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:shadow-foreground/3 hover:shadow-lg"
+      style={{ animationDelay: delay }}
     >
-      {/* Colored glow on hover */}
-      <div
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          boxShadow: `0 0 40px ${tech.glowColor}15, 0 0 80px ${tech.glowColor}08, inset 0 1px 0 ${tech.glowColor}15`,
-        }}
-      />
+      <div className="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-foreground/2 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
 
-      {/* Top gradient accent */}
+      {/* Icon */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${tech.glowColor}40, transparent)`,
-        }}
-      />
-
-      {/* Icon container */}
-      <div
-        className="relative flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-105 [&>svg]:h-7 [&>svg]:w-7"
-        style={{
-          backgroundColor: `${tech.glowColor}12`,
-          boxShadow: `0 0 0 1px ${tech.glowColor}10`,
-          color: tech.glowColor,
-        }}
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-secondary/50 transition-colors duration-300 [&>svg]:h-5 [&>svg]:w-5"
+        style={{ color: tech.glowColor }}
       >
         {tech.icon}
       </div>
 
       {/* Name */}
-      <span className="relative text-center font-medium text-[13px] text-muted-foreground tracking-tight transition-colors duration-300 group-hover:text-foreground">
+      <span className="relative font-medium text-foreground/75 text-sm tracking-tight transition-colors duration-300 group-hover:text-foreground">
         {tech.name}
       </span>
     </div>
@@ -204,35 +187,18 @@ function TechCard({ tech, index }: { tech: Tech; index: number }) {
 
 export function TechStack() {
   return (
-    <section className="relative overflow-hidden bg-secondary py-24 sm:py-32">
-      {/* Seamless edge blending */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-background to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent" />
-
-      {/* Grid pattern */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      {/* Radial glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_5%,transparent)_0%,transparent_60%)]" />
-
-      <div className="relative mx-auto max-w-6xl px-6">
+    <section className="py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="mb-16 text-center">
-          <p className="mb-4 font-mono text-muted-foreground text-xs uppercase tracking-[0.25em]">
+          <p className="mb-4 font-mono text-foreground/70 text-xs uppercase tracking-[0.25em]">
             Tech Stack
           </p>
           <h2 className="font-display text-3xl text-foreground tracking-tight sm:text-5xl">
             Built on the{" "}
-            <span className="text-muted-foreground italic">best tools</span>
+            <span className="text-foreground/75 italic">best tools</span>
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground leading-relaxed">
+          <p className="mx-auto mt-5 max-w-xl text-base text-foreground/75 leading-relaxed">
             A modern, type-safe stack chosen for developer experience and
             production reliability.
           </p>

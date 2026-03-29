@@ -1,15 +1,17 @@
 import Link from "next/link";
 
+import { siteLinks } from "@/lib/site-config";
+
 const PRODUCT_LINKS = [
-  { label: "Demo", href: "https://demo.chatjs.dev" },
-  { label: "Documentation", href: "/docs" },
-  { label: "Getting Started", href: "/docs/getting-started" },
+  { label: "Demo", href: siteLinks.demo },
+  { label: "Documentation", href: siteLinks.docs },
+  { label: "Getting Started", href: siteLinks.docsGettingStarted },
 ];
 
 const COMMUNITY_LINKS = [
   {
     label: "GitHub",
-    href: "https://github.com/franciscomoretti/chat-js",
+    href: siteLinks.github,
   },
   { label: "X / Twitter", href: "https://x.com/franmoretti_" },
 ];
@@ -50,49 +52,55 @@ export function Footer() {
               </svg>
               ChatJS
             </Link>
-            <p className="mt-3 max-w-xs text-muted-foreground text-sm leading-relaxed">
+            <p className="mt-3 max-w-xs text-foreground/75 text-sm leading-relaxed">
               The open-source, production-ready AI chat foundation.
             </p>
           </div>
 
           {/* Link columns */}
-          <div className="flex gap-16">
+          <nav
+            aria-labelledby="footer-navigation-heading"
+            className="flex gap-16"
+          >
+            <h2 className="sr-only" id="footer-navigation-heading">
+              Footer navigation
+            </h2>
             <div>
-              <h4 className="font-medium text-sm">Product</h4>
+              <h3 className="font-medium text-sm">Product</h3>
               <ul className="mt-4 space-y-3">
                 {PRODUCT_LINKS.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                    <a
+                      className="text-foreground/75 text-sm transition-colors hover:text-foreground"
                       href={link.href}
                     >
                       {link.label}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-sm">Community</h4>
+              <h3 className="font-medium text-sm">Community</h3>
               <ul className="mt-4 space-y-3">
                 {COMMUNITY_LINKS.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                    <a
+                      className="text-foreground/75 text-sm transition-colors hover:text-foreground"
                       href={link.href}
                     >
                       {link.label}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
+          </nav>
         </div>
 
         {/* Bottom bar */}
         <div className="mt-12 border-border/40 border-t pt-6">
-          <p className="text-muted-foreground/70 text-sm">
+          <p className="text-foreground/65 text-sm">
             &copy; {new Date().getFullYear()} ChatJS. Open source under the
             Apache 2.0 license.
           </p>
