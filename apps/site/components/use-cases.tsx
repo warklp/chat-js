@@ -76,7 +76,7 @@ export function UseCases() {
               />
 
               <div className="relative flex items-start gap-4">
-                <span className="mt-1 shrink-0 font-mono text-[10px] text-foreground/55 transition-colors duration-400 group-hover:text-foreground/75">
+                <span className="mt-1 shrink-0 font-mono text-[10px] text-foreground/75 transition-colors duration-400 group-hover:text-foreground">
                   {item.number}
                 </span>
                 <div>
