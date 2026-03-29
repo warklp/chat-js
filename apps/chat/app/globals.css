@@ -384,13 +384,13 @@
 
 .cm-editor,
 .cm-gutters {
-  @apply bg-background! dark:bg-zinc-800! outline-hidden! selection:bg-zinc-900!;
+  @apply bg-card! outline-hidden! selection:bg-zinc-900!;
 }
 
 .ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
 .ͼo.cm-content::selection {
-  @apply bg-zinc-200! dark:bg-zinc-900!;
+  @apply bg-accent!;
 }
 
 .cm-activeLine,
@@ -415,7 +415,7 @@
 }
 
 .suggestion-highlight {
-  @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
+  @apply bg-accent text-accent-foreground hover:bg-accent/80;
 }
 
 /* Lexical Editor Styles */

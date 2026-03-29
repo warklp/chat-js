@@ -836,10 +836,10 @@ function PureMultimodalInput({
         <PromptInput
           className={cn(
             "@container relative transition-colors",
-            isDragActive && "border-blue-500 bg-blue-50 dark:bg-blue-950/20",
+            isDragActive && "border-primary bg-accent",
             className
           )}
-          inputGroupClassName="dark:bg-muted bg-muted"
+          inputGroupClassName="bg-muted"
           {...getRootProps({ onError: undefined, onSubmit: undefined })}
           onSubmit={(_message, event) => {
             event.preventDefault();
@@ -855,8 +855,8 @@ function PureMultimodalInput({
           <input {...getInputProps()} />
 
           {isDragActive && attachmentsEnabled && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-blue-500 border-dashed bg-blue-50/80 dark:bg-blue-950/40">
-              <div className="font-medium text-blue-600 dark:text-blue-400">
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-primary border-dashed bg-accent/80">
+              <div className="font-medium text-primary">
                 Drop images or PDFs here to attach
               </div>
             </div>

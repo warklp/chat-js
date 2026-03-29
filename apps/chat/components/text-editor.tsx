@@ -129,7 +129,7 @@ function PureEditor({
             <ContentEditable className="lexical-editor text-left outline-hidden" />
           }
           ErrorBoundary={LexicalErrorBoundary}
-          placeholder={<div className="text-gray-400">Start typing...</div>}
+          placeholder={<div className="text-muted-foreground">Start typing...</div>}
         />
         <HistoryPlugin />
         <ListPlugin />

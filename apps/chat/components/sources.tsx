@@ -28,7 +28,7 @@ const SourcesList = ({
   <div className="space-y-3">
     {sources?.map((source: SearchResultItem) => (
       <a
-        className="block rounded-lg bg-neutral-50 p-4 transition-colors hover:bg-neutral-100 dark:bg-neutral-800/50 dark:hover:bg-neutral-800"
+        className="block rounded-lg bg-secondary p-4 transition-colors hover:bg-accent"
         href={source.url}
         key={source.url}
         rel="noopener noreferrer"
@@ -113,7 +113,7 @@ function ShowSourcesButton({
 }) {
   return (
     <button
-      className="group flex items-center justify-center gap-2 rounded-lg border border-neutral-200 p-2.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
+      className="group flex items-center justify-center gap-2 rounded-lg border border-border p-2.5 transition-colors hover:bg-accent"
       onClick={() => document.getElementById(dialogId)?.click()}
       type="button"
     >
@@ -125,10 +125,10 @@ function ShowSourcesButton({
           title: s.title,
         }))}
       />
-      <span className="text-neutral-600 text-xs group-hover:text-neutral-700 dark:text-neutral-400 dark:group-hover:text-neutral-300">
+      <span className="text-muted-foreground text-xs group-hover:text-foreground">
         {sources.length} Sources
       </span>
-      <ArrowRight className="h-3.5 w-3.5 text-neutral-400 transition-colors group-hover:text-neutral-500" />
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
     </button>
   );
 }
