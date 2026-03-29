@@ -65,7 +65,7 @@ export function UseCases() {
         <div className="grid gap-4">
           {USE_CASES.map((item, index) => (
             <article
-              className="use-case-card group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 transition-all duration-400 hover:border-border/80 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20"
+              className="use-case-card group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 transition-all duration-400 hover:border-border/80 hover:shadow-black/5 hover:shadow-lg dark:hover:shadow-black/20"
               key={item.title}
               style={{ animationDelay: `${index * 100}ms` }}
             >

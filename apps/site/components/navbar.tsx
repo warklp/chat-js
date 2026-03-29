@@ -1,8 +1,4 @@
-"use client";
-
-import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 import { ThemeToggle } from "./theme-toggle";
 
@@ -16,8 +12,6 @@ const NAV_LINKS = [
 ];
 
 export function Navbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   return (
     <header className="sticky top-0 z-50 w-full border-border/40 border-b bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -66,43 +60,30 @@ export function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button
-          aria-controls="mobile-nav-menu"
-          aria-expanded={mobileOpen}
-          aria-label="Toggle menu"
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          type="button"
-        >
-          {mobileOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
-      </nav>
+        <details className="relative md:hidden">
+          <summary className="cursor-pointer list-none rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary">
+            <span className="sr-only">Toggle menu</span>
+            <span aria-hidden="true" className="text-sm">
+              Menu
+            </span>
+          </summary>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div
-          className="border-border/40 border-t px-6 py-4 md:hidden"
-          id="mobile-nav-menu"
-        >
-          <div className="flex flex-col gap-4">
-            {NAV_LINKS.map((link) => (
-              <Link
-                className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-                href={link.href}
-                key={link.label}
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <ThemeToggle />
+          <div className="absolute inset-x-0 top-full w-[min(18rem,calc(100vw-3rem))] rounded-2xl border border-border/40 bg-background/95 p-4 shadow-xl backdrop-blur-xl">
+            <div className="flex flex-col gap-4">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+                  href={link.href}
+                  key={link.label}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
-      )}
+        </details>
+      </nav>
     </header>
   );
 }

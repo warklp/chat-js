@@ -1,5 +1,4 @@
 import { ArrowRight, BookOpen } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 function Sparkle({
@@ -135,23 +134,25 @@ export function Hero() {
           {/* Screenshot with depth */}
           <div className="relative animate-float rounded-2xl shadow-[0_20px_70px_-10px_rgba(0,0,0,0.35)] ring-1 ring-foreground/[0.08] transition-transform duration-700 [transform:rotateX(2deg)] dark:shadow-[0_20px_70px_-10px_rgba(0,0,0,0.7)] hover:[transform:rotateX(0deg)]">
             <div className="overflow-hidden rounded-2xl">
-              <Image
-                alt="ChatJS — AI chat interface"
-                className="block h-auto w-full dark:hidden"
-                height={1536}
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
-                src="/chatjs_preview_light.png"
-                width={2048}
-              />
-              <Image
-                alt="ChatJS — AI chat interface"
-                className="hidden h-auto w-full dark:block"
-                height={1536}
-                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
-                src="/chatjs_preview_dark.png"
-                width={2048}
-              />
+              <picture>
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcSet="/chatjs_preview_dark.avif"
+                  type="image/avif"
+                />
+                <source srcSet="/chatjs_preview_light.avif" type="image/avif" />
+                <img
+                  alt="ChatJS — AI chat interface"
+                  className="block h-auto w-full"
+                  decoding="async"
+                  fetchPriority="high"
+                  height="1080"
+                  loading="eager"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
+                  src="/chatjs_preview_light.avif"
+                  width="1440"
+                />
+              </picture>
             </div>
           </div>
         </div>

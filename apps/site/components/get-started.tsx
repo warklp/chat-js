@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Check, Copy } from "lucide-react";
+import { BookOpen, Copy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -9,15 +9,17 @@ const command = "npx @chat-js/cli@latest create my-app";
 export function GetStarted() {
   const [copied, setCopied] = useState(false);
 
-  async function copyCommand() {
+  async function handleCopy() {
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard write failed (e.g. permissions denied)
-    }
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {}
   }
+
   return (
     <section className="relative overflow-hidden py-24 sm:py-32">
       {/* Background atmosphere */}
@@ -56,14 +58,13 @@ export function GetStarted() {
               <button
                 aria-label="Copy command"
                 className="ml-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                onClick={copyCommand}
+                onClick={handleCopy}
                 type="button"
               >
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
+                <span className="flex items-center gap-1.5">
                   <Copy className="h-4 w-4" />
-                )}
+                  <span className="text-xs">{copied ? "Copied" : "Copy"}</span>
+                </span>
               </button>
             </div>
           </div>
