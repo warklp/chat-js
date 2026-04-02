@@ -42,16 +42,20 @@ Each tool lives in its own folder. The CLI copies two files and injects entries 
 
 ### 1. Backend tool
 
-```ts title="tools/word-count/tool.ts"
-import { tool } from "ai";
-import { z } from "zod";
+Registry tools use `defineTool` from `@/lib/ai/tool-builder` instead of `tool()` from the AI SDK. It has the same shape but injects a `ctx` second argument into `execute` — giving the tool access to `costAccumulator`, `dataStream`, and `selectedModel` without any wiring in `tools/index.ts`. See [Tool context](/cookbook/add-tools#tool-context) for the full API.
 
-export const wordCount = tool({
+```ts title="tools/word-count/tool.ts"
+import { z } from "zod";
+import { defineTool } from "@/lib/ai/tool-builder";
+
+export const wordCount = defineTool({
   description: "Count the words, characters, and sentences in a given text",
   inputSchema: z.object({
     text: z.string().describe("The text to analyze"),
   }),
-  execute: async ({ text }: { text: string }) => {
+  execute: async ({ text }, { ctx }) => {
+    ctx.costAccumulator.addAPICost("wordCount", 0);
+
     const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
     const characters = text.length;
     const charactersNoSpaces = text.replace(/\s/g, "").length;

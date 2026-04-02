@@ -97,6 +97,39 @@ npx @chat-js/cli@latest add word-count \
 CHATJS_REGISTRY_URL=./packages/registry/items/{name}.json
 ```
 
+## Tool context
+
+Registry tools use `defineTool` instead of the AI SDK's `tool()`. The difference is a second argument injected into `execute`:
+
+```ts
+// tool() from the AI SDK — no access to request context
+export const wordCount = tool({
+  inputSchema: z.object({ text: z.string() }),
+  execute: async ({ text }) => {
+    // ...
+  },
+});
+
+// defineTool — ctx is injected automatically
+export const wordCount = defineTool({
+  inputSchema: z.object({ text: z.string() }),
+  execute: async ({ text }, { ctx }) => {
+    ctx.costAccumulator.addAPICost("wordCount", 0);
+    // ...
+  },
+});
+```
+
+`ctx` is available in every tool installed from the registry:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `ctx.costAccumulator` | `CostAccumulator` | Track external API costs for this request |
+| `ctx.dataStream` | `UIMessageStreamWriter` | Write custom data parts to the stream |
+| `ctx.selectedModel` | `string` | The model ID the user selected |
+
+Context is propagated via `AsyncLocalStorage` — set up once in the chat route before `streamText` runs. Tools receive it automatically with no changes needed in `tools/index.ts`.
+
 ## Related
 
 - [Tools](/cookbook/tools) — how to build a tool and publish it to the registry
