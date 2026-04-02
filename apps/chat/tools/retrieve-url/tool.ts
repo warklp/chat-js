@@ -1,11 +1,11 @@
+import { tool } from "ai";
 import { z } from "zod";
-import { defineTool } from "@/lib/ai/tool-builder";
 import { env } from "@/lib/env";
 import { createModuleLogger } from "@/lib/logger";
 
 const log = createModuleLogger("tools/retrieve-url");
 
-export const retrieveUrl = defineTool({
+export const retrieveUrl = tool({
   description: `Fetch structured information from a single URL via Firecrawl.
 
 Use for:
@@ -16,7 +16,7 @@ Avoid:
   inputSchema: z.object({
     url: z.string().describe("The URL to retrieve the information from."),
   }),
-  execute: async ({ url }) => {
+  execute: async ({ url }: { url: string }) => {
     try {
       if (!env.FIRECRAWL_API_KEY) {
         return {

@@ -5,7 +5,6 @@ import { getRecentGeneratedImage } from "@/app/(chat)/api/chat/get-recent-genera
 import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
 import { markdownJoinerTransform } from "@/lib/ai/markdown-joiner-transform";
 import { getLanguageModel, getModelProviderOptions } from "@/lib/ai/providers";
-import { withToolContext } from "@/lib/ai/tool-context";
 import { getMcpTools, getTools } from "@/lib/ai/tools/tools";
 import type { ChatMessage, StreamWriter, ToolName } from "@/lib/ai/types";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
@@ -121,49 +120,43 @@ export async function createCoreChatAgent({
     throw error;
   }
 
-  // Create the streamText result — withToolContext makes dataStream, costAccumulator,
-  // and selectedModel available to any tool that calls getToolContext() / defineTool().
-  const result = withToolContext(
-    { dataStream, costAccumulator, selectedModel: modelDefinition.apiModelId },
-    () =>
-      streamText({
-        model,
-        system,
-        messages: contextForLLM,
-        stopWhen: [
-          stepCountIs(5),
-          ({ steps }) => {
-            return steps.some((step) => {
-              const toolResults = step.content;
-              // Don't stop if the tool result is a clarifying question
-              return toolResults.some(
-                (toolResult) =>
-                  toolResult.type === "tool-result" &&
-                  toolResult.toolName === "deepResearch" &&
-                  (toolResult.output as { format?: string }).format === "report"
-              );
-            });
-          },
-        ],
-        activeTools,
-        experimental_transform: markdownJoinerTransform(),
-        experimental_telemetry: {
-          isEnabled: true,
-          functionId: "chat-response",
-        },
-        tools: allTools,
-        onError: (error) => {
-          onError?.(error);
-        },
-        onChunk,
-        abortSignal,
-        providerOptions,
-        onFinish: async () => {
-          // Clean up MCP clients when streaming is done (onFinish runs for both success and error)
-          await mcpCleanup();
-        },
-      })
-  );
+  const result = streamText({
+    model,
+    system,
+    messages: contextForLLM,
+    stopWhen: [
+      stepCountIs(5),
+      ({ steps }) => {
+        return steps.some((step) => {
+          const toolResults = step.content;
+          // Don't stop if the tool result is a clarifying question
+          return toolResults.some(
+            (toolResult) =>
+              toolResult.type === "tool-result" &&
+              toolResult.toolName === "deepResearch" &&
+              (toolResult.output as { format?: string }).format === "report"
+          );
+        });
+      },
+    ],
+    activeTools,
+    experimental_transform: markdownJoinerTransform(),
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "chat-response",
+    },
+    tools: allTools,
+    onError: (error) => {
+      onError?.(error);
+    },
+    onChunk,
+    abortSignal,
+    providerOptions,
+    onFinish: async () => {
+      // Clean up MCP clients when streaming is done (onFinish runs for both success and error)
+      await mcpCleanup();
+    },
+  });
 
   return {
     result,

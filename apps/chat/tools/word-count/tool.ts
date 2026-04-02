@@ -1,14 +1,12 @@
+import { tool } from "ai";
 import { z } from "zod";
-import { defineTool } from "@/lib/ai/tool-builder";
 
-export const wordCount = defineTool({
+export const wordCount = tool({
   description: "Count the words, characters, and sentences in a given text",
   inputSchema: z.object({
     text: z.string().describe("The text to analyze"),
   }),
-  execute: async ({ text }, { ctx }) => {
-    ctx.costAccumulator.addAPICost("wordCount", 0);
-
+  execute: async ({ text }: { text: string }) => {
     const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
     const characters = text.length;
     const charactersNoSpaces = text.replace(/\s/g, "").length;
