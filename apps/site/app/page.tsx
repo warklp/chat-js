@@ -12,17 +12,18 @@ import { UseCases } from "@/components/use-cases";
 import { siteConfig, siteLinks } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Open-Source Next.js AI Chat Starter",
+  title: "The Prod-Ready AI Chat App",
   description:
-    "Launch a production-ready AI chat app with Next.js, authentication, streaming UI, tool calling, and integrations for 120+ models.",
+    "Stop rebuilding the same AI chat infrastructure. ChatJS gives you a production-ready foundation with auth, streaming, tool calling, and 120+ models.",
   alternates: {
     canonical: siteLinks.home,
   },
   openGraph: {
     url: siteLinks.home,
-    title: "ChatJS | Open-Source Next.js AI Chat Starter",
+    title:
+      "ChatJS — Stop Rebuilding the Same AI Chat Infrastructure",
     description:
-      "Launch a production-ready AI chat app with Next.js, authentication, streaming UI, tool calling, and integrations for 120+ models.",
+      "A production-ready foundation with auth, streaming, tool calling, and 120+ models. Scaffold it, customize it, ship it.",
   },
 };
 

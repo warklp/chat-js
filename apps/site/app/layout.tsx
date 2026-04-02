@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   applicationName: siteConfig.name,
   title: {
-    default: `${siteConfig.title} | Open-Source Next.js AI Chat Starter`,
+    default: `${siteConfig.title} — The Prod-Ready AI Chat App`,
     template: `%s | ${siteConfig.title}`,
   },
   description: siteConfig.description,
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     siteName: siteConfig.name,
     url: siteConfig.url,
-    title: `${siteConfig.title} | Open-Source Next.js AI Chat Starter`,
+    title: `${siteConfig.title} — The Prod-Ready AI Chat App`,
     description: siteConfig.description,
     images: [
       {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     creator: siteConfig.creator,
-    title: `${siteConfig.title} | Open-Source Next.js AI Chat Starter`,
+    title: `${siteConfig.title} — The Prod-Ready AI Chat App`,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
   },
