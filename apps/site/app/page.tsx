@@ -20,8 +20,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     url: siteLinks.home,
-    title:
-      "ChatJS — Stop Rebuilding the Same AI Chat Infrastructure",
+    title: "ChatJS — Stop Rebuilding the Same AI Chat Infrastructure",
     description:
       "A production-ready foundation with auth, streaming, tool calling, and 120+ models. Scaffold it, customize it, ship it.",
   },

@@ -14,6 +14,7 @@ import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import type { EditorState } from "lexical";
 import { $getRoot } from "lexical";
 import { memo, useEffect, useRef } from "react";
 
@@ -95,7 +96,7 @@ function ContentUpdatePlugin({
     }
   }, [content, status, editor]);
 
-  const handleChange = (editorState: any) => {
+  const handleChange = (editorState: EditorState) => {
     if (!(isReadonly || isProgrammaticUpdate.current)) {
       handleEditorChange({
         editorState,

@@ -5,6 +5,7 @@ import { LoaderCircle } from "lucide-react";
 import { memo, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigateToMessage } from "@/hooks/use-navigate-to-message";
+import type { AppModelId } from "@/lib/ai/app-models";
 import {
   type ChatMessage,
   expandSelectedModelValue,
@@ -19,15 +20,15 @@ function getEffectiveModelId(
   message: {
     metadata: { selectedModel: ChatMessage["metadata"]["selectedModel"] };
   } | null,
-  fallbackModelId: string
-): string | undefined {
+  fallbackModelId: AppModelId
+): AppModelId | undefined {
   return message?.metadata.selectedModel
-    ? getPrimarySelectedModelId(message.metadata.selectedModel)
+    ? (getPrimarySelectedModelId(message.metadata.selectedModel) ?? undefined)
     : fallbackModelId;
 }
 
 function getModelOrderIndex(
-  modelId: string | undefined,
+  modelId: AppModelId | undefined,
   models: Array<{ id: string }>
 ): number {
   if (!modelId) {

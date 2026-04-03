@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
+import { type LanguageModel, streamText } from "ai";
 import { evalite } from "evalite";
 import { wrapAISDKModel } from "evalite/ai-sdk";
 
@@ -16,7 +16,9 @@ evalite("Test Capitals", {
   ],
   task: async (input) => {
     const result = streamText({
-      model: wrapAISDKModel(openai("gpt-4o-mini") as any),
+      model: wrapAISDKModel(
+        openai("gpt-4o-mini") as unknown as Parameters<typeof wrapAISDKModel>[0]
+      ) as unknown as LanguageModel,
       system: "Answer the question concisely.",
       prompt: input,
     });

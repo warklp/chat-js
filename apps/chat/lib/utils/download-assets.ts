@@ -135,8 +135,8 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
   );
 
   const mapPart = (
-    part: TextPart | ImagePart | FilePart | any
-  ): TextPart | ImagePart | FilePart | any => {
+    part: TextPart | ImagePart | FilePart
+  ): TextPart | ImagePart | FilePart => {
     if (part.type === "file") {
       return mapFilePart(part as FilePart, downloaded);
     }
@@ -148,14 +148,13 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
   };
 
   return messages.map((message) => {
-    if (typeof message.content === "string") {
+    if (message.role !== "user" || typeof message.content === "string") {
       return message;
     }
+
     return {
       ...message,
-      content: (
-        message.content as Array<TextPart | ImagePart | FilePart | any>
-      ).map(mapPart),
-    } as ModelMessage;
+      content: message.content.map(mapPart),
+    };
   });
 }

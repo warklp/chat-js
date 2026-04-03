@@ -389,7 +389,6 @@ interface AiToolsInputFor<G extends GatewayType> {
 }
 
 // Only gateway is required; everything else is an override on top of GATEWAY_MODEL_DEFAULTS
-// biome-ignore lint/style/useConsistentTypeDefinitions: type is used intentionally here
 type AiInputFor<G extends GatewayType> = {
   gateway: G;
   providerOrder?: AiShape["providerOrder"];

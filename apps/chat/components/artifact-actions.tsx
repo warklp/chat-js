@@ -1,8 +1,21 @@
 import { type Dispatch, memo, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
+import type {
+  Artifact,
+  ArtifactActionContext,
+  ArtifactMetadata,
+} from "@/components/create-artifact";
+import {
+  codeArtifact,
+  getCodeArtifactMetadata,
+} from "@/lib/artifacts/code/client";
+import {
+  getSheetArtifactMetadata,
+  sheetArtifact,
+} from "@/lib/artifacts/sheet/client";
+import { textArtifact } from "@/lib/artifacts/text/client";
 import { cn } from "@/lib/utils";
-import { artifactDefinitions, type UIArtifact } from "./artifact-panel";
-import type { ArtifactActionContext } from "./create-artifact";
+import type { UIArtifact } from "./artifact-panel";
 import { Button } from "./ui/button";
 import { Toggle } from "./ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -13,13 +26,33 @@ interface ArtifactActionsProps {
   handleVersionChange: (type: "next" | "prev" | "toggle" | "latest") => void;
   isCurrentVersion: boolean;
   isReadonly: boolean;
-  metadata: any;
+  metadata: ArtifactMetadata;
   mode: "edit" | "diff";
-  setMetadata: Dispatch<SetStateAction<any>>;
+  setMetadata: Dispatch<SetStateAction<ArtifactMetadata>>;
 }
 
-function PureArtifactActions({
+function createTypedMetadataSetter<M extends ArtifactMetadata>(
+  setMetadata: Dispatch<SetStateAction<ArtifactMetadata>>,
+  coerce: (metadata: ArtifactMetadata) => M
+): Dispatch<SetStateAction<M>> {
+  return (value) => {
+    setMetadata((current) => {
+      const typedCurrent = coerce(current);
+      return typeof value === "function" ? value(typedCurrent) : value;
+    });
+  };
+}
+
+interface TypedArtifactActionsProps<M extends ArtifactMetadata>
+  extends Omit<ArtifactActionsProps, "metadata" | "setMetadata"> {
+  artifactDefinition: Artifact<string, M>;
+  metadata: M;
+  setMetadata: Dispatch<SetStateAction<M>>;
+}
+
+function TypedArtifactActions<M extends ArtifactMetadata>({
   artifact,
+  artifactDefinition,
   handleVersionChange,
   currentVersionIndex,
   isCurrentVersion,
@@ -27,18 +60,10 @@ function PureArtifactActions({
   metadata,
   setMetadata,
   isReadonly,
-}: ArtifactActionsProps) {
+}: TypedArtifactActionsProps<M>) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const artifactDefinition = artifactDefinitions.find(
-    (definition) => definition.kind === artifact.kind
-  );
-
-  if (!artifactDefinition) {
-    throw new Error("Artifact definition not found!");
-  }
-
-  const actionContext: ArtifactActionContext = {
+  const actionContext: ArtifactActionContext<M> = {
     content: artifact.content,
     handleVersionChange,
     currentVersionIndex,
@@ -50,7 +75,7 @@ function PureArtifactActions({
   };
 
   function isActionDisabled(action: {
-    isDisabled?: (context: ArtifactActionContext) => boolean;
+    isDisabled?: (context: ArtifactActionContext<M>) => boolean;
   }): boolean {
     if (isLoading || artifact.status === "streaming") {
       return true;
@@ -137,7 +162,45 @@ function PureArtifactActions({
 }
 
 export const ArtifactActions = memo(
-  PureArtifactActions,
+  function ArtifactActions(props: ArtifactActionsProps) {
+    switch (props.artifact.kind) {
+      case "code":
+        return (
+          <TypedArtifactActions
+            {...props}
+            artifactDefinition={codeArtifact}
+            metadata={getCodeArtifactMetadata(props.metadata)}
+            setMetadata={createTypedMetadataSetter(
+              props.setMetadata,
+              getCodeArtifactMetadata
+            )}
+          />
+        );
+      case "sheet":
+        return (
+          <TypedArtifactActions
+            {...props}
+            artifactDefinition={sheetArtifact}
+            metadata={getSheetArtifactMetadata(props.metadata)}
+            setMetadata={createTypedMetadataSetter(
+              props.setMetadata,
+              getSheetArtifactMetadata
+            )}
+          />
+        );
+      case "text":
+        return (
+          <TypedArtifactActions
+            {...props}
+            artifactDefinition={textArtifact}
+            metadata={props.metadata}
+            setMetadata={props.setMetadata}
+          />
+        );
+      default:
+        throw new Error("Artifact definition not found!");
+    }
+  },
   (prevProps, nextProps) => {
     if (prevProps.artifact.status !== nextProps.artifact.status) {
       return false;

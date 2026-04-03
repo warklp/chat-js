@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { UIArtifact } from "@/components/artifact-panel";
+import type { ArtifactMetadata } from "@/components/create-artifact";
 
 const initialArtifactData: UIArtifact = {
   documentId: "init",
@@ -23,18 +24,19 @@ const initialArtifactData: UIArtifact = {
 
 type Selector<T> = (state: UIArtifact) => T;
 
+type MetadataUpdater = (current: ArtifactMetadata) => ArtifactMetadata;
+
+type MetadataStore = Record<string, ArtifactMetadata>;
+
 interface ArtifactContextType {
   artifact: UIArtifact;
-  metadata: Record<string, any> | null;
+  metadata: MetadataStore;
   setArtifact: (
     updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)
   ) => void;
   setMetadata: (
     documentId: string,
-    metadata:
-      | Record<string, any>
-      | null
-      | ((current: Record<string, any> | null) => Record<string, any> | null)
+    metadata: ArtifactMetadata | MetadataUpdater
   ) => void;
 }
 
@@ -45,10 +47,7 @@ const ArtifactContext = createContext<ArtifactContextType | undefined>(
 export function ArtifactProvider({ children }: { children: ReactNode }) {
   const [artifact, setArtifactState] =
     useState<UIArtifact>(initialArtifactData);
-  const [metadataStore, setMetadataStore] = useState<Record<
-    string,
-    any
-  > | null>(initialArtifactData);
+  const [metadataStore, setMetadataStore] = useState<MetadataStore>({});
 
   const setArtifact = useCallback(
     (updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)) => {
@@ -63,12 +62,12 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
   );
 
   const setMetadata = useCallback(
-    (documentId: string, metadata: any | ((current: any) => any)) => {
+    (documentId: string, metadata: ArtifactMetadata | MetadataUpdater) => {
       setMetadataStore((current) => ({
         ...current,
         [documentId]:
           typeof metadata === "function"
-            ? metadata(current ? current[documentId] : null)
+            ? metadata(current[documentId] ?? null)
             : metadata,
       }));
     },
@@ -117,12 +116,13 @@ export function useArtifact() {
   } = useArtifactContext();
 
   const metadata = useMemo(
-    () => (artifact.documentId ? metadataStore?.[artifact.documentId] : null),
+    () =>
+      artifact.documentId ? (metadataStore[artifact.documentId] ?? null) : null,
     [metadataStore, artifact.documentId]
   );
 
   const setMetadata = useCallback(
-    (metadataArg: any | ((current: any) => any)) => {
+    (metadataArg: ArtifactMetadata | MetadataUpdater) => {
       if (artifact.documentId) {
         setMetadataStore(artifact.documentId, metadataArg);
       }
