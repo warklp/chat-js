@@ -11,7 +11,6 @@ import { editSheetDocumentTool } from "./documents/edit-sheet-document";
 import { editTextDocumentTool } from "./documents/edit-text-document";
 import { generateImageTool } from "./generate-image";
 import { generateVideoTool } from "./generate-video";
-import { getWeather } from "./get-weather";
 import { readDocument } from "./read-document";
 import { retrieveUrl } from "./retrieve-url";
 import { tavilyWebSearch } from "./web-search";
@@ -53,7 +52,6 @@ export function getTools({
   };
 
   return {
-    getWeather,
     createTextDocument: createTextDocumentTool(documentToolProps),
     createCodeDocument: createCodeDocumentTool(documentToolProps),
     createSheetDocument: createSheetDocumentTool(documentToolProps),

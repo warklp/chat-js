@@ -10,7 +10,6 @@ import { GenerateImage } from "./generate-image";
 import { GenerateVideo } from "./generate-video";
 import { ReadDocument } from "./read-document";
 import { RetrieveUrl } from "./retrieve-url";
-import { Weather } from "./weather";
 import { WebSearch } from "./web-search";
 
 interface ToolPartProps {
@@ -21,10 +20,6 @@ interface ToolPartProps {
 
 export function ToolPart({ part, messageId, isReadonly }: ToolPartProps) {
   const type = part.type;
-
-  if (type === "tool-getWeather") {
-    return <Weather tool={part} />;
-  }
 
   if (
     type === "tool-createTextDocument" ||

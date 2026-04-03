@@ -181,6 +181,22 @@ ChatJS now separates tool code into two buckets:
 
 Only `tools/chatjs/index.ts` is managed by `chatjs add`.
 
+## Architecture note
+
+Treat `tools/platform` and `tools/chatjs` as different ownership layers:
+
+- Put a tool in `tools/platform` when it is part of the product runtime, depends tightly on app infrastructure, or needs richer internal contracts.
+- Put a tool in `tools/chatjs` when it is a self-contained installable unit that can be copied into another ChatJS project by `chatjs add`.
+
+This boundary is intentional:
+
+1. Installable tools are the extension surface.
+2. Platform tools are the built-in product surface.
+3. `tools/chatjs/index.ts` is the only CLI-managed registry index.
+4. `paths.tools` configures the installable tools namespace, not the platform tool namespace.
+
+Do not migrate a platform tool into `tools/chatjs` unless it remains useful as a portable package with a small public contract.
+
 ## Registry manifest
 
 When you publish a tool to a registry, the manifest is a self-contained JSON payload with the source files and dependency list the CLI will install.

@@ -1,5 +1,9 @@
 [
   {
+    "name": "get-weather",
+    "description": "Get the current weather at a location"
+  },
+  {
     "name": "word-count",
     "description": "Count words, characters, and sentences in text"
   }

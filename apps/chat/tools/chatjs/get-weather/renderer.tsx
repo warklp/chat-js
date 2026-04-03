@@ -2,8 +2,7 @@
 
 import { format, isWithinInterval } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { WeatherAtLocation } from "@/tools/platform/get-weather";
-import type { ChatMessage } from "@/lib/ai/types";
+import type { WeatherAtLocation } from "./tool";
 import { cn } from "@/lib/utils";
 
 const SAMPLE = {
@@ -161,14 +160,13 @@ const SAMPLE = {
   },
 };
 
+type GetWeatherPart =
+  | { state: "input-available" | "input-streaming"; toolCallId?: string }
+  | { state: "output-available"; output: WeatherAtLocation; toolCallId?: string };
+
 function n(num: number): number {
   return Math.ceil(num);
 }
-
-export type WeatherTool = Extract<
-  ChatMessage["parts"][number],
-  { type: "tool-getWeather" }
->;
 
 function WeatherCard({
   weatherAtLocation,
@@ -188,15 +186,10 @@ function WeatherCard({
   });
 
   const isMobile = useIsMobile();
-
   const hoursToShow = isMobile ? 5 : 6;
-
-  // Find the index of the current time or the next closest time
   const currentTimeIndex = weatherAtLocation.hourly.time.findIndex(
     (time) => new Date(time) >= new Date(weatherAtLocation.current.time)
   );
-
-  // Slice the arrays to get the desired number of items
   const displayTimes = weatherAtLocation.hourly.time.slice(
     currentTimeIndex,
     currentTimeIndex + hoursToShow
@@ -210,12 +203,8 @@ function WeatherCard({
     <div
       className={cn(
         "skeleton-bg flex max-w-[500px] flex-col gap-4 rounded-2xl p-4",
-        {
-          "bg-blue-400": isDay,
-        },
-        {
-          "bg-indigo-900": !isDay,
-        }
+        { "bg-blue-400": isDay },
+        { "bg-indigo-900": !isDay }
       )}
     >
       <div className="flex flex-row items-center justify-between">
@@ -223,12 +212,8 @@ function WeatherCard({
           <div
             className={cn(
               "skeleton-div size-10 rounded-full",
-              {
-                "bg-yellow-300": isDay,
-              },
-              {
-                "bg-indigo-100": !isDay,
-              }
+              { "bg-yellow-300": isDay },
+              { "bg-indigo-100": !isDay }
             )}
           />
           <div className="font-medium text-4xl text-blue-50">
@@ -249,12 +234,8 @@ function WeatherCard({
             <div
               className={cn(
                 "skeleton-div size-6 rounded-full",
-                {
-                  "bg-yellow-300": isDay,
-                },
-                {
-                  "bg-indigo-200": !isDay,
-                }
+                { "bg-yellow-300": isDay },
+                { "bg-indigo-200": !isDay }
               )}
             />
             <div className="text-blue-50 text-sm">
@@ -268,14 +249,15 @@ function WeatherCard({
   );
 }
 
-export function Weather({ tool }: { tool: WeatherTool }) {
-  const isLoading = tool.state === "input-available";
-  const weatherAtLocation: WeatherAtLocation =
-    tool.state === "output-available" ? tool.output : SAMPLE;
+export function GetWeatherRenderer({ tool }: { tool: unknown }) {
+  const part = tool as GetWeatherPart;
+  const isLoading = part.state === "input-available";
+  const weatherAtLocation =
+    part.state === "output-available" ? part.output : SAMPLE;
 
   if (isLoading) {
     return (
-      <div className="skeleton" key={tool.toolCallId}>
+      <div className="skeleton" key={part.toolCallId}>
         <WeatherCard weatherAtLocation={weatherAtLocation} />
       </div>
     );

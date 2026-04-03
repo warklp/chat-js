@@ -9,7 +9,6 @@ import type { codeExecution } from "@/tools/platform/code-execution";
 import type { deepResearch } from "@/tools/platform/deep-research/deep-research";
 import type { generateImageTool as generateImageToolFactory } from "@/tools/platform/generate-image";
 import type { generateVideoTool as generateVideoToolFactory } from "@/tools/platform/generate-video";
-import type { getWeather } from "@/tools/platform/get-weather";
 import type { readDocument } from "@/tools/platform/read-document";
 import type { retrieveUrl } from "@/tools/platform/retrieve-url";
 import type { tavilyWebSearch } from "@/tools/platform/web-search";
@@ -71,7 +70,6 @@ const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type weatherTool = InferUITool<typeof getWeather>;
 type createTextDocumentToolType = InferUITool<
   ReturnType<typeof createTextDocumentTool>
 >;
@@ -114,7 +112,6 @@ export type ChatTools = {
   editTextDocument: editTextDocumentToolType;
   generateImage: generateImageTool;
   generateVideo: generateVideoTool;
-  getWeather: weatherTool;
   readDocument: readDocumentTool;
   retrieveUrl: retrieveUrlTool;
   webSearch: webSearchTool;
