@@ -56,7 +56,7 @@ export function Console({
     <div className={cn("flex w-full flex-col overflow-hidden", className)}>
       <div className="flex h-full w-full flex-col overflow-x-hidden overflow-y-scroll border-border border-t bg-muted">
         <div className="sticky top-0 z-50 flex h-fit w-full flex-row items-center justify-between border-border border-b bg-muted px-2 py-1">
-          <div className="flex flex-row items-center gap-3 pl-2 text-sm text-foreground">
+          <div className="flex flex-row items-center gap-3 pl-2 text-foreground text-sm">
             <div className="text-muted-foreground">
               <Terminal size={16} />
             </div>
@@ -103,9 +103,9 @@ export function Console({
                 </div>
               ) : (
                 <div className="flex w-full flex-col gap-2 overflow-x-scroll text-foreground">
-                  {consoleOutput.contents.map((content, contentIndex) =>
+                  {consoleOutput.contents.map((content) =>
                     content.type === "image" ? (
-                      <picture key={`${consoleOutput.id}-${contentIndex}`}>
+                      <picture key={`${consoleOutput.id}-${content.value}`}>
                         <img
                           alt="output"
                           className="w-full max-w-(--breakpoint-toast-mobile) rounded-md"
@@ -117,7 +117,7 @@ export function Console({
                     ) : (
                       <div
                         className="break-word-wrap w-full whitespace-pre-line"
-                        key={`${consoleOutput.id}-${contentIndex}`}
+                        key={`${consoleOutput.id}-${content.type}-${content.value}`}
                       >
                         {content.value}
                       </div>

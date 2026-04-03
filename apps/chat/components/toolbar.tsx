@@ -89,11 +89,11 @@ function Tool({
       return;
     }
 
-    if (selectedTool !== description) {
-      setSelectedTool(description);
-    } else {
+    if (selectedTool === description) {
       setSelectedTool(null);
       onClick({ sendMessage, storeApi });
+    } else {
+      setSelectedTool(description);
     }
   };
 

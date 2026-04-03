@@ -86,7 +86,7 @@ function RetrievedContentHeader({ firstItem }: { firstItem: unknown }) {
           />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
-          <h2 className="truncate font-semibold text-lg text-foreground tracking-tight">
+          <h2 className="truncate font-semibold text-foreground text-lg tracking-tight">
             {title}
           </h2>
           <p className="line-clamp-2 text-muted-foreground text-sm">

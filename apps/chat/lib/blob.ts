@@ -67,7 +67,7 @@ export function extractFilenameFromUrl(url: string): string | null {
 
     // Remove the prefix if it exists in the URL
     if (filename.startsWith(BLOB_FILE_PREFIX)) {
-      return filename.substring(BLOB_FILE_PREFIX.length);
+      return filename.slice(BLOB_FILE_PREFIX.length);
     }
 
     return filename;

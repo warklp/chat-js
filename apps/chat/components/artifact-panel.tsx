@@ -77,15 +77,7 @@ function PureArtifactPanel({
         (doc) => doc.messageId === artifact.messageId
       );
 
-      if (mostRecentDocumentIndex !== -1) {
-        const mostRecentDocument = documents[mostRecentDocumentIndex];
-        setDocument(mostRecentDocument);
-        setCurrentVersionIndex(mostRecentDocumentIndex);
-        setArtifact((currentArtifact) => ({
-          ...currentArtifact,
-          content: mostRecentDocument.content ?? "",
-        }));
-      } else {
+      if (mostRecentDocumentIndex === -1) {
         // Fallback to the most recent document
         const latestDocument = documents.at(-1);
         if (latestDocument) {
@@ -96,6 +88,14 @@ function PureArtifactPanel({
             content: latestDocument.content ?? "",
           }));
         }
+      } else {
+        const mostRecentDocument = documents[mostRecentDocumentIndex];
+        setDocument(mostRecentDocument);
+        setCurrentVersionIndex(mostRecentDocumentIndex);
+        setArtifact((currentArtifact) => ({
+          ...currentArtifact,
+          content: mostRecentDocument.content ?? "",
+        }));
       }
     }
   }, [documents, setArtifact, artifact.messageId]);

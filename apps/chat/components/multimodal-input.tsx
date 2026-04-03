@@ -579,13 +579,13 @@ function PureMultimodalInput({
         });
       }
 
-      void runParallelSecondaryRequests({
+      runParallelSecondaryRequests({
         message,
         secondaryRequestSpecs: requestSpecs.slice(1),
       }).catch((error) => {
         console.error("Failed to complete parallel requests", error);
         toast.error("Failed to complete all parallel responses");
-        void invalidatePersistedMessages();
+        invalidatePersistedMessages();
       });
     } else {
       sendMessage(message);

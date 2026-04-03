@@ -78,12 +78,12 @@ export default async function RootLayout({
         <Script id="theme-color-script" strategy="beforeInteractive">
           {THEME_COLOR_SCRIPT}
         </Script>
-        {process.env.NODE_ENV !== "production" ? (
+        {process.env.NODE_ENV === "production" ? null : (
           <Script
             src="https://unpkg.com/react-scan/dist/auto.global.js"
             strategy="beforeInteractive"
           />
-        ) : null}
+        )}
       </head>
       <body className="antialiased">
         <Script

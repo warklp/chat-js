@@ -177,11 +177,11 @@ export const withThreads =
         set((state) => {
           const idx = state.allMessages.findIndex((m) => m.id === message.id);
           let next: UI_MESSAGE[];
-          if (idx !== -1) {
+          if (idx === -1) {
+            next = [...state.allMessages, message];
+          } else {
             next = [...state.allMessages];
             next[idx] = message;
-          } else {
-            next = [...state.allMessages, message];
           }
           return { ...state, allMessages: next, childrenMap: rebuildMap(next) };
         });

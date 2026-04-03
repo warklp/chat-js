@@ -126,7 +126,7 @@ export async function checkAnonymousRateLimit(
     );
     return {
       success: false,
-      error: `Monthly message limit exceeded. You can make ${RATE_LIMIT.REQUESTS_PER_MONTH} requests per month. You've made ${RATE_LIMIT.REQUESTS_PER_MONTH - monthResult.remaining} requests this month. Try again in ${daysUntilReset} day${daysUntilReset !== 1 ? "s" : ""}.`,
+      error: `Monthly message limit exceeded. You can make ${RATE_LIMIT.REQUESTS_PER_MONTH} requests per month. You've made ${RATE_LIMIT.REQUESTS_PER_MONTH - monthResult.remaining} requests this month. Try again in ${daysUntilReset} day${daysUntilReset === 1 ? "" : "s"}.`,
       headers: {
         "X-RateLimit-Limit": RATE_LIMIT.REQUESTS_PER_MONTH.toString(),
         "X-RateLimit-Remaining": monthResult.remaining.toString(),

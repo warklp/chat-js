@@ -82,8 +82,7 @@ function InteractiveChart({ chart }: { chart: BaseChart }) {
       backgroundColor: tooltipBg,
       borderWidth: 0,
       padding: [6, 10],
-      className:
-        "echarts-tooltip rounded-lg! border! border-border!",
+      className: "echarts-tooltip rounded-lg! border! border-border!",
       textStyle: {
         color: textColor,
         fontSize: 13,
@@ -250,7 +249,7 @@ function InteractiveChart({ chart }: { chart: BaseChart }) {
       <Card className="overflow-hidden border-border bg-card">
         <div className="p-6">
           {chart.title && (
-            <h3 className="mb-4 font-medium text-lg text-foreground">
+            <h3 className="mb-4 font-medium text-foreground text-lg">
               {chart.title}
             </h3>
           )}
