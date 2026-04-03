@@ -132,6 +132,9 @@ const config = defineConfig({
       },
     },
   },
+  paths: {
+    tools: "@/tools/chatjs",
+  },
   anonymous: {
     credits: isProd ? 10 : 1000,
     availableTools: [],

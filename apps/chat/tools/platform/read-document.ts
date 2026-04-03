@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
-import type { ToolSession } from "@/lib/ai/tools/types";
+import type { ToolSession } from "./types";
 import { getDocumentById } from "@/lib/db/queries";
-import type { StreamWriter } from "../types";
+import type { StreamWriter } from "@/lib/ai/types";
 
 interface ReadDocumentProps {
   dataStream: StreamWriter;

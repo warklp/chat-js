@@ -1,5 +1,5 @@
 import { generateUUID } from "@/lib/utils";
-import type { StreamWriter } from "../../types";
+import type { StreamWriter } from "@/lib/ai/types";
 import { deduplicateByDomainAndUrl } from "./search-utils";
 import type { SearchProviderOptions } from "./web-search";
 import { webSearchStep } from "./web-search";

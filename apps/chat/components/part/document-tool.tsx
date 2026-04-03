@@ -6,7 +6,7 @@ import {
   type DocumentToolType,
   getToolKind,
   isEditTool,
-} from "@/lib/ai/tools/documents/types";
+} from "@/tools/platform/documents/types";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useIsLastArtifact } from "@/lib/stores/hooks-message-parts";
 import { DocumentPreview } from "./document-preview";

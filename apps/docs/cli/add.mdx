@@ -43,7 +43,7 @@ For each tool name, the command:
 1. Fetches `{name}.json` from the registry
 2. Writes the tool's files into your project (under the path configured in `chat.config.ts`)
 3. Installs any npm dependencies the tool declares
-4. Injects imports and registrations into `tools/index.ts`
+4. Injects imports and registrations into the CLI-managed registry index at `tools/chatjs/index.ts` by default
 
 ## Environment variables
 

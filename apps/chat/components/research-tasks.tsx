@@ -2,7 +2,7 @@ import { CircleCheck, Dot, FileText, Pencil, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import type React from "react";
 import type { ReactNode } from "react";
-import type { ResearchUpdate } from "@/lib/ai/tools/research-updates-schema";
+import type { ResearchUpdate } from "@/tools/platform/research-updates-schema";
 import { cn } from "@/lib/utils";
 import { ResearchTask } from "./research-task";
 

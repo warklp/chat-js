@@ -2,7 +2,7 @@ import FirecrawlApp from "@mendable/firecrawl-js";
 import { tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { createModuleLogger } from "../../logger";
+import { createModuleLogger } from "@/lib/logger";
 
 const log = createModuleLogger("tools/retrieve-url");
 
@@ -40,7 +40,6 @@ Avoid:
         };
       }
 
-      // Define schema for extracting missing content
       const schema = z.object({
         title: z.string(),
         content: z.string(),
@@ -51,7 +50,6 @@ Avoid:
       let description = content.metadata.description;
       let extractedContent = content.markdown;
 
-      // If any content is missing, use extract to get it
       if (!(title && description && extractedContent)) {
         const extractResult = await app.extract([url], {
           prompt:

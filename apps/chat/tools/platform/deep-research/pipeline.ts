@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type { AppModelId, ModelId } from "@/lib/ai/app-models";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { truncateMessages } from "@/lib/ai/token-utils";
-import type { ToolSession } from "@/lib/ai/tools/types";
+import type { ToolSession } from "../types";
 import { generateUUID, getTextContentFromModelMessage } from "@/lib/utils";
 import { createTextDocumentTool } from "../documents/create-text-document";
 import type { DocumentToolResult } from "../documents/types";

@@ -7,9 +7,9 @@ description: Install a tool from the registry into your ChatJS project with one 
 
 ## Overview
 
-The `add` command fetches a tool from the registry, writes its files to your project, and injects the imports and exports into `tools/index.ts` — the CLI-managed file that connects tools to the rest of the app.
+The `add` command fetches a tool from the registry, writes its files to your project, and injects the imports and exports into `tools/chatjs/index.ts` — the CLI-managed file that connects installable tools to the rest of the app.
 
-You never edit `tools/index.ts` by hand. The CLI keeps it in sync.
+You never edit `tools/chatjs/index.ts` by hand. The CLI keeps it in sync.
 
 ## Install a tool
 
@@ -20,8 +20,8 @@ npx @chat-js/cli@latest add word-count
 That's it. The command:
 
 1. Fetches `word-count.json` from the registry
-2. Writes `tools/word-count/tool.ts` and `tools/word-count/renderer.tsx`
-3. Injects the import and registration into `tools/index.ts`
+2. Writes `tools/chatjs/word-count/tool.ts` and `tools/chatjs/word-count/renderer.tsx`
+3. Injects the import and registration into `tools/chatjs/index.ts`
 4. Installs any npm dependencies the tool declares
 
 ## What changes in your project
@@ -30,17 +30,18 @@ That's it. The command:
 
 ```
 tools/
-  word-count/
-    tool.ts       ← backend: schema + execute function
-    renderer.tsx  ← frontend: renders the tool's output
+  chatjs/
+    word-count/
+      tool.ts       ← backend: schema + execute function
+      renderer.tsx  ← frontend: renders the tool's output
 ```
 
-**Updated `tools/index.ts`** (CLI-managed, do not edit manually):
+**Updated `tools/chatjs/index.ts`** (CLI-managed, do not edit manually):
 
-```ts title="tools/index.ts"
+```ts title="tools/chatjs/index.ts"
 // [chatjs-registry:imports]
-import { WordCountRenderer } from "@/tools/word-count/renderer";
-import { wordCount } from "@/tools/word-count/tool";
+import { WordCountRenderer } from "@/tools/chatjs/word-count/renderer";
+import { wordCount } from "@/tools/chatjs/word-count/tool";
 // [/chatjs-registry:imports]
 
 export const tools = {
@@ -56,7 +57,7 @@ export const ui = {
 };
 ```
 
-The `tools` export is consumed by the chat API route and typed end-to-end via `InstalledTools`. The `ui` map is used by the renderer registry to look up the right component for each tool call part.
+The `tools` export is consumed by the platform tool loader and typed end-to-end via `InstalledTools`. The `ui` map is used by the renderer registry to look up the right component for each tool call part.
 
 ## Install multiple tools at once
 
@@ -81,7 +82,7 @@ If a tool's files already exist, the CLI will prompt you to confirm before overw
 npx @chat-js/cli@latest add word-count --overwrite
 ```
 
-The entries in `tools/index.ts` are never duplicated — re-running is always safe regardless of whether you overwrite the files.
+The entries in `tools/chatjs/index.ts` are never duplicated — re-running is always safe regardless of whether you overwrite the files.
 
 ## Use a local registry (monorepo development)
 

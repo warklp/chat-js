@@ -2,10 +2,10 @@ import { type ModelMessage, tool } from "ai";
 import { Langfuse } from "langfuse";
 import { z } from "zod";
 
-import type { ToolSession } from "@/lib/ai/tools/types";
+import type { ToolSession } from "../types";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import { generateUUID } from "@/lib/utils";
-import type { StreamWriter } from "../../types";
+import type { StreamWriter } from "@/lib/ai/types";
 import { getDeepResearchConfig } from "./configuration";
 import { runDeepResearchPipeline } from "./pipeline";
 

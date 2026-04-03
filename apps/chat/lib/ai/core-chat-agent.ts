@@ -5,7 +5,7 @@ import { getRecentGeneratedImage } from "@/app/(chat)/api/chat/get-recent-genera
 import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
 import { markdownJoinerTransform } from "@/lib/ai/markdown-joiner-transform";
 import { getLanguageModel, getModelProviderOptions } from "@/lib/ai/providers";
-import { getMcpTools, getTools } from "@/lib/ai/tools/tools";
+import { getMcpTools, getTools } from "@/tools/platform/tools";
 import type { ChatMessage, StreamWriter, ToolName } from "@/lib/ai/types";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import type { McpConnector } from "@/lib/db/schema";

@@ -1,7 +1,7 @@
 import FirecrawlApp, { type SearchParams } from "@mendable/firecrawl-js";
 import { type TavilySearchOptions, tavily } from "@tavily/core";
 import { env } from "@/lib/env";
-import { createModuleLogger } from "../../../logger";
+import { createModuleLogger } from "@/lib/logger";
 
 export type SearchProviderOptions =
   | ({

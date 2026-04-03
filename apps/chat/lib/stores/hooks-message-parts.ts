@@ -3,7 +3,7 @@
 import equal from "fast-deep-equal";
 import { shallow } from "zustand/shallow";
 import { useStoreWithEqualityFn } from "zustand/traditional";
-import { documentToolTypes } from "../ai/tools/documents/types";
+import { documentToolTypes } from "@/tools/platform/documents/types";
 import type { ChatMessage } from "../ai/types";
 import {
   type CustomChatStoreState,

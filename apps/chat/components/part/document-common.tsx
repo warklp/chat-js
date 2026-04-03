@@ -4,7 +4,7 @@ import { useArtifact } from "@/hooks/use-artifact";
 import type {
   CreateDocumentToolType,
   EditDocumentToolType,
-} from "@/lib/ai/tools/documents/types";
+} from "@/tools/platform/documents/types";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
 

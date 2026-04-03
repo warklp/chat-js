@@ -1,4 +1,4 @@
-// Marker pairs that bound the CLI-managed sections in tools/index.ts.
+// Marker pairs that bound the CLI-managed sections in the registry index.
 const MARKERS = {
   imports: {
     open: "// [chatjs-registry:imports]",
@@ -43,7 +43,7 @@ function injectIntoBlock(
   if (openIdx === -1 || closeIdx === -1) {
     throw new Error(
       `Registry markers not found: ${openMarker}\n` +
-        `Ensure tools/index.ts contains the expected marker comments.`
+        `Ensure the registry index contains the expected marker comments.`
     );
   }
 
@@ -59,10 +59,10 @@ function injectIntoBlock(
 }
 
 /**
- * Inject a tool's imports and registrations into the tools/index.ts source.
+ * Inject a tool's imports and registrations into the registry index source.
  * Returns the updated source string (pure — no file I/O).
  *
- * @param source    Current contents of tools/index.ts
+ * @param source    Current contents of the registry index
  * @param name      Kebab-case tool name, e.g. "word-count"
  * @param toolsAlias  Import alias, e.g. "@/tools"
  */
@@ -113,7 +113,7 @@ export function injectTool(
   return source;
 }
 
-/** Template used when tools/index.ts doesn't exist yet. */
+/** Template used when the registry index doesn't exist yet. */
 export function createEmptyIndexTemplate(): string {
   return (
     `// All tools and UI components installed via \`chatjs add\`.\n` +

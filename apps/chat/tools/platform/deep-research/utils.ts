@@ -1,7 +1,7 @@
 import { experimental_createMCPClient } from "@ai-sdk/mcp";
 import type { ModelId } from "@/lib/ai/app-models";
 import type { StreamWriter } from "@/lib/ai/types";
-import { getAppModelDefinition } from "../../app-models";
+import { getAppModelDefinition } from "@/lib/ai/app-models";
 import { firecrawlWebSearch, tavilyWebSearch } from "../web-search";
 import type { DeepResearchRuntimeConfig, SearchAPI } from "./configuration";
 

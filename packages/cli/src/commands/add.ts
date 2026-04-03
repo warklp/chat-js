@@ -51,7 +51,7 @@ export const add = new Command()
       // Load project config to resolve the tools directory
       const configSpinner = spinner("Loading project config...");
       configSpinner.start();
-      let config: { paths: { tools: string; toolUi: string } };
+      let config: { paths: { tools: string } };
       try {
         config = await loadProjectConfig(cwd);
         configSpinner.succeed("Project config loaded");
@@ -137,8 +137,8 @@ export const add = new Command()
           }
         }
 
-        // 4. Inject into tools/index.ts
-        const injectSpinner = spinner("Updating tools/index.ts...");
+        // 4. Inject into the CLI-managed registry index
+        const injectSpinner = spinner("Updating tool registry index...");
         injectSpinner.start();
         try {
           let source: string;
@@ -150,9 +150,9 @@ export const add = new Command()
           const updated = injectTool(source, name, config.paths.tools);
           await fs.mkdir(path.dirname(indexPath), { recursive: true });
           await fs.writeFile(indexPath, updated, "utf8");
-          injectSpinner.succeed("Updated tools/index.ts");
+          injectSpinner.succeed("Updated tool registry index");
         } catch (err) {
-          injectSpinner.fail("Failed to update tools/index.ts");
+          injectSpinner.fail("Failed to update tool registry index");
           throw err;
         }
       }

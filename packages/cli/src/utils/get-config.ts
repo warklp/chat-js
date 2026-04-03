@@ -26,7 +26,6 @@ function getTsEvalCommand(pm: PackageManager): [string, string[]] {
 export type ProjectConfig = {
   paths: {
     tools: string;
-    toolUi: string;
   };
 };
 
@@ -63,8 +62,7 @@ export async function loadProjectConfig(cwd: string): Promise<ProjectConfig> {
   const parsed = JSON.parse(stdout);
   return {
     paths: {
-      tools: parsed?.paths?.tools ?? "@/tools",
-      toolUi: parsed?.paths?.toolUi ?? "@/tools",
+      tools: parsed?.paths?.tools ?? "@/tools/chatjs",
     },
   };
 }
