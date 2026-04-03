@@ -1,6 +1,7 @@
 "use client";
 
 import { Github } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
@@ -44,39 +45,80 @@ export function SocialAuthProviders({
 }: {
   callbackURL?: string;
 } = {}) {
+  const params = useSearchParams();
+
   // Detect Electron synchronously so there's no flash of the wrong UI.
   // Defaults to false on the server (SSR); the lazy initializer runs only on
-  // the client where window.electronAPI is already set by the preload script.
+  // the client where window bridges are set by the preload script.
   const [isElectron] = useState(
     () =>
       typeof window !== "undefined" &&
-      Boolean(
-        (window as { electronAPI?: { isElectron?: boolean } }).electronAPI
-          ?.isElectron
-      )
+      typeof (window as Record<string, unknown>).requestAuth === "function"
   );
 
-  // In the Electron app, delegate provider selection to the web browser.
-  // window.open() is intercepted by Electron's setWindowOpenHandler and
-  // forwarded to shell.openExternal(), so OAuth state cookies are stored in
-  // the browser (not in Electron's session), preventing state_mismatch errors.
+  // In the Electron app, use the @better-auth/electron bridges exposed by
+  // setupRenderer() in the preload script. requestAuth() opens the sign-in
+  // URL in the user's default browser with the proper PKCE params.
   if (isElectron) {
+    const requestAuth = (window as Record<string, unknown>)
+      .requestAuth as (opts?: { provider?: string }) => void;
+
     return (
-      <Button
-        className="w-full"
-        onClick={() => window.open(`${window.location.origin}/electron-auth`)}
-        type="button"
-        variant="outline"
-      >
-        Sign in via browser
-      </Button>
+      <div className="space-y-2">
+        {config.authentication.google ? (
+          <Button
+            className="w-full"
+            onClick={() => requestAuth({ provider: "google" })}
+            type="button"
+            variant="outline"
+          >
+            <GoogleIcon className="mr-2 h-4 w-4" />
+            Continue with Google
+          </Button>
+        ) : null}
+        {config.authentication.github ? (
+          <Button
+            className="w-full"
+            onClick={() => requestAuth({ provider: "github" })}
+            type="button"
+            variant="outline"
+          >
+            <Github className="mr-2 h-4 w-4" />
+            Continue with GitHub
+          </Button>
+        ) : null}
+        {config.authentication.vercel ? (
+          <Button
+            className="w-full"
+            onClick={() => requestAuth({ provider: "vercel" })}
+            type="button"
+            variant="outline"
+          >
+            <VercelIcon className="mr-2 h-4 w-4" />
+            Continue with Vercel
+          </Button>
+        ) : null}
+        <Button
+          className="w-full"
+          onClick={() => requestAuth()}
+          type="button"
+          variant="outline"
+        >
+          Sign in via browser
+        </Button>
+      </div>
     );
   }
+
+  // In the browser: pass electron query params (client_id, state, etc.)
+  // through to social sign-in calls so the electron plugin can redirect back.
+  const query = Object.fromEntries(params.entries());
 
   function signIn(provider: "google" | "github" | "vercel") {
     authClient.signIn.social({
       provider,
       ...(callbackURL ? { callbackURL } : {}),
+      fetchOptions: { query },
     });
   }
 

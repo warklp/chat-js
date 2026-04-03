@@ -1,3 +1,5 @@
+import { electron } from "@better-auth/electron";
+import type { BetterAuthPlugin } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
@@ -16,6 +18,7 @@ export const auth = betterAuth({
     // Vercel URL for preview branches
     ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
     config.appUrl,
+    `${config.appPrefix}:/`,
   ],
   secret: env.AUTH_SECRET,
 
@@ -60,7 +63,7 @@ export const auth = betterAuth({
 
     return { google, github, vercel } as const;
   })(),
-  plugins: [nextCookies()],
+  plugins: [nextCookies(), electron()],
 });
 
 // Infer session type from the auth instance for type safety

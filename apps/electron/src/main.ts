@@ -4,15 +4,26 @@ import {
   BrowserWindow,
   Menu,
   nativeImage,
-  session,
   shell,
   Tray,
 } from "electron";
 import { autoUpdater } from "electron-updater";
 import { APP_NAME, APP_SCHEME, APP_URL, TITLEBAR_HEIGHT, WINDOW_DEFAULTS } from "./config";
+import { authClient } from "./lib/auth-client";
 
-// Register the custom protocol as a handler for OAuth deep-link callbacks.
-// Must be called before app is ready.
+// Disable GPU acceleration in WSL / headless environments to prevent D3D12 crashes.
+if (process.env.WSL_DISTRO_NAME || process.env.WSLENV) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch("disable-gpu");
+  app.commandLine.appendSwitch("disable-software-rasterizer");
+}
+
+// Setup the @better-auth/electron main process handler.
+// Registers the custom protocol, handles deep-link callbacks, and manages
+// IPC bridges for the renderer. Must be called before app is ready.
+authClient.setupMain();
+
+// Register the custom protocol as default handler for deep-link callbacks.
 app.setAsDefaultProtocolClient(APP_SCHEME);
 
 // On Windows, a second instance is launched when the OS opens a deep link.
@@ -25,68 +36,6 @@ if (!gotSingleInstanceLock) {
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-
-// --- Deep-link / OAuth callback ---
-
-const OAUTH_HOSTS = [
-  "https://accounts.google.com",
-  "https://github.com/login/oauth",
-];
-
-function isAuthCallbackUrl(url: URL): boolean {
-  if (url.protocol !== `${APP_SCHEME}:`) {
-    return false;
-  }
-
-  return (
-    url.pathname === "/auth/callback" ||
-    (url.host === "auth" && url.pathname === "/callback")
-  );
-}
-
-async function handleDeepLink(url: string): Promise<void> {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return;
-  }
-
-  if (!isAuthCallbackUrl(parsed)) {
-    return;
-  }
-
-  const token = parsed.searchParams.get("token");
-  if (!token) return;
-
-  try {
-    const res = await fetch(
-      `${APP_URL}/api/auth/electron-exchange?token=${encodeURIComponent(token)}`
-    );
-    if (!res.ok) {
-      console.error("electron-exchange failed:", res.status);
-      return;
-    }
-    const { sessionToken } = (await res.json()) as { sessionToken?: string };
-    if (!sessionToken) return;
-
-    // Inject the Better Auth session cookie into Electron's webview session.
-    await session.defaultSession.cookies.set({
-      url: APP_URL,
-      name: "better-auth.session_token",
-      value: sessionToken,
-      httpOnly: true,
-      secure: APP_URL.startsWith("https"),
-      sameSite: "lax",
-    });
-
-    mainWindow?.show();
-    mainWindow?.focus();
-    mainWindow?.webContents.reload();
-  } catch (err) {
-    console.error("Deep-link auth error:", err);
-  }
-}
 
 function getAppAssetPath(...segments: string[]): string {
   return path.join(app.getAppPath(), ...segments);
@@ -116,15 +65,6 @@ function createWindow(): BrowserWindow {
         height: calc(100svh - var(--electron-titlebar-height)) !important;
       }
     `);
-  });
-
-  // Intercept top-level navigations to OAuth providers and open them in the
-  // user's default browser instead (where they're already logged in).
-  win.webContents.on("will-navigate", (event, url) => {
-    if (OAUTH_HOSTS.some((prefix) => url.startsWith(prefix))) {
-      event.preventDefault();
-      shell.openExternal(url);
-    }
   });
 
   // Open all new-window requests (including OAuth popups) in the default browser.
@@ -199,17 +139,8 @@ function setupAutoUpdater(): void {
   }
 }
 
-
-// macOS: deep link arrives as open-url on the already-running instance.
-app.on("open-url", (event, url) => {
-  event.preventDefault();
-  handleDeepLink(url);
-});
-
-// Windows/Linux: deep link causes a second instance launch; grab the URL from argv.
-app.on("second-instance", (_event, argv) => {
-  const url = argv.find((arg) => arg.startsWith(`${APP_SCHEME}://`));
-  if (url) handleDeepLink(url);
+// Windows/Linux: deep link causes a second instance launch.
+app.on("second-instance", () => {
   mainWindow?.show();
   mainWindow?.focus();
 });

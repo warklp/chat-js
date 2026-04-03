@@ -7,6 +7,7 @@ import Script from "next/script";
 import "./globals.css";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
+import { ElectronAuthHandler } from "@/components/electron-auth-handler";
 import { ElectronTitlebarOffset } from "@/components/electron-titlebar-offset";
 import { ThemeProvider } from "@/components/theme-provider";
 import { config } from "@/lib/config";
@@ -92,6 +93,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <ElectronTitlebarOffset />
+        <ElectronAuthHandler />
         <Script
           src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
           strategy="afterInteractive"

@@ -20,9 +20,12 @@ my-app/
 ├── app/                        # Next.js app (unchanged)
 ├── electron/
 │   ├── src/
-│   │   ├── main.ts             # Main process: window, tray, deep links, auto-updater
-│   │   ├── preload.ts          # Context bridge (contextIsolation enabled)
-│   │   └── config.ts           # Reads APP_NAME, APP_SCHEME, APP_URL from chat.config.ts
+│   │   ├── main.ts             # Main process: window, tray, auth, auto-updater
+│   │   ├── preload.ts          # Context bridge + @better-auth/electron renderer setup
+│   │   ├── preload.d.ts        # Type declarations for auth bridges
+│   │   ├── config.ts           # Reads APP_NAME, APP_SCHEME, APP_URL from chat.config.ts
+│   │   └── lib/
+│   │       └── auth-client.ts  # Electron auth client (@better-auth/electron)
 │   ├── icon.png                # App icon (512×512 PNG, edit this)
 │   ├── build/
 │   │   ├── icon.png            # Copied from icon.png (generated)
@@ -55,7 +58,7 @@ DevTools open in a detached window automatically in development mode.
 
 ## Authentication
 
-OAuth cannot redirect back to a traditional `http://` URL inside Electron. The integration solves this with a **custom URL scheme deep link**.
+OAuth cannot redirect back to a traditional `http://` URL inside Electron. The integration uses the [`@better-auth/electron`](https://better-auth.com/docs/integrations/electron) plugin to handle this with a **custom URL scheme deep link** and PKCE-based token exchange.
 
 ### How it works
 
@@ -65,23 +68,20 @@ sequenceDiagram
     participant B as Default browser
     participant W as Your web app
 
-    E->>B: Open /electron-auth in default browser
+    E->>B: Open /login in default browser (with PKCE params)
     B->>W: User completes OAuth login
-    W->>W: GET /api/auth/electron-callback
-    W->>B: Redirect to yourapp://auth/callback?token=...
+    W->>W: electronProxyClient redirects via deep link
     B->>E: OS delivers deep link to Electron
-    E->>W: GET /api/auth/electron-exchange?token=...
-    W->>E: Returns session token
-    E->>E: Sets better-auth.session_token cookie
-    E->>E: Reloads BrowserWindow
+    E->>W: Exchanges authorization code for session
+    E->>E: Stores session, notifies renderer
 ```
 
-The exchange token is a short-lived HMAC-signed value (60 second expiry) derived from your `AUTH_SECRET`. No database or shared state is required.
+The `@better-auth/electron` plugin handles the full flow:
 
-Your web app already includes the two API routes that support this:
-
-- `GET /api/auth/electron-callback` — reads the session cookie after OAuth completes, signs it into a short-lived token, and redirects to the deep link URL
-- `GET /api/auth/electron-exchange?token=...` — verifies the signed token and returns the raw session token so Electron can set the cookie
+- **Server** (`lib/auth.ts`) — the `electron()` plugin adds the authorization code exchange endpoints
+- **Web client** (`lib/auth-client.ts`) — the `electronProxyClient()` plugin handles the redirect back to Electron after OAuth
+- **Electron main** (`src/main.ts`) — `authClient.setupMain()` registers protocol handlers and IPC bridges
+- **Electron preload** (`src/preload.ts`) — `setupRenderer()` exposes `window.requestAuth()`, `window.onAuthenticated()`, and other bridges to the renderer
 
 ### Configuring the URL scheme
 

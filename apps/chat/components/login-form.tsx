@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
   Card,
@@ -24,7 +25,9 @@ export function LoginForm({
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            <SocialAuthProviders />
+            <Suspense>
+              <SocialAuthProviders />
+            </Suspense>
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <a className="underline underline-offset-4" href="/register">
