@@ -9,6 +9,7 @@ import {
   $getRoot,
   type EditorConfig,
   type LexicalEditor,
+  type SerializedTextNode,
   TextNode,
 } from "lexical";
 import { useEffect } from "react";
@@ -23,6 +24,11 @@ const DiffType = {
 
 // Define diff types
 type DiffTypeValue = (typeof DiffType)[keyof typeof DiffType];
+type SerializedDiffTextNode = SerializedTextNode & {
+  diffType?: DiffTypeValue;
+  type: "diff-text";
+  version: 1;
+};
 
 // Custom diff text node that supports styling
 class DiffTextNode extends TextNode {
@@ -38,7 +44,7 @@ class DiffTextNode extends TextNode {
     return newNode;
   }
 
-  static importJSON(serializedNode: any): DiffTextNode {
+  static importJSON(serializedNode: SerializedDiffTextNode): DiffTextNode {
     const { text, diffType } = serializedNode;
     const node = new DiffTextNode(text);
     if (diffType !== undefined) {
@@ -47,7 +53,7 @@ class DiffTextNode extends TextNode {
     return node;
   }
 
-  exportJSON(): any {
+  exportJSON(): SerializedDiffTextNode {
     return {
       ...super.exportJSON(),
       diffType: this.__diffType,

@@ -118,8 +118,9 @@ export async function multiQueryWebSearchStep({
     return {
       searches: searchResults,
     };
-  } catch (error: any) {
-    const errorMessage = error?.message || "Unknown error occurred";
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
 
     // Send error annotation
     dataStream.write({

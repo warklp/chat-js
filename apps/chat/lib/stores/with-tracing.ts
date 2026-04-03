@@ -2,7 +2,7 @@
 
 import type { StateCreator } from "zustand";
 
-type AnyFn = (...args: any[]) => any;
+type AnyFn = (...args: unknown[]) => unknown;
 
 function safeStringifyArgs(args: unknown[]) {
   try {

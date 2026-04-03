@@ -1,13 +1,21 @@
 import { Copy, LineChart, Redo2, Sparkles, Undo2 } from "lucide-react";
 import { parse, unparse } from "papaparse";
 import { toast } from "sonner";
-import { Artifact } from "@/components/create-artifact";
+import { Artifact, type ArtifactMetadata } from "@/components/create-artifact";
 import { SpreadsheetEditor } from "@/components/sheet-editor";
 import { config } from "@/lib/config";
 
-type Metadata = any;
+export type SheetArtifactMetadata = Record<string, unknown>;
 
-export const sheetArtifact = new Artifact<"sheet", Metadata>({
+export function getSheetArtifactMetadata(
+  metadata: ArtifactMetadata
+): SheetArtifactMetadata {
+  return metadata && typeof metadata === "object"
+    ? Object.fromEntries(Object.entries(metadata))
+    : {};
+}
+
+export const sheetArtifact = new Artifact<"sheet", SheetArtifactMetadata>({
   kind: "sheet",
   description: "Useful for working with spreadsheets",
   initialize: async () => {

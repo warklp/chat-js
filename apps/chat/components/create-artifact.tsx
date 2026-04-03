@@ -7,7 +7,11 @@ import type { ChatMessage, CustomUIDataTypes } from "@/lib/ai/types";
 import type { useTRPC } from "@/trpc/react";
 import type { UIArtifact } from "./artifact-panel";
 
-export interface ArtifactActionContext<M = any> {
+export type ArtifactMetadata = object | null;
+
+export interface ArtifactActionContext<
+  M extends ArtifactMetadata = ArtifactMetadata,
+> {
   content: string;
   currentVersionIndex: number;
   handleVersionChange: (type: "next" | "prev" | "toggle" | "latest") => void;
@@ -18,7 +22,7 @@ export interface ArtifactActionContext<M = any> {
   setMetadata: Dispatch<SetStateAction<M>>;
 }
 
-interface ArtifactAction<M = any> {
+interface ArtifactAction<M extends ArtifactMetadata = ArtifactMetadata> {
   description: string;
   icon: ReactNode;
   isDisabled?: (context: ArtifactActionContext<M>) => boolean;
@@ -37,7 +41,7 @@ export interface ArtifactToolbarItem {
   onClick: (context: ArtifactToolbarContext) => void;
 }
 
-interface ArtifactContent<M = any> {
+interface ArtifactContent<M extends ArtifactMetadata = ArtifactMetadata> {
   content: string;
   currentVersionIndex: number;
   getDocumentContentById: (index: number) => string;
@@ -53,7 +57,10 @@ interface ArtifactContent<M = any> {
   title: string;
 }
 
-interface ArtifactConfig<T extends string, M = any> {
+interface ArtifactConfig<
+  T extends string,
+  M extends ArtifactMetadata = ArtifactMetadata,
+> {
   actions: ArtifactAction<M>[];
   content: ComponentType<ArtifactContent<M>>;
   description: string;
@@ -80,7 +87,10 @@ interface ArtifactConfig<T extends string, M = any> {
   toolbar: ArtifactToolbarItem[];
 }
 
-export class Artifact<T extends string, M = any> {
+export class Artifact<
+  T extends string,
+  M extends ArtifactMetadata = ArtifactMetadata,
+> {
   readonly kind: T;
   readonly description: string;
   readonly content: ComponentType<ArtifactContent<M>>;

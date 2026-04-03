@@ -334,7 +334,7 @@ export function cloneMessagesWithDocuments<
     messageId: string;
     userId: string;
     title: string;
-    kind: any;
+    kind: unknown;
     content: string | null;
     createdAt: Date;
   },

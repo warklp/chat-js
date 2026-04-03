@@ -80,7 +80,7 @@ const PureSpreadsheetEditor = ({
   const initialRows = useMemo(
     () =>
       parseData.map((row, rowIndex) => {
-        const rowData: any = {
+        const rowData: Record<string, string | number> = {
           id: rowIndex,
           rowNumber: rowIndex + 1,
         };
@@ -100,9 +100,9 @@ const PureSpreadsheetEditor = ({
     setLocalRows(initialRows);
   }, [initialRows]);
 
-  const generateCsv = (data: any[][]) => unparse(data);
+  const generateCsv = (data: Array<Array<string | number>>) => unparse(data);
 
-  const handleRowsChange = (newRows: any[]) => {
+  const handleRowsChange = (newRows: Record<string, string | number>[]) => {
     if (isReadonly) {
       return;
     }
