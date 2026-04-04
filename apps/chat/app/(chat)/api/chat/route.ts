@@ -25,6 +25,7 @@ import {
   streamFollowupSuggestions,
 } from "@/lib/ai/followup-suggestions";
 import { systemPrompt } from "@/lib/ai/prompts";
+import { getStreamErrorMessage } from "@/lib/ai/stream-errors";
 import { calculateMessagesTokens } from "@/lib/ai/token-utils";
 import { allTools } from "@/lib/ai/tools/tools-definitions";
 import {
@@ -482,7 +483,10 @@ async function createChatStream({
       if (!isAnonymous) {
         after(() =>
           Promise.resolve(
-            updateMessageActiveStreamId({ id: messageId, activeStreamId: null })
+            updateMessageActiveStreamId({
+              id: messageId,
+              activeStreamId: null,
+            })
           ).catch((dbError) => {
             log.error(
               { error: dbError },
@@ -493,7 +497,7 @@ async function createChatStream({
       }
 
       log.error({ error }, "onError");
-      return "Oops, an error occured!";
+      return getStreamErrorMessage(error);
     },
   });
 
