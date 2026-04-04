@@ -33,7 +33,6 @@ declare global {
       ) => () => void;
       platform: string;
       syncAuthSession?: () => Promise<void>;
-      titlebarHeight: number;
     };
   }
 }

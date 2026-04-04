@@ -10,7 +10,7 @@ import {
 } from "electron";
 import { autoUpdater } from "electron-updater";
 import { ELECTRON_AUTH_COOKIE_PREFIX } from "@/lib/electron-auth";
-import { APP_NAME, APP_SCHEME, APP_URL, TITLEBAR_HEIGHT, WINDOW_DEFAULTS } from "./config";
+import { APP_NAME, APP_SCHEME, APP_URL, WINDOW_DEFAULTS } from "./config";
 import { electronAuthClient } from "./lib/auth-client";
 
 // Disable GPU acceleration in WSL / headless environments to prevent D3D12 crashes.
@@ -421,8 +421,9 @@ function scheduleAuthRefresh(): void {
 async function createWindow(): Promise<BrowserWindow> {
   const win = new BrowserWindow({
     ...WINDOW_DEFAULTS,
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 16, y: 10 },
+    ...(process.platform === "darwin"
+      ? { titleBarStyle: "default" as const }
+      : { titleBarStyle: "hidden" as const, titleBarOverlay: true }),
     webPreferences: {
       preload: getAppAssetPath("dist", "preload.js"),
       contextIsolation: true,
@@ -434,14 +435,6 @@ async function createWindow(): Promise<BrowserWindow> {
   win.loadURL(APP_URL);
 
   win.webContents.on("did-finish-load", () => {
-    win.webContents.insertCSS(`
-      :root { --electron-titlebar-height: ${TITLEBAR_HEIGHT}px !important; }
-      body { padding-top: var(--electron-titlebar-height) !important; }
-      [data-slot="sidebar-container"] {
-        top: var(--electron-titlebar-height) !important;
-        height: calc(100svh - var(--electron-titlebar-height)) !important;
-      }
-    `);
     if (currentAuthOverlayMessage) {
       void setAuthOverlay(win, {
         visible: true,

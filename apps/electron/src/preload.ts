@@ -1,6 +1,5 @@
 import { setupRenderer } from "@better-auth/electron/preload";
 import { contextBridge, ipcRenderer } from "electron";
-import { TITLEBAR_HEIGHT } from "./config";
 
 // Setup @better-auth/electron renderer bridges.
 // Exposes window.requestAuth(), window.onAuthenticated(), window.signOut(), etc.
@@ -23,5 +22,4 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   platform: process.platform,
   syncAuthSession: () => ipcRenderer.invoke("chatjs:sync-auth-session"),
-  titlebarHeight: TITLEBAR_HEIGHT,
 });

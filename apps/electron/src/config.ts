@@ -14,5 +14,3 @@ export const WINDOW_DEFAULTS = {
   minWidth: 800,
   minHeight: 600,
 } as const;
-
-export const TITLEBAR_HEIGHT = 36;

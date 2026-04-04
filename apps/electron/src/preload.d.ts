@@ -22,7 +22,6 @@ declare global {
       ) => () => void;
       platform: NodeJS.Platform;
       syncAuthSession?: () => Promise<void>;
-      titlebarHeight: number;
     };
   }
 }
