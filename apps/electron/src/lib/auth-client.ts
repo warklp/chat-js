@@ -1,3 +1,4 @@
+import { safeStorage } from "electron";
 import { electronClient } from "@better-auth/electron/client";
 import { storage } from "@better-auth/electron/storage";
 import { createAuthClient } from "better-auth/client";
@@ -7,6 +8,27 @@ import {
   ELECTRON_AUTH_COOKIE_PREFIX,
 } from "@/lib/electron-auth";
 import { APP_SCHEME, APP_URL } from "../config";
+
+if (process.env.NODE_ENV !== "production") {
+  Object.defineProperty(safeStorage, "isEncryptionAvailable", {
+    configurable: true,
+    value: () => false,
+  });
+}
+
+const memoryStorage = () => {
+  const store = new Map<string, string>();
+
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+  };
+};
+
+const electronAuthStorage =
+  process.env.NODE_ENV === "production" ? storage() : memoryStorage();
 
 export const authClient = createAuthClient({
   baseURL: APP_URL,
@@ -19,7 +41,7 @@ export const authClient = createAuthClient({
       protocol: {
         scheme: APP_SCHEME,
       },
-      storage: storage(),
+      storage: electronAuthStorage,
     }) as any,
   ],
 });
