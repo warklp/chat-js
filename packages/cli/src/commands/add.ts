@@ -5,7 +5,11 @@ import { Command } from "commander";
 import { resolveRegistryItems } from "../registry/resolve";
 import { loadProjectConfig, resolveToolsPath } from "../utils/get-config";
 import { handleError } from "../utils/handle-error";
-import { createEmptyIndexTemplate, injectTool } from "../utils/inject-tool";
+import {
+  createEmptyToolsTemplate,
+  createEmptyUiTemplate,
+  injectTool,
+} from "../utils/inject-tool";
 import { installDependencies } from "../utils/install-deps";
 import { spinner } from "../utils/spinner";
 import { writeToolFiles } from "../utils/write-files";
@@ -61,7 +65,8 @@ export const add = new Command()
       }
 
       const toolsDir = resolveToolsPath(config.paths.tools, cwd);
-      const indexPath = path.join(toolsDir, "index.ts");
+      const toolsIndexPath = path.join(toolsDir, "tools.ts");
+      const uiIndexPath = path.join(toolsDir, "ui.ts");
 
       // Confirm installation unless --yes
       if (!opts.yes) {
@@ -167,25 +172,37 @@ export const add = new Command()
           }
         }
 
-        // 4. Inject into the CLI-managed registry index
+        // 4. Inject into the CLI-managed registry files
         const injectSpinner = spinner("Updating tool registry index...");
         injectSpinner.start();
         try {
-          let source: string;
+          let toolsSource: string;
+          let uiSource: string;
           try {
-            source = await fs.readFile(indexPath, "utf8");
+            toolsSource = await fs.readFile(toolsIndexPath, "utf8");
           } catch {
-            source = createEmptyIndexTemplate();
+            toolsSource = createEmptyToolsTemplate();
+          }
+          try {
+            uiSource = await fs.readFile(uiIndexPath, "utf8");
+          } catch {
+            uiSource = createEmptyUiTemplate();
           }
           const shouldInject =
             mainItem?.files.some(
               (file) => file.type === "tool" || file.type === "renderer"
             ) ?? false;
           const updated = shouldInject
-            ? injectTool(source, name, config.paths.tools)
-            : source;
-          await fs.mkdir(path.dirname(indexPath), { recursive: true });
-          await fs.writeFile(indexPath, updated, "utf8");
+            ? injectTool({
+                toolsSource,
+                uiSource,
+                name,
+                toolsAlias: config.paths.tools,
+              })
+            : { toolsSource, uiSource };
+          await fs.mkdir(path.dirname(toolsIndexPath), { recursive: true });
+          await fs.writeFile(toolsIndexPath, updated.toolsSource, "utf8");
+          await fs.writeFile(uiIndexPath, updated.uiSource, "utf8");
           injectSpinner.succeed("Updated tool registry index");
         } catch (err) {
           injectSpinner.fail("Failed to update tool registry index");

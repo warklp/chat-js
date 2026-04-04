@@ -3,12 +3,22 @@
 import { ChevronDown, ExternalLink, Globe, TextIcon } from "lucide-react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
-import type { ChatMessage } from "@/lib/ai/types";
 
-export type RetrieveUrlTool = Extract<
-  ChatMessage["parts"][number],
-  { type: "tool-retrieveUrl" }
->;
+type RetrieveUrlResult = {
+  error?: string;
+  results?: Array<{
+    content?: string;
+    description?: string;
+    error?: string;
+    language?: string;
+    title?: string;
+    url?: string;
+  }>;
+};
+
+type RetrieveUrlPart =
+  | { state: "input-available" | "input-streaming"; output?: never }
+  | { state: "output-available"; output: RetrieveUrlResult };
 
 function LoadingState() {
   return (
@@ -159,12 +169,18 @@ function getErrorMessage(result: unknown, firstItem: unknown): string | null {
   return topLevelError ?? firstItemError ?? null;
 }
 
-export function RetrieveUrl({ tool }: { tool: RetrieveUrlTool }) {
-  if (tool.state === "input-available") {
+export function RetrieveUrlRenderer({ tool }: { tool: unknown }) {
+  const part = tool as RetrieveUrlPart;
+
+  if (part.state === "input-available") {
     return <LoadingState />;
   }
 
-  const { output: result } = tool;
+  if (part.state !== "output-available") {
+    return null;
+  }
+
+  const { output: result } = part;
   const firstItem = getFirstItem(result);
   const errorMessage = getErrorMessage(result, firstItem);
 

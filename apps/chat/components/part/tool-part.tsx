@@ -9,7 +9,6 @@ import { DocumentTool } from "./document-tool";
 import { GenerateImage } from "./generate-image";
 import { GenerateVideo } from "./generate-video";
 import { ReadDocument } from "./read-document";
-import { RetrieveUrl } from "./retrieve-url";
 import { WebSearch } from "./web-search";
 
 interface ToolPartProps {
@@ -32,10 +31,6 @@ export function ToolPart({ part, messageId, isReadonly }: ToolPartProps) {
     return (
       <DocumentTool isReadonly={isReadonly} messageId={messageId} tool={part} />
     );
-  }
-
-  if (type === "tool-retrieveUrl") {
-    return <RetrieveUrl tool={part} />;
   }
 
   if (type === "tool-readDocument") {

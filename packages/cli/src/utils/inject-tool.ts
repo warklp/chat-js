@@ -1,12 +1,16 @@
-// Marker pairs that bound the CLI-managed sections in the registry index.
+// Marker pairs that bound the CLI-managed sections in the registry files.
 const MARKERS = {
-  imports: {
-    open: "// [chatjs-registry:imports]",
-    close: "// [/chatjs-registry:imports]",
+  toolImports: {
+    open: "// [chatjs-registry:tool-imports]",
+    close: "// [/chatjs-registry:tool-imports]",
   },
   tools: {
     open: "// [chatjs-registry:tools]",
     close: "// [/chatjs-registry:tools]",
+  },
+  uiImports: {
+    open: "// [chatjs-registry:ui-imports]",
+    close: "// [/chatjs-registry:ui-imports]",
   },
   ui: {
     open: "// [chatjs-registry:ui]",
@@ -59,73 +63,101 @@ function injectIntoBlock(
 }
 
 /**
- * Inject a tool's imports and registrations into the registry index source.
- * Returns the updated source string (pure — no file I/O).
+ * Inject a tool's imports and registrations into the managed registry files.
+ * Returns the updated source strings (pure — no file I/O).
  *
- * @param source    Current contents of the registry index
+ * @param toolsSource Current contents of the managed tools file
+ * @param uiSource    Current contents of the managed UI file
  * @param name      Kebab-case tool name, e.g. "word-count"
  * @param toolsAlias  Import alias, e.g. "@/tools"
  */
 export function injectTool(
-  source: string,
-  name: string,
-  toolsAlias: string
-): string {
+  {
+    toolsSource,
+    uiSource,
+    name,
+    toolsAlias,
+  }: {
+    toolsSource: string;
+    uiSource: string;
+    name: string;
+    toolsAlias: string;
+  }
+): { toolsSource: string; uiSource: string } {
   const camel = toCamelCase(name);
   const pascal = toPascalCase(name);
   const rendererName = `${pascal}Renderer`;
 
-  // 1. Imports block
-  const importLines =
-    `import { ${rendererName} } from "${toolsAlias}/${name}/renderer";\n` +
+  // 1. Server tool imports block
+  const toolImportLines =
     `import { ${camel} } from "${toolsAlias}/${name}/tool";\n`;
-
-  source = injectIntoBlock(
-    source,
-    MARKERS.imports.open,
-    MARKERS.imports.close,
-    importLines,
+  toolsSource = injectIntoBlock(
+    toolsSource,
+    MARKERS.toolImports.open,
+    MARKERS.toolImports.close,
+    toolImportLines,
     camel
   );
 
-  // 2. Tools object block
+  // 2. Server tools object block
   const toolLine = `  ${camel},\n`;
-
-  source = injectIntoBlock(
-    source,
+  toolsSource = injectIntoBlock(
+    toolsSource,
     MARKERS.tools.open,
     MARKERS.tools.close,
     toolLine,
     camel
   );
 
-  // 3. UI registry block
-  const uiLine = `  "tool-${camel}": ${rendererName},\n`;
+  // 3. Client UI imports block
+  const uiImportLines =
+    `import { ${rendererName} } from "${toolsAlias}/${name}/renderer";\n`;
+  uiSource = injectIntoBlock(
+    uiSource,
+    MARKERS.uiImports.open,
+    MARKERS.uiImports.close,
+    uiImportLines,
+    camel
+  );
 
-  source = injectIntoBlock(
-    source,
+  // 4. Client UI registry block
+  const uiLine = `  "tool-${camel}": ${rendererName},\n`;
+  uiSource = injectIntoBlock(
+    uiSource,
     MARKERS.ui.open,
     MARKERS.ui.close,
     uiLine,
     camel
   );
 
-  return source;
+  return { toolsSource, uiSource };
 }
 
-/** Template used when the registry index doesn't exist yet. */
-export function createEmptyIndexTemplate(): string {
+/** Template used when the managed tools file doesn't exist yet. */
+export function createEmptyToolsTemplate(): string {
   return (
-    `// All tools and UI components installed via \`chatjs add\`.\n` +
+    `// Server-side tools installed via \`chatjs add\`.\n` +
     `// This file is fully managed by the CLI — do not edit manually.\n` +
     `\n` +
-    `${MARKERS.imports.open}\n` +
-    `${MARKERS.imports.close}\n` +
+    `${MARKERS.toolImports.open}\n` +
+    `${MARKERS.toolImports.close}\n` +
     `\n` +
     `export const tools = {\n` +
     `  ${MARKERS.tools.open}\n` +
     `  ${MARKERS.tools.close}\n` +
     `} as const;\n` +
+    `\n`
+  );
+}
+
+/** Template used when the managed UI file doesn't exist yet. */
+export function createEmptyUiTemplate(): string {
+  return (
+    `// Client-side tool renderers installed via \`chatjs add\`.\n` +
+    `// This file is fully managed by the CLI — do not edit manually.\n` +
+    `\n` +
+    `${MARKERS.uiImports.open}\n` +
+    `${MARKERS.uiImports.close}\n` +
     `\n` +
     `export const ui = {\n` +
     `  ${MARKERS.ui.open}\n` +

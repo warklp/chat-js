@@ -1,23 +1,16 @@
-// All tools and UI components installed via `chatjs add`.
+// Client-side tool renderers installed via `chatjs add`.
 // This file is fully managed by the CLI — do not edit manually.
 
-// [chatjs-registry:imports]
+// [chatjs-registry:ui-imports]
 import { GetWeatherRenderer } from "@/tools/chatjs/get-weather/renderer";
-import { getWeather } from "@/tools/chatjs/get-weather/tool";
+import { RetrieveUrlRenderer } from "@/tools/chatjs/retrieve-url/renderer";
 import { WordCountRenderer } from "@/tools/chatjs/word-count/renderer";
-import { wordCount } from "@/tools/chatjs/word-count/tool";
-// [/chatjs-registry:imports]
-
-export const tools = {
-  // [chatjs-registry:tools]
-  getWeather,
-  wordCount,
-  // [/chatjs-registry:tools]
-} as const;
+// [/chatjs-registry:ui-imports]
 
 export const ui = {
   // [chatjs-registry:ui]
   "tool-getWeather": GetWeatherRenderer,
+  "tool-retrieveUrl": RetrieveUrlRenderer,
   "tool-wordCount": WordCountRenderer,
   // [/chatjs-registry:ui]
 };

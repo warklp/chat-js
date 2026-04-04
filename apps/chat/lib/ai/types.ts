@@ -10,7 +10,6 @@ import type { deepResearch } from "@/tools/platform/deep-research/deep-research"
 import type { generateImageTool as generateImageToolFactory } from "@/tools/platform/generate-image";
 import type { generateVideoTool as generateVideoToolFactory } from "@/tools/platform/generate-video";
 import type { readDocument } from "@/tools/platform/read-document";
-import type { retrieveUrl } from "@/tools/platform/retrieve-url";
 import type { tavilyWebSearch } from "@/tools/platform/web-search";
 import type { AppModelId } from "./app-models";
 import type { InstalledTools } from "./installed-tools";
@@ -98,7 +97,6 @@ type generateVideoTool = InferUITool<
 >;
 type webSearchTool = InferUITool<ReturnType<typeof tavilyWebSearch>>;
 type codeExecutionTool = InferUITool<ReturnType<typeof codeExecution>>;
-type retrieveUrlTool = InferUITool<typeof retrieveUrl>;
 
 // biome-ignore lint/style/useConsistentTypeDefinitions: using type for mapped type compatibility
 export type ChatTools = {
@@ -113,7 +111,6 @@ export type ChatTools = {
   generateImage: generateImageTool;
   generateVideo: generateVideoTool;
   readDocument: readDocumentTool;
-  retrieveUrl: retrieveUrlTool;
   webSearch: webSearchTool;
 } & InstalledTools;
 

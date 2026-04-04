@@ -10,5 +10,9 @@
   {
     "name": "word-count",
     "description": "Count words, characters, and sentences in text"
+  },
+  {
+    "name": "retrieve-url",
+    "description": "Fetch structured information from a single URL"
   }
 ]

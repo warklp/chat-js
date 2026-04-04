@@ -12,7 +12,6 @@ import { editTextDocumentTool } from "./documents/edit-text-document";
 import { generateImageTool } from "./generate-image";
 import { generateVideoTool } from "./generate-video";
 import { readDocument } from "./read-document";
-import { retrieveUrl } from "./retrieve-url";
 import { tavilyWebSearch } from "./web-search";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
@@ -50,6 +49,11 @@ export function getTools({
     selectedModel,
     costAccumulator,
   };
+  const enabledInstalledTools = Object.fromEntries(
+    Object.entries(installedTools).filter(
+      ([name]) => name !== "retrieveUrl" || config.ai.tools.urlRetrieval.enabled
+    )
+  );
 
   return {
     createTextDocument: createTextDocumentTool(documentToolProps),
@@ -62,7 +66,6 @@ export function getTools({
       session,
       dataStream,
     }),
-    ...(config.ai.tools.urlRetrieval.enabled ? { retrieveUrl } : {}),
     ...(config.ai.tools.webSearch.enabled
       ? {
           webSearch: tavilyWebSearch({
@@ -102,7 +105,7 @@ export function getTools({
           generateVideo: generateVideoTool({ selectedModel, costAccumulator }),
         }
       : {}),
-    ...installedTools,
+    ...enabledInstalledTools,
   };
 }
 

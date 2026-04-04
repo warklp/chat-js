@@ -15,7 +15,7 @@ When you run `chatjs add`, the CLI:
 2. Resolves any registry dependencies that item depends on
 3. Writes the tool files into the installable tools directory from `chat.config.ts`
 4. Installs any npm dependencies declared by the registry item
-5. Updates the CLI-managed registry index so the tool is available to the model and renderer
+5. Updates the CLI-managed registry files so the tool is available to the model and renderer
 
 ```bash
 npx @chat-js/cli@latest add word-count
@@ -39,7 +39,8 @@ By default, installed tools are written into `tools/chatjs`:
 ```text
 tools/
   chatjs/
-    index.ts
+    tools.ts
+    ui.ts
     word-count/
       tool.ts
       renderer.tsx
@@ -48,7 +49,7 @@ tools/
       lib/
 ```
 
-`tools/chatjs/index.ts` is the only CLI-managed registry index. You should not edit it manually.
+`tools/chatjs/tools.ts` and `tools/chatjs/ui.ts` are the CLI-managed registry files. You should not edit them manually.
 
 ## Registry Boundaries
 
