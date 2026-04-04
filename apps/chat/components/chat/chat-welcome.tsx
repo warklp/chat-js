@@ -38,7 +38,7 @@ function PureChatWelcome({
         className
       )}
     >
-      <div className="mx-auto w-full p-2 pb-4 @[500px]:px-4 @[500px]:pb-6 md:max-w-3xl">
+      <div className="mx-auto w-full p-2 @[500px]:px-4 @[500px]:pb-6 pb-4 md:max-w-3xl">
         <div className="mb-4 md:mb-6">
           <WelcomeMessage />
         </div>
