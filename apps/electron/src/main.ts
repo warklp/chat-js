@@ -9,7 +9,6 @@ import {
   shell,
   Tray,
 } from "electron";
-import { autoUpdater } from "electron-updater";
 import { ELECTRON_AUTH_COOKIE_PREFIX } from "@/lib/electron-auth";
 import { APP_NAME, APP_SCHEME, APP_URL, WINDOW_DEFAULTS } from "./config";
 import { electronAuthClient } from "./lib/auth-client";
@@ -40,6 +39,13 @@ type AuthRendererState =
       message: string;
       detail?: string | null;
     };
+
+type AppAutoUpdater = {
+  autoDownload: boolean;
+  autoInstallOnAppQuit: boolean;
+  on(event: "error", listener: (error: unknown) => void): void;
+  checkForUpdatesAndNotify(): void | Promise<unknown>;
+};
 
 let currentAuthState: AuthRendererState = {
   status: "idle",
@@ -436,7 +442,9 @@ async function createWindow(): Promise<BrowserWindow> {
     win.removeMenu();
   }
 
-  await syncAuthSessionCookies(win);
+  // Avoid touching encrypted auth storage on app launch. On macOS this can
+  // trigger an immediate Keychain prompt before the window even loads, which
+  // feels like a crash. Session sync still runs after explicit auth events.
   win.loadURL(APP_URL);
 
   win.webContents.on("did-finish-load", () => {
@@ -552,6 +560,24 @@ function setupApplicationMenu(): void {
 }
 
 function setupAutoUpdater(): void {
+  if (!app.isPackaged) {
+    return;
+  }
+
+  let autoUpdater: AppAutoUpdater;
+
+  try {
+    ({ autoUpdater } = require("electron-updater") as {
+      autoUpdater: AppAutoUpdater;
+    });
+  } catch (error) {
+    console.warn(
+      "[electron-main] electron-updater is unavailable; automatic updates are disabled.",
+      error
+    );
+    return;
+  }
+
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
@@ -559,9 +585,7 @@ function setupAutoUpdater(): void {
     console.error("AutoUpdater error:", err);
   });
 
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify();
-  }
+  void autoUpdater.checkForUpdatesAndNotify();
 }
 
 ipcMain.handle("chatjs:sync-auth-session", async () => {

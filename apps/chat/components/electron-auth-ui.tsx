@@ -16,6 +16,10 @@ export function ElectronBrowserSignIn({
 
   return (
     <div className="space-y-3">
+      <p className="text-center text-sm text-muted-foreground">
+        Sign-in opens in your browser. On macOS, ChatJS may ask to use Keychain so it can
+        store your session securely.
+      </p>
       <Button
         className="w-full"
         onClick={() => {
@@ -32,7 +36,8 @@ export function ElectronBrowserSignIn({
 
       {opened ? (
         <p className="text-center text-sm text-muted-foreground">
-          Finish signing in through your browser. This app will update automatically.
+          Finish signing in through your browser. If macOS asks about Keychain access, allow
+          it to keep your session saved securely.
         </p>
       ) : null}
     </div>
