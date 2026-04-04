@@ -4,6 +4,7 @@ import {
   BrowserWindow,
   ipcMain,
   Menu,
+  type MenuItemConstructorOptions,
   nativeImage,
   shell,
   Tray,
@@ -431,6 +432,10 @@ async function createWindow(): Promise<BrowserWindow> {
     },
   });
 
+  if (process.platform === "win32" || process.platform === "linux") {
+    win.removeMenu();
+  }
+
   await syncAuthSessionCookies(win);
   win.loadURL(APP_URL);
 
@@ -502,6 +507,50 @@ function createTray(): Tray {
   return t;
 }
 
+function setupApplicationMenu(): void {
+  if (process.platform !== "darwin") {
+    return;
+  }
+
+  const template: MenuItemConstructorOptions[] = [
+    {
+      label: APP_NAME,
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+    {
+      role: "editMenu",
+    },
+    ...(!app.isPackaged
+      ? ([
+          {
+            role: "viewMenu",
+            submenu: [
+              { role: "reload" },
+              { role: "forceReload" },
+              { type: "separator" },
+              { role: "toggleDevTools" },
+            ],
+          },
+        ] satisfies MenuItemConstructorOptions[])
+      : []),
+    {
+      role: "windowMenu",
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function setupAutoUpdater(): void {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -522,6 +571,8 @@ ipcMain.handle("chatjs:sync-auth-session", async () => {
 ipcMain.handle("chatjs:get-auth-state", () => currentAuthState);
 
 app.whenReady().then(async () => {
+  app.setName(APP_NAME);
+  setupApplicationMenu();
   mainWindow = await createWindow();
   tray = createTray();
   setupAutoUpdater();
