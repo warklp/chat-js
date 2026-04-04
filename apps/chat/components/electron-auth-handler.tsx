@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import authClient from "@/lib/auth-client";
-import { ElectronManualSignInToast } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
 import {
   ELECTRON_TRANSFER_STORAGE_KEY,
@@ -30,27 +29,6 @@ export function ElectronAuthHandler() {
   useEffect(() => {
     const id = authClient.ensureElectronRedirect();
     return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const authorizationCode = authClient.electron.getAuthorizationCode();
-
-    if (!authorizationCode) {
-      return;
-    }
-
-    console.log("[electron-auth-handler] found authorization code cookie");
-
-    const timeoutId = window.setTimeout(() => {
-      toast.custom(
-        (t) => (
-          <ElectronManualSignInToast authorizationCode={authorizationCode} t={t} />
-        ),
-        { duration: 5_000 }
-      );
-    }, 750);
-
-    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -88,7 +66,6 @@ export function ElectronAuthHandler() {
       toast.error(ctx.message || "Authentication failed");
     });
     const unsubscribeAuthState = window.electronAPI.onAuthStateChanged((state) => {
-      console.log("[electron-auth-handler] auth state changed", state);
       setAuthState(state);
     });
 
@@ -110,7 +87,6 @@ export function ElectronAuthHandler() {
     );
 
     if (!rawTransferState) {
-      console.log("[electron-auth-handler] no stored electron transfer state");
       return;
     }
 
@@ -119,27 +95,18 @@ export function ElectronAuthHandler() {
     try {
       query = JSON.parse(rawTransferState) as Record<string, string>;
     } catch {
-      console.warn("[electron-auth-handler] failed to parse stored transfer state");
       window.sessionStorage.removeItem(ELECTRON_TRANSFER_STORAGE_KEY);
       return;
     }
 
     if (!query || !isElectronTransferQuery(query)) {
-      console.warn("[electron-auth-handler] stored transfer state is not valid", query);
       window.sessionStorage.removeItem(ELECTRON_TRANSFER_STORAGE_KEY);
       return;
     }
 
-    console.log("[electron-auth-handler] found stored transfer state", query);
-
     let cancelled = false;
 
     void authClient.getSession().then(async ({ data: session }) => {
-      console.log("[electron-auth-handler] session lookup", {
-        hasUser: !!session?.user,
-        userId: session?.user?.id ?? null,
-      });
-
       if (cancelled || !session?.user) {
         return;
       }
@@ -147,25 +114,6 @@ export function ElectronAuthHandler() {
       await authClient.electron.transferUser({
         fetchOptions: {
           query,
-          onSuccess: (ctx) => {
-            console.log("[electron-auth-handler] transfer success", ctx.data);
-            const authorizationCode = ctx.data?.electron_authorization_code;
-
-            if (authorizationCode) {
-              toast.custom(
-                (t) => (
-                  <ElectronManualSignInToast
-                    authorizationCode={authorizationCode}
-                    t={t}
-                  />
-                ),
-                { duration: 5_000 }
-              );
-            }
-          },
-          onError: (ctx) => {
-            console.error("[electron-auth-handler] transfer failed", ctx.error);
-          },
         },
       });
 
@@ -221,7 +169,7 @@ function ElectronAuthOverlay({
                 ? "Complete sign-in in your browser, then come back here."
                 : state.status === "finishing"
                   ? "Your browser has returned to ChatJS. We're finalizing the session now."
-                  : state.detail || "If nothing changes, try the browser flow again or use the one-time code."}
+                  : state.detail || "If nothing changes, try the browser flow again."}
             </p>
             {!isLoading ? (
               <Button

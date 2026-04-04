@@ -176,10 +176,7 @@ app.setAsDefaultProtocolClient(APP_SCHEME);
 // register them explicitly so the preload bridge stays reliable in dev builds.
 ipcMain.removeHandler("better-auth:requestAuth");
 ipcMain.handle("better-auth:requestAuth", async (_event, options) => {
-  console.log("[electron-main] requestAuth", options);
-
   if (isAuthFlowInProgress) {
-    console.log("[electron-main] requestAuth ignored because a flow is already in progress");
     mainWindow?.show();
     mainWindow?.focus();
     return;
@@ -206,17 +203,8 @@ ipcMain.handle("better-auth:requestAuth", async (_event, options) => {
   }
 });
 
-ipcMain.removeHandler("better-auth:authenticate");
-ipcMain.handle("better-auth:authenticate", async (_event, data) => {
-  console.log("[electron-main] authenticate");
-  const result = await electronAuthClient.authenticate(data);
-  await syncAuthSessionCookies();
-  return result;
-});
-
 ipcMain.removeHandler("better-auth:signOut");
 ipcMain.handle("better-auth:signOut", async () => {
-  console.log("[electron-main] signOut");
   const result = await electronAuthClient.signOut();
   await syncAuthSessionCookies();
   return result;
@@ -224,7 +212,6 @@ ipcMain.handle("better-auth:signOut", async () => {
 
 ipcMain.removeHandler("better-auth:getUser");
 ipcMain.handle("better-auth:getUser", async () => {
-  console.log("[electron-main] getUser");
   const sessionResult = await electronAuthClient.getSession();
   return sessionResult.data?.user ?? null;
 });
@@ -305,12 +292,6 @@ async function authenticateFromDeepLink(url: string): Promise<boolean> {
       ? parsed.hash.slice("#token=".length)
       : null;
 
-    console.log("[electron-main] authenticateFromDeepLink", {
-      hasToken: !!token,
-      pathname: `${parsed.host}${parsed.pathname}`,
-      protocol: parsed.protocol,
-    });
-
     if (!token) {
       return false;
     }
@@ -320,7 +301,6 @@ async function authenticateFromDeepLink(url: string): Promise<boolean> {
       message: "Finishing sign-in...",
     });
     await electronAuthClient.authenticate({ token });
-    console.log("[electron-main] deep link authentication succeeded");
     return true;
   } catch (error) {
     console.error("[electron-main] deep link authentication failed", error);
@@ -345,11 +325,6 @@ async function waitForElectronSession(timeoutMs = 8_000): Promise<boolean> {
       const sessionResult = await electronAuthClient.getSession();
       const hasUser = !!sessionResult.data?.user;
 
-      console.log("[electron-main] waitForElectronSession", {
-        hasCookie,
-        hasUser,
-      });
-
       if (hasCookie && hasUser) {
         return true;
       }
@@ -363,7 +338,7 @@ async function waitForElectronSession(timeoutMs = 8_000): Promise<boolean> {
   return false;
 }
 
-function scheduleAuthRefresh(reason: string): void {
+function scheduleAuthRefresh(): void {
   const targetWindow = mainWindow;
   const authFlowId = currentAuthFlowId;
 
@@ -378,20 +353,17 @@ function scheduleAuthRefresh(reason: string): void {
 
   targetWindow.show();
   targetWindow.focus();
-  console.log("[electron-main] scheduling auth refresh", { reason });
 
   pendingAuthRefreshTimer = setTimeout(() => {
     void waitForElectronSession()
       .then(async (ready) => {
-        console.log("[electron-main] auth refresh wait result", { ready });
-
         if (!ready) {
           isAuthFlowInProgress = false;
           if (authFlowId === currentAuthFlowId) {
             await setAuthState({
               status: "timed-out",
               message: "Still waiting for the desktop app to finish signing in...",
-              detail: "You can try again or use the one-time code from the browser page.",
+              detail: "Please try the browser flow again.",
             });
           } else {
             await setAuthState({
@@ -403,7 +375,6 @@ function scheduleAuthRefresh(reason: string): void {
         }
 
         await syncAuthSessionCookies(targetWindow);
-        console.log("[electron-main] auth refresh reloading window");
         isAuthFlowInProgress = false;
         await setAuthState({
           status: "idle",
@@ -551,25 +522,20 @@ app.whenReady().then(async () => {
 });
 
 app.on("open-url", (_event, url) => {
-  console.log("[electron-main] open-url event received", { url });
   void authenticateFromDeepLink(url);
-  scheduleAuthRefresh("open-url");
+  scheduleAuthRefresh();
 });
 
 app.on("second-instance", (_event, commandLine) => {
   const deepLinkUrl = commandLine.find((value) =>
     value.startsWith(`${APP_SCHEME}://`)
   );
-  console.log("[electron-main] second-instance event received", {
-    commandLine,
-    deepLinkUrl: deepLinkUrl ?? null,
-  });
 
   if (deepLinkUrl) {
     void authenticateFromDeepLink(deepLinkUrl);
   }
 
-  scheduleAuthRefresh("second-instance");
+  scheduleAuthRefresh();
 });
 
 app.on("before-quit", () => {

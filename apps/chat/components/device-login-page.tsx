@@ -3,7 +3,6 @@
 import { CheckCircle2, LoaderCircle } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ElectronManualSignInToast } from "@/components/electron-auth-ui";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +28,6 @@ export function DeviceLoginPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [state, setState] = useState<DeviceLoginState>("checking-session");
-  const [authorizationCode, setAuthorizationCode] = useState<string | null>(null);
   const transferStartedRef = useRef(false);
 
   const query = useMemo(
@@ -42,15 +40,7 @@ export function DeviceLoginPage() {
   }, [pathname, searchParams]);
 
   useEffect(() => {
-    console.log("[device-login] mounted", {
-      href: window.location.href,
-      query,
-    });
-  }, [query]);
-
-  useEffect(() => {
     if (!isElectronTransferQuery(query)) {
-      console.log("[device-login] missing electron transfer params");
       setState("needs-sign-in");
       return;
     }
@@ -67,11 +57,6 @@ export function DeviceLoginPage() {
         return;
       }
 
-      console.log("[device-login] session check", {
-        hasUser: !!session?.user,
-        userId: session?.user?.id ?? null,
-      });
-
       if (!session?.user) {
         setState("needs-sign-in");
         return;
@@ -87,18 +72,10 @@ export function DeviceLoginPage() {
       await authClient.electron.transferUser({
         fetchOptions: {
           query,
-          onSuccess: (ctx) => {
-            const code = ctx.data?.electron_authorization_code ?? null;
-            console.log("[device-login] transfer success", {
-              hasAuthorizationCode: !!code,
-              redirect: ctx.data?.redirect ?? null,
-              url: ctx.data?.url ?? null,
-            });
-            setAuthorizationCode(code);
+          onSuccess: () => {
             setState("waiting-for-app");
           },
-          onError: (ctx) => {
-            console.error("[device-login] transfer failed", ctx.error);
+          onError: () => {
             transferStartedRef.current = false;
             setState("needs-sign-in");
           },
@@ -155,12 +132,6 @@ export function DeviceLoginPage() {
                   icon={<CheckCircle2 className="size-5 text-green-600" />}
                   title="Session sent"
                 />
-                {authorizationCode ? (
-                  <ElectronManualSignInToast
-                    authorizationCode={authorizationCode}
-                    t="device-login-inline"
-                  />
-                ) : null}
                 <Button
                   className="w-full"
                   onClick={() => {
@@ -169,10 +140,7 @@ export function DeviceLoginPage() {
                     void authClient.electron.transferUser({
                       fetchOptions: {
                         query,
-                        onSuccess: (ctx) => {
-                          setAuthorizationCode(
-                            ctx.data?.electron_authorization_code ?? null
-                          );
+                        onSuccess: () => {
                           setState("waiting-for-app");
                         },
                       },
@@ -184,12 +152,6 @@ export function DeviceLoginPage() {
                   Try again
                 </Button>
               </>
-            ) : null}
-
-            {process.env.NODE_ENV !== "production" ? (
-              <pre className="overflow-x-auto rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-                {JSON.stringify({ currentHref, query, state }, null, 2)}
-              </pre>
             ) : null}
           </CardContent>
         </Card>

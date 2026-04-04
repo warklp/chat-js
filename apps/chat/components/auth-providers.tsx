@@ -100,29 +100,11 @@ export function SocialAuthProviders({
         : {}),
       fetchOptions: {
         query,
-        onSuccess: (ctx) => {
-          console.log("[auth-providers] social sign-in response", {
-            provider,
-            data: ctx.data,
-            isElectronTransfer,
-          });
-        },
-        onError: (ctx) => {
-          console.error("[auth-providers] social sign-in error", {
-            provider,
-            error: ctx.error,
-            isElectronTransfer,
-          });
-        },
       },
     });
 
     if (isElectronTransfer) {
       const redirectUrl = result.data?.url;
-      console.log("[auth-providers] redirecting browser to provider", {
-        provider,
-        redirectUrl,
-      });
 
       if (redirectUrl) {
         window.location.href = redirectUrl;

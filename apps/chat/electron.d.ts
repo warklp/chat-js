@@ -13,7 +13,6 @@ declare global {
   }
 
   interface Window {
-    authenticate?: (data: { token: string }) => Promise<unknown>;
     onAuthenticated?: (
       callback: (user: unknown) => void
     ) => () => void;
