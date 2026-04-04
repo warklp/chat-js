@@ -839,7 +839,7 @@ function PureMultimodalInput({
             isDragActive && "border-primary bg-accent",
             className
           )}
-          inputGroupClassName="bg-muted"
+          inputGroupClassName="bg-muted dark:bg-muted"
           {...getRootProps({ onError: undefined, onSubmit: undefined })}
           onSubmit={(_message, event) => {
             event.preventDefault();
