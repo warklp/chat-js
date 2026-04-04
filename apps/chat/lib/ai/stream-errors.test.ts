@@ -39,7 +39,8 @@ describe("getStreamErrorToastContent", () => {
     });
 
     expect(getStreamErrorToastContent(error)).toEqual({
-      message: "An error occurred while generating a response. Please try again.",
+      message:
+        "An error occurred while generating a response. Please try again.",
       description: "Oops, the provider returned a 429.",
     });
   });
