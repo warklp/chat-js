@@ -25,7 +25,9 @@ export function SidebarToggle({
           className={className}
           onClick={(event) => {
             onClick?.(event);
-            if (!event.defaultPrevented) toggleSidebar();
+            if (!event.defaultPrevented) {
+              toggleSidebar();
+            }
           }}
           size="icon"
           variant="ghost"
