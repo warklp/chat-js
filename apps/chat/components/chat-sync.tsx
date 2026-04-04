@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDataStream } from "@/components/data-stream-provider";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
+import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
 import type { ChatMessage } from "@/lib/ai/types";
@@ -103,14 +104,8 @@ export function ChatSync({
       }
 
       console.error(error);
-      const cause = error.cause;
-      if (cause && typeof cause === "string") {
-        toast.error(error.message ?? "An error occured, please try again!", {
-          description: cause,
-        });
-      } else {
-        toast.error(error.message ?? "An error occured, please try again!");
-      }
+      const { message, description } = getStreamErrorToastContent(error);
+      toast.error(message, description ? { description } : undefined);
     },
   });
 
