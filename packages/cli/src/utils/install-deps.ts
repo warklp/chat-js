@@ -7,12 +7,27 @@ import { inferPackageManager } from "./get-package-manager";
  */
 export async function installDependencies(
   deps: string[],
+  devDeps: string[],
   cwd: string
 ): Promise<void> {
-  if (!deps.length) return;
+  const dependencies = Array.from(new Set(deps));
+  const developmentDependencies = Array.from(new Set(devDeps));
+
+  if (!dependencies.length && !developmentDependencies.length) {
+    return;
+  }
 
   const pm = inferPackageManager();
-  const args = pm === "yarn" ? ["add", ...deps] : ["add", ...deps];
+  if (dependencies.length) {
+    const args = pm === "yarn" ? ["add", ...dependencies] : ["add", ...dependencies];
+    await runCommand(pm, args, cwd);
+  }
 
-  await runCommand(pm, args, cwd);
+  if (developmentDependencies.length) {
+    const args =
+      pm === "npm"
+        ? ["install", "-D", ...developmentDependencies]
+        : ["add", "-D", ...developmentDependencies];
+    await runCommand(pm, args, cwd);
+  }
 }

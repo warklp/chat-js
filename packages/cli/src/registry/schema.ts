@@ -3,7 +3,7 @@ import { z } from "zod";
 export const registryToolFileSchema = z.object({
   path: z.string(),
   content: z.string(),
-  type: z.enum(["tool", "renderer"]),
+  type: z.enum(["tool", "renderer", "lib", "component", "hook"]),
   target: z.string(),
 });
 
@@ -11,6 +11,8 @@ export const registryToolItemSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   dependencies: z.array(z.string()).optional(),
+  devDependencies: z.array(z.string()).optional(),
+  registryDependencies: z.array(z.string()).optional(),
   files: z.array(registryToolFileSchema),
 });
 

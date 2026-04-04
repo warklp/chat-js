@@ -2,6 +2,7 @@
   "name": "word-count",
   "description": "Count words, characters, and sentences in text",
   "dependencies": [
+    "ai",
     "zod"
   ],
   "files": [

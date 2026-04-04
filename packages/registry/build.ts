@@ -52,7 +52,8 @@ function extractNpmImports(source: string): string[] {
         spec.startsWith(".") ||    // relative
         spec.startsWith("/") ||    // absolute path
         spec.startsWith("node:") || // explicit node: protocol
-        spec.startsWith("@/")      // app path alias
+        spec.startsWith("@/") ||      // app path alias
+        spec.startsWith("@toolkit/")  // registry-owned shared helpers
       ) continue;
 
       // Extract the package name (handles scoped packages like @org/pkg)
@@ -72,69 +73,137 @@ function extractNpmImports(source: string): string[] {
 type Meta = {
   description: string;
   extraDependencies?: string[];
+  devDependencies?: string[];
+  registryDependencies?: string[];
+  files?: Array<{
+    source: string;
+    target: string;
+    type: "tool" | "renderer" | "lib" | "component" | "hook";
+  }>;
 };
 
-await fs.mkdir(itemsDir, { recursive: true });
-
-const entries = await fs.readdir(srcDir);
-const dirs: string[] = [];
-for (const entry of entries) {
-  const stat = await fs.stat(path.join(srcDir, entry));
-  if (stat.isDirectory()) dirs.push(entry);
+async function fileExists(filePath: string): Promise<boolean> {
+  return fs
+    .access(filePath)
+    .then(() => true)
+    .catch(() => false);
 }
 
-const index: { name: string; description: string }[] = [];
+async function main(): Promise<void> {
+  await fs.mkdir(itemsDir, { recursive: true });
 
-for (const name of dirs) {
-  const dir = path.join(srcDir, name);
+  const entries = await fs.readdir(srcDir);
+  const dirs: string[] = [];
+  for (const entry of entries) {
+    const stat = await fs.stat(path.join(srcDir, entry));
+    if (stat.isDirectory()) dirs.push(entry);
+  }
 
-  const meta: Meta = JSON.parse(
-    await fs.readFile(path.join(dir, "meta.json"), "utf8")
-  );
-  const appDir = path.join(appToolsDir, name);
-  const toolContent = await fs.readFile(path.join(appDir, "tool.ts"), "utf8");
-  const rendererContent = await fs.readFile(
-    path.join(appDir, "renderer.tsx"),
-    "utf8"
-  );
+  const index: { name: string; description: string }[] = [];
 
-  // Auto-detect dependencies from both source files, merge with any extras
-  const detected = new Set([
-    ...extractNpmImports(toolContent),
-    ...extractNpmImports(rendererContent),
-  ]);
-  for (const dep of meta.extraDependencies ?? []) detected.add(dep);
-  const dependencies = [...detected].sort();
+  for (const name of dirs) {
+    const dir = path.join(srcDir, name);
 
-  const item = {
-    name,
-    description: meta.description,
-    dependencies,
-    files: [
-      {
+    const meta: Meta = JSON.parse(
+      await fs.readFile(path.join(dir, "meta.json"), "utf8")
+    );
+    const appDir = path.join(appToolsDir, name);
+    const registryFiles: Array<{
+      path: string;
+      type: "tool" | "renderer" | "lib" | "component" | "hook";
+      target: string;
+      content: string;
+    }> = [];
+
+    const detected = new Set<string>();
+
+    const registryToolPath = path.join(dir, "tool.ts");
+    const registryRendererPath = path.join(dir, "renderer.tsx");
+    const toolPath =
+      (await fileExists(registryToolPath))
+        ? registryToolPath
+        : path.join(appDir, "tool.ts");
+    const rendererPath =
+      (await fileExists(registryRendererPath))
+        ? registryRendererPath
+        : path.join(appDir, "renderer.tsx");
+
+    if (await fileExists(toolPath)) {
+      const toolContent = await fs.readFile(toolPath, "utf8");
+      registryFiles.push({
         path: "tool.ts",
         type: "tool",
         target: `${name}/tool.ts`,
         content: toolContent,
-      },
-      {
+      });
+      for (const dependency of extractNpmImports(toolContent)) {
+        detected.add(dependency);
+      }
+    }
+
+    if (await fileExists(rendererPath)) {
+      const rendererContent = await fs.readFile(rendererPath, "utf8");
+      registryFiles.push({
         path: "renderer.tsx",
         type: "renderer",
         target: `${name}/renderer.tsx`,
         content: rendererContent,
-      },
-    ],
-  };
+      });
+      for (const dependency of extractNpmImports(rendererContent)) {
+        detected.add(dependency);
+      }
+    }
 
-  await fs.writeFile(
-    path.join(itemsDir, `${name}.json`),
-    JSON.stringify(item, null, 2) + "\n"
-  );
+    for (const file of meta.files ?? []) {
+      const content = await fs.readFile(path.join(dir, file.source), "utf8");
+      registryFiles.push({
+        path: file.source,
+        type: file.type,
+        target: file.target,
+        content,
+      });
+      for (const dependency of extractNpmImports(content)) {
+        detected.add(dependency);
+      }
+    }
 
-  index.push({ name, description: meta.description });
-  console.log(`  built ${name} (deps: ${dependencies.join(", ") || "none"})`);
+    for (const dep of meta.extraDependencies ?? []) detected.add(dep);
+    const dependencies = [...detected].sort();
+
+    const item = {
+      name,
+      description: meta.description,
+      ...(dependencies.length > 0 ? { dependencies } : {}),
+      ...(meta.devDependencies?.length
+        ? { devDependencies: [...new Set(meta.devDependencies)].sort() }
+        : {}),
+      ...(meta.registryDependencies?.length
+        ? {
+            registryDependencies: [
+              ...new Set(meta.registryDependencies),
+            ].sort(),
+          }
+        : {}),
+      files: registryFiles,
+    };
+
+    await fs.writeFile(
+      path.join(itemsDir, `${name}.json`),
+      JSON.stringify(item, null, 2) + "\n"
+    );
+
+    index.push({ name, description: meta.description });
+    console.log(
+      `  built ${name} (deps: ${dependencies.join(", ") || "none"})`
+    );
+  }
+
+  await fs.writeFile(indexPath, JSON.stringify(index, null, 2) + "\n");
+
+  console.log(`\n✓ ${dirs.length} tool(s) → items/ + index.json`);
 }
 
-await fs.writeFile(indexPath, JSON.stringify(index, null, 2) + "\n");
-
-console.log(`\n✓ ${dirs.length} tool(s) → items/ + index.json`);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

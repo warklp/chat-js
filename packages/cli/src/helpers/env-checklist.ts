@@ -1,10 +1,10 @@
 import {
   authEnvRequirements,
   type EnvRequirement,
+  envVarDescriptions,
   featureEnvRequirements,
   gatewayEnvRequirements,
-} from "../../../../apps/chat/lib/config-requirements";
-import { serverEnvSchema } from "../../../../apps/chat/lib/env-schema";
+} from "./config-requirements";
 import {
   FEATURE_KEYS,
   type AuthProvider,
@@ -21,22 +21,7 @@ export type EnvVarEntry = {
   oneOfGroup?: string;
 };
 
-/**
- * Extract descriptions from the server env Zod schema.
- * Mirrors the approach used by config-builder.ts `extractDescriptions`.
- */
-function extractEnvDescriptions(): Map<string, string> {
-  const result = new Map<string, string>();
-  for (const [key, schema] of Object.entries(serverEnvSchema)) {
-    const desc = (schema as { description?: string }).description;
-    if (desc) {
-      result.set(key, desc);
-    }
-  }
-  return result;
-}
-
-const envDescriptions = extractEnvDescriptions();
+const envDescriptions = new Map(Object.entries(envVarDescriptions));
 
 /**
  * Expand an EnvRequirement into one or more EnvVarEntries, pulling

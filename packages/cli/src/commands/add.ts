@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { confirm, intro, isCancel, log, outro } from "@clack/prompts";
 import { Command } from "commander";
-import { fetchRegistryItem } from "../registry/fetch";
+import { resolveRegistryItems } from "../registry/resolve";
 import { loadProjectConfig, resolveToolsPath } from "../utils/get-config";
 import { handleError } from "../utils/handle-error";
 import { createEmptyIndexTemplate, injectTool } from "../utils/inject-tool";
@@ -75,20 +75,38 @@ export const add = new Command()
       }
 
       // Install each tool
+      const processedItems = new Set<string>();
       for (const name of tools) {
         log.step(`Installing ${name}`);
 
-        // 1. Fetch from registry
+        // 1. Resolve the full registry tree
         const fetchSpinner = spinner(`Fetching ${name}...`);
         fetchSpinner.start();
-        let item: Awaited<ReturnType<typeof fetchRegistryItem>>;
+        let resolution: Awaited<ReturnType<typeof resolveRegistryItems>>;
         try {
-          item = await fetchRegistryItem(name, opts.registry);
+          resolution = await resolveRegistryItems([name], opts.registry);
           fetchSpinner.succeed(`Fetched ${name}`);
         } catch (err) {
           fetchSpinner.fail(`Failed to fetch ${name}`);
           throw err;
         }
+
+        const itemsToInstall = resolution.items.filter((item) => {
+          if (processedItems.has(item.name)) {
+            return false;
+          }
+          processedItems.add(item.name);
+          return true;
+        });
+
+        const filesToWrite = itemsToInstall.flatMap((item) => item.files);
+        const dependencies = Array.from(
+          new Set(itemsToInstall.flatMap((item) => item.dependencies ?? []))
+        );
+        const devDependencies = Array.from(
+          new Set(itemsToInstall.flatMap((item) => item.devDependencies ?? []))
+        );
+        const mainItem = resolution.items.find((item) => item.name === name);
 
         // 2. Write files to disk
         const overwrite = opts.overwrite as boolean;
@@ -96,9 +114,10 @@ export const add = new Command()
           // First pass: skip existing files unless --overwrite
           const writeSpinner = spinner("Writing files...");
           writeSpinner.start();
-          const { written, existing } = await writeToolFiles(item.files, {
+          const { written, existing } = await writeToolFiles(filesToWrite, {
             overwrite,
             toolsDir,
+            toolsAlias: config.paths.tools,
           });
           writeSpinner.stop();
 
@@ -107,30 +126,41 @@ export const add = new Command()
               message: `${existing.map((f) => path.relative(cwd, f)).join(", ")} already exist. Overwrite?`,
             });
             if (isCancel(answer) || !answer) {
-              log.warn(`Skipped ${name}`);
-              continue;
+              log.warn(
+                `Kept existing files for ${name}; installed remaining new files`
+              );
+            } else {
+              // Write the files that were skipped
+              const { written: rest } = await writeToolFiles(filesToWrite, {
+                overwrite: true,
+                toolsDir,
+                toolsAlias: config.paths.tools,
+              });
+              written.push(...rest);
             }
-            // Write the files that were skipped
-            const { written: rest } = await writeToolFiles(item.files, {
-              overwrite: true,
-              toolsDir,
-            });
-            written.push(...rest);
           }
 
-          log.step(written.map((f) => path.relative(cwd, f)).join(", "));
+          if (written.length > 0) {
+            log.step(written.map((f) => path.relative(cwd, f)).join(", "));
+          } else {
+            log.step(`No file changes needed for ${name}`);
+          }
         } catch (err) {
           log.error("Failed to write files");
           throw err;
         }
 
         // 3. Install npm dependencies
-        if (item.dependencies && item.dependencies.length > 0) {
+        if (dependencies.length > 0 || devDependencies.length > 0) {
           const depsSpinner = spinner("Installing dependencies...");
           depsSpinner.start();
           try {
-            await installDependencies(item.dependencies, cwd);
-            depsSpinner.succeed(`Installed: ${item.dependencies.join(", ")}`);
+            await installDependencies(dependencies, devDependencies, cwd);
+            const installed = [
+              ...dependencies,
+              ...devDependencies.map((dep) => `${dep} (dev)`),
+            ];
+            depsSpinner.succeed(`Installed: ${installed.join(", ")}`);
           } catch (err) {
             depsSpinner.fail("Failed to install dependencies");
             throw err;
@@ -147,7 +177,13 @@ export const add = new Command()
           } catch {
             source = createEmptyIndexTemplate();
           }
-          const updated = injectTool(source, name, config.paths.tools);
+          const shouldInject =
+            mainItem?.files.some(
+              (file) => file.type === "tool" || file.type === "renderer"
+            ) ?? false;
+          const updated = shouldInject
+            ? injectTool(source, name, config.paths.tools)
+            : source;
           await fs.mkdir(path.dirname(indexPath), { recursive: true });
           await fs.writeFile(indexPath, updated, "utf8");
           injectSpinner.succeed("Updated tool registry index");

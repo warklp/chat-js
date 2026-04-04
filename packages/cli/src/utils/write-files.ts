@@ -1,6 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { RegistryToolItemFile } from "../registry/schema";
+import { isSafeTarget } from "./is-safe-target";
+
+function rewriteToolkitImports(content: string, toolsAlias: string): string {
+  return content.replace(
+    /(["'])@toolkit\/(lib|components|hooks)\/([^"'`]+)\1/g,
+    (_match, quote: string, kind: string, rest: string) =>
+      `${quote}${toolsAlias}/_shared/${kind}/${rest}${quote}`
+  );
+}
 
 /**
  * Write tool files to disk.
@@ -9,12 +18,26 @@ import type { RegistryToolItemFile } from "../registry/schema";
  */
 export async function writeToolFiles(
   files: RegistryToolItemFile[],
-  { overwrite = false, toolsDir }: { overwrite?: boolean; toolsDir: string }
+  {
+    overwrite = false,
+    toolsDir,
+    toolsAlias,
+  }: {
+    overwrite?: boolean;
+    toolsDir: string;
+    toolsAlias: string;
+  }
 ): Promise<{ written: string[]; existing: string[] }> {
   const written: string[] = [];
   const existing: string[] = [];
 
   for (const file of files) {
+    if (!isSafeTarget(file.target, toolsDir)) {
+      throw new Error(
+        `Refusing to write "${file.target}" outside the tools directory`
+      );
+    }
+
     const dest = path.resolve(toolsDir, file.target);
 
     const exists = await fs
@@ -28,7 +51,11 @@ export async function writeToolFiles(
     }
 
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    await fs.writeFile(dest, file.content, "utf8");
+    const content =
+      dest.endsWith(".ts") || dest.endsWith(".tsx") || dest.endsWith(".js")
+        ? rewriteToolkitImports(file.content, toolsAlias)
+        : file.content;
+    await fs.writeFile(dest, content, "utf8");
     written.push(dest);
   }
 

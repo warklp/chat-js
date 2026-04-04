@@ -5,6 +5,8 @@ description: How to build and distribute installable AI tools with custom UI com
 
 > Build a self-contained tool that the `chatjs add` CLI command can install into any ChatJS project.
 
+For the product-level overview of the registry and when to use it, start with [Tool Registry](../core/tool-registry).
+
 ## Overview
 
 The registry system lets you package a backend AI tool and its frontend renderer as a distributable unit. Once installed, the tool is available to the AI model and its output is rendered with your custom component -- with full TypeScript type safety end to end.
@@ -42,7 +44,7 @@ Each tool lives in its own folder. The CLI copies two files and injects entries 
 
 ### 1. Backend tool
 
-Registry tools use `tool()` from the AI SDK directly — they are plain tools that take input and return output.
+Registry tools use `tool()` from the AI SDK directly. They are plain tools that take input and return output.
 
 ```ts title="tools/chatjs/word-count/tool.ts"
 import { tool } from "ai";
@@ -155,7 +157,7 @@ export const ui = {
 tools (as const) → InstalledTools → ChatTools & InstalledTools → ToolUIPart<ChatTools>
 ```
 
-Renderers receive `{ tool: unknown }` and cast to a locally defined type. The local type is built from the exported `WordCountOutput` type in `tool.ts`, keeping the renderer isolated from the `@/lib/ai/types` import chain (which would cause a circular dependency via `installed-tools → tools/chatjs/index`). The `output` field is fully typed — no `unknown` beyond the initial cast.
+Renderers receive `{ tool: unknown }` and cast to a locally defined type. The local type is built from the exported `WordCountOutput` type in `tool.ts`, keeping the renderer isolated from the `@/lib/ai/types` import chain (which would cause a circular dependency via `installed-tools → tools/chatjs/index`). The `output` field is fully typed with no `unknown` beyond the initial cast.
 
 ## Path configuration
 

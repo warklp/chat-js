@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 import { intro, outro } from "@clack/prompts";
 import { Command } from "commander";
 import { z } from "zod";
@@ -23,6 +23,31 @@ import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
 import { runCommand } from "../utils/run-command";
 import { spinner } from "../utils/spinner";
+
+function resolveCreateTarget(targetArg: string | undefined): {
+	projectName: string;
+	targetDir: string;
+	displayPath: string;
+} {
+	if (!targetArg) {
+		const projectName = "my-chat-app";
+		return {
+			projectName,
+			targetDir: resolve(process.cwd(), projectName),
+			displayPath: projectName,
+		};
+	}
+
+	const targetDir = resolve(process.cwd(), targetArg);
+	const projectName = basename(targetDir);
+	const relativePath = relative(process.cwd(), targetDir);
+
+	return {
+		projectName,
+		targetDir,
+		displayPath: relativePath || projectName,
+	};
+}
 
 function printEnvChecklist(entries: EnvVarEntry[]): void {
 	logger.info("Required for your configuration:");
@@ -80,9 +105,19 @@ export const create = new Command()
 				intro("Create ChatJS App");
 			}
 
-			// 1. Project name
-			const projectName = await promptProjectName(options.target, options.yes);
-			const targetDir = resolve(process.cwd(), projectName);
+			// 1. Project name + target directory
+			const initialTarget = resolveCreateTarget(options.target);
+			const promptedProjectName = await promptProjectName(
+				initialTarget.projectName,
+				options.yes,
+			);
+			const projectName = promptedProjectName;
+			const targetDir = options.target
+				? initialTarget.targetDir
+				: resolve(process.cwd(), projectName);
+			const displayPath = options.target
+				? initialTarget.displayPath
+				: projectName;
 
 			// 2. Validate target
 			await ensureTargetEmpty(targetDir);
@@ -172,7 +207,7 @@ export const create = new Command()
 			logger.info("Next steps:");
 			logger.break();
 			logger.log(
-				`  ${highlighter.dim("1.")} cd ${highlighter.info(projectName)}`,
+				`  ${highlighter.dim("1.")} cd ${highlighter.info(displayPath)}`,
 			);
 			logger.log(
 				`  ${highlighter.dim("2.")} Copy ${highlighter.info(".env.example")} to ${highlighter.info(".env.local")} and fill in the values below`,

@@ -2,6 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { registryToolItemSchema, type RegistryToolItem } from "./schema";
 
+export type { RegistryToolItem } from "./schema";
+export type { RegistryToolItemFile } from "./schema";
+
 export const DEFAULT_REGISTRY_URL =
   "https://registry.chatjs.dev/items/{name}.json";
 

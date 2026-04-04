@@ -28,6 +28,7 @@
               "core/architecture",
               "core/configuration",
               "core/authentication",
+              "core/tool-registry",
               "core/multi-model",
               "core/syntax-highlighting"
             ]

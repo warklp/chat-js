@@ -1,11 +1,17 @@
-import type {
-  authEnvRequirements,
-  gatewayEnvRequirements,
-} from "../../../apps/chat/lib/config-requirements";
-
 export type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
-export type Gateway = keyof typeof gatewayEnvRequirements;
-export type AuthProvider = keyof typeof authEnvRequirements;
+
+export const GATEWAYS = [
+  "vercel",
+  "openrouter",
+  "openai",
+  "openai-compatible",
+] as const;
+
+export type Gateway = (typeof GATEWAYS)[number];
+
+export const AUTH_PROVIDERS = ["google", "github", "vercel"] as const;
+
+export type AuthProvider = (typeof AUTH_PROVIDERS)[number];
 
 export const FEATURE_KEYS = [
   "sandbox",
