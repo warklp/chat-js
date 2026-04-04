@@ -25,21 +25,33 @@ describe("getStreamErrorMessage", () => {
     );
   });
 
-  it("falls back to the original message for unknown errors", () => {
+  it("falls back to a generic message for unknown errors", () => {
     expect(getStreamErrorMessage(new Error("Provider exploded"))).toBe(
-      "Provider exploded"
+      "An error occurred while generating a response. Please try again."
     );
   });
 });
 
 describe("getStreamErrorToastContent", () => {
-  it("uses the streamed cause when the message is truncated", () => {
+  it("uses the streamed cause as description when the message is truncated", () => {
     const error = new Error("O", {
       cause: "Oops, the provider returned a 429.",
     });
 
     expect(getStreamErrorToastContent(error)).toEqual({
-      message: "Oops, the provider returned a 429.",
+      message: "An error occurred while generating a response. Please try again.",
+      description: "Oops, the provider returned a 429.",
+    });
+  });
+
+  it("extracts message from an Error object used as cause", () => {
+    const error = new Error("An error occurred, please try again!", {
+      cause: new Error("Rate limit exceeded. Try again in 30 seconds."),
+    });
+
+    expect(getStreamErrorToastContent(error)).toEqual({
+      message: "Rate limit exceeded. Please wait a moment and try again.",
+      description: "Rate limit exceeded. Try again in 30 seconds.",
     });
   });
 

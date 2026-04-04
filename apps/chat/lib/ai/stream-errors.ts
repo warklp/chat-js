@@ -77,7 +77,7 @@ export function getStreamErrorToastContent(error: Error): {
   const rawMessage =
     typeof error.message === "string" ? error.message.trim() : "";
   const rawCause =
-    typeof error.cause === "string" ? error.cause.trim() : undefined;
+    error.cause != null ? (getErrorText(error.cause) ?? undefined) : undefined;
 
   const rawResolved =
     (rawMessage.length <= 1 || genericErrorMessages.has(rawMessage)) && rawCause
@@ -86,7 +86,7 @@ export function getStreamErrorToastContent(error: Error): {
 
   const message = mapKnownStreamErrorMessage(rawResolved);
 
-  if (rawCause && rawCause !== message && !genericErrorMessages.has(message)) {
+  if (rawCause && rawCause !== message && !genericErrorMessages.has(rawCause)) {
     return { message, description: rawCause };
   }
 
