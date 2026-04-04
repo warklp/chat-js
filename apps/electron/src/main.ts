@@ -421,7 +421,7 @@ function scheduleAuthRefresh(): void {
 async function createWindow(): Promise<BrowserWindow> {
   const win = new BrowserWindow({
     ...WINDOW_DEFAULTS,
-    ...(process.platform === "darwin"
+    ...(process.platform === "darwin" || process.platform === "win32"
       ? { titleBarStyle: "default" as const }
       : { titleBarStyle: "hidden" as const, titleBarOverlay: true }),
     webPreferences: {
