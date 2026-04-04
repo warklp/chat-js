@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeftIcon } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { SidebarToggle } from "@/components/sidebar-toggle";
@@ -50,7 +50,7 @@ export function SidebarTopRow() {
             src="/icon.svg"
             width={20}
           />
-          <PanelLeftIcon className="absolute size-4 opacity-0 transition-opacity duration-150 group-hover/logo:opacity-100" />
+          <PanelLeft className="absolute size-4 opacity-0 transition-opacity duration-150 group-hover/logo:opacity-100" />
         </button>
       )}
 

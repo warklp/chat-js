@@ -12,6 +12,8 @@ import { Button } from "./ui/button";
 
 export function SidebarToggle({
   className,
+  onClick,
+  ...props
 }: ComponentProps<typeof SidebarTrigger>) {
   const { toggleSidebar } = useSidebar();
 
@@ -19,8 +21,12 @@ export function SidebarToggle({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
+          {...props}
           className={className}
-          onClick={toggleSidebar}
+          onClick={(event) => {
+            onClick?.(event);
+            if (!event.defaultPrevented) toggleSidebar();
+          }}
           size="icon"
           variant="ghost"
         >
