@@ -1,9 +1,8 @@
 "use client";
 
-import { CheckCircle2, LoaderCircle, Monitor } from "lucide-react";
+import { CheckCircle2, LoaderCircle } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SocialAuthProviders } from "@/components/auth-providers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +17,6 @@ import { isElectronTransferQuery } from "@/lib/electron-auth";
 
 type DeviceLoginState =
   | "checking-session"
-  | "needs-sign-in"
   | "transferring"
   | "waiting-for-app";
 
@@ -35,10 +33,6 @@ export function DeviceLoginPage() {
     [searchParams]
   );
   const isCompletedView = searchParams.get(DEVICE_LOGIN_COMPLETED_PARAM) === "1";
-  const currentHref = useMemo(() => {
-    const queryString = searchParams.toString();
-    return queryString ? `${pathname}?${queryString}` : pathname;
-  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (isCompletedView) {
@@ -47,7 +41,7 @@ export function DeviceLoginPage() {
     }
 
     if (!isElectronTransferQuery(query)) {
-      setState("needs-sign-in");
+      setState("waiting-for-app");
       return;
     }
 
@@ -55,11 +49,7 @@ export function DeviceLoginPage() {
 
     void authClient.getSession().then(async ({ data: session }) => {
       if (cancelled) return;
-
-      if (!session?.user) {
-        setState("needs-sign-in");
-        return;
-      }
+      if (!session?.user) return;
 
       if (transferStartedRef.current) return;
 
@@ -75,7 +65,7 @@ export function DeviceLoginPage() {
           },
           onError: () => {
             transferStartedRef.current = false;
-            setState("needs-sign-in");
+            setState("checking-session");
           },
         },
       });
@@ -85,10 +75,6 @@ export function DeviceLoginPage() {
       cancelled = true;
     };
   }, [isCompletedView, pathname, query]);
-
-  if (state === "needs-sign-in") {
-    return <ProviderSelectionScreen callbackURL={currentHref} />;
-  }
 
   return (
     <DeviceAuthScreen
@@ -107,29 +93,6 @@ export function DeviceLoginPage() {
       }}
       state={state}
     />
-  );
-}
-
-function ProviderSelectionScreen({ callbackURL }: { callbackURL: string }) {
-  return (
-    <div className="flex min-h-dvh w-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm px-6">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="mb-2 flex justify-center">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground text-background">
-                <Monitor className="size-7" />
-              </div>
-            </div>
-            <CardTitle className="text-xl">Sign in to {config.appName}</CardTitle>
-            <CardDescription>Continue to the desktop app</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SocialAuthProviders callbackURL={callbackURL} />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
   );
 }
 

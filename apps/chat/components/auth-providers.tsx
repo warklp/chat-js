@@ -72,15 +72,18 @@ export function SocialAuthProviders({
   // through to social sign-in calls so the electron plugin can redirect back.
   const query = Object.fromEntries(params.entries());
   const isElectronTransfer = params.get("client_id") === ELECTRON_AUTH_CLIENT_ID;
+  const returnTo = params.get("returnTo");
   const deviceLoginCallbackURL =
     typeof window !== "undefined"
       ? new URL("/device-login", window.location.origin).toString()
       : "/device-login";
+  const resolvedCallbackURL =
+    returnTo && !isElectronTransfer ? returnTo : callbackURL;
 
   async function signIn(provider: "google" | "github" | "vercel") {
     const result = await authClient.signIn.social({
       provider,
-      callbackURL: isElectronTransfer ? deviceLoginCallbackURL : callbackURL,
+      callbackURL: isElectronTransfer ? deviceLoginCallbackURL : resolvedCallbackURL,
       ...(isElectronTransfer
         ? {
             disableRedirect: true,

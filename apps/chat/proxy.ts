@@ -40,6 +40,14 @@ function isAuthPage(pathname: string): boolean {
   );
 }
 
+function getSafeReturnTo(url: URL): string | null {
+  const returnTo = url.searchParams.get("returnTo");
+  if (!returnTo || !returnTo.startsWith("/")) {
+    return null;
+  }
+  return returnTo;
+}
+
 export async function proxy(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
@@ -51,9 +59,10 @@ export async function proxy(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
   const isLoggedIn = !!session?.user;
   const isDeviceLoginPage = pathname.startsWith("/device-login");
+  const returnTo = getSafeReturnTo(url);
 
   if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginPage) {
-    return NextResponse.redirect(new URL("/", url));
+    return NextResponse.redirect(new URL(returnTo ?? "/", url));
   }
 
   if (isAuthPage(pathname) || isPublicPage(pathname)) {
