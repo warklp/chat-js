@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
@@ -16,6 +17,12 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const searchParams = useSearchParams();
+  const registerHref = (() => {
+    const query = searchParams.toString();
+    return query ? `/register?${query}` : "/register";
+  })();
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -26,11 +33,11 @@ export function LoginForm({
         <CardContent>
           <div className="grid gap-6">
             <Suspense>
-              <SocialAuthProviders />
+              <SocialAuthProviders electronBrowserLabel="Continue in browser" />
             </Suspense>
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
-              <a className="underline underline-offset-4" href="/register">
+              <a className="underline underline-offset-4" href={registerHref}>
                 Sign up
               </a>
             </div>

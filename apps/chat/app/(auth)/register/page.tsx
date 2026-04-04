@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SignupForm } from "@/components/signup-form";
 import { buttonVariants } from "@/components/ui/button";
+import { buildAuthPageHref } from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -9,18 +9,24 @@ export const metadata: Metadata = {
   description: "Create an account to get started.",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+
   return (
     <div className="container m-auto flex h-dvh w-screen flex-col items-center justify-center px-4">
-      <Link
+      <a
         className={cn(
           buttonVariants({ variant: "ghost" }),
           "absolute top-4 right-4 md:top-8 md:right-8"
         )}
-        href="/login"
+        href={buildAuthPageHref("/login", resolvedSearchParams)}
       >
         Login
-      </Link>
+      </a>
       <div className="mx-auto w-full sm:w-[480px]">
         <SignupForm />
       </div>

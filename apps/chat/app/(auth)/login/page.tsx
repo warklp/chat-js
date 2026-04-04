@@ -1,8 +1,12 @@
 import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { ElectronTransferUser } from "@/components/electron-auth-ui";
 import { LoginForm } from "@/components/login-form";
 import { buttonVariants } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
+import { ELECTRON_AUTH_CLIENT_ID, toSearchParamRecord } from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -10,7 +14,18 @@ export const metadata: Metadata = {
   description: "Login to your account",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const query = toSearchParamRecord(resolvedSearchParams);
+  const isElectronTransfer = query.client_id === ELECTRON_AUTH_CLIENT_ID;
+  const session = isElectronTransfer
+    ? await auth.api.getSession({ headers: await headers() })
+    : null;
+
   return (
     <div className="container mx-auto flex h-dvh w-screen flex-col items-center justify-center">
       <Link
@@ -24,7 +39,11 @@ export default function LoginPage() {
         Back
       </Link>
       <div className="mx-auto flex w-full flex-col items-center justify-center sm:w-[420px]">
-        <LoginForm className="w-full" />
+        {session?.user && isElectronTransfer ? (
+          <ElectronTransferUser query={query} session={session} />
+        ) : (
+          <LoginForm className="w-full" />
+        )}
       </div>
     </div>
   );

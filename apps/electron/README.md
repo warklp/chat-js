@@ -11,6 +11,9 @@ bun install
 bun run dev
 ```
 
+`bun run dev` points Electron at `http://localhost:3000` by default. You can override
+that during development with `ELECTRON_APP_URL=... bun run dev`.
+
 ## Customization
 
 ### App Icon
@@ -36,7 +39,9 @@ The `APP_SCHEME` in `src/config.ts` controls the custom URL scheme used for OAut
 
 ### Production URL
 
-Update `APP_URL` in `src/config.ts` with your deployed app URL. This is used when `NODE_ENV !== "development"`.
+Update `appUrl` in `apps/chat/chat.config.ts` for your deployed site. Packaged Electron
+builds use that URL by default, while development uses `http://localhost:3000` unless
+`ELECTRON_APP_URL` is set.
 
 ## Building for Distribution
 

@@ -33,7 +33,11 @@ function isPublicPage(pathname: string): boolean {
 }
 
 function isAuthPage(pathname: string): boolean {
-  return pathname.startsWith("/login") || pathname.startsWith("/register");
+  return (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/device-login")
+  );
 }
 
 export async function proxy(req: NextRequest) {
@@ -46,8 +50,9 @@ export async function proxy(req: NextRequest) {
 
   const session = await auth.api.getSession({ headers: req.headers });
   const isLoggedIn = !!session?.user;
+  const isDeviceLoginPage = pathname.startsWith("/device-login");
 
-  if (isLoggedIn && isAuthPage(pathname)) {
+  if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginPage) {
     return NextResponse.redirect(new URL("/", url));
   }
 

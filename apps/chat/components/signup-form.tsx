@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
@@ -15,6 +16,12 @@ export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<typeof Card>) {
+  const searchParams = useSearchParams();
+  const loginHref = (() => {
+    const query = searchParams.toString();
+    return query ? `/login?${query}` : "/login";
+  })();
+
   return (
     <div className="flex flex-col gap-6" {...props}>
       <Card {...props}>
@@ -25,11 +32,11 @@ export function SignupForm({
         <CardContent>
           <div className="grid gap-6">
             <Suspense>
-              <SocialAuthProviders />
+              <SocialAuthProviders electronBrowserLabel="Continue in browser" />
             </Suspense>
             <div className="text-center text-sm">
               Already have an account?{" "}
-              <a className="underline underline-offset-4" href="/login">
+              <a className="underline underline-offset-4" href={loginHref}>
                 Sign in
               </a>
             </div>

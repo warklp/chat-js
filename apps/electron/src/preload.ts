@@ -1,5 +1,5 @@
 import { setupRenderer } from "@better-auth/electron/preload";
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 import { TITLEBAR_HEIGHT } from "./config";
 
 // Setup @better-auth/electron renderer bridges.
@@ -9,6 +9,18 @@ setupRenderer();
 // Expose additional app metadata to the renderer process.
 contextBridge.exposeInMainWorld("electronAPI", {
   isElectron: true,
+  getAuthState: () => ipcRenderer.invoke("chatjs:get-auth-state"),
+  onAuthStateChanged: (callback: (state: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, state: unknown) => {
+      callback(state);
+    };
+
+    ipcRenderer.on("chatjs:auth-state-changed", listener);
+    return () => {
+      ipcRenderer.removeListener("chatjs:auth-state-changed", listener);
+    };
+  },
   platform: process.platform,
+  syncAuthSession: () => ipcRenderer.invoke("chatjs:sync-auth-session"),
   titlebarHeight: TITLEBAR_HEIGHT,
 });

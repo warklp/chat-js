@@ -1,6 +1,27 @@
-import type { authClient } from "./lib/auth-client";
+import type { electronAuthClient } from "./lib/auth-client";
 
 declare global {
-  type Bridges = typeof authClient.$Infer.Bridges;
-  interface Window extends Bridges {}
+  type Bridges = typeof electronAuthClient.$Infer.Bridges;
+  type ElectronRendererAuthState =
+    | {
+        status: "idle";
+        message: null;
+      }
+    | {
+        status: "awaiting-browser" | "finishing" | "timed-out" | "error";
+        message: string;
+        detail?: string | null;
+      };
+  interface Window extends Bridges {
+    electronAPI?: {
+      getAuthState?: () => Promise<ElectronRendererAuthState>;
+      isElectron: boolean;
+      onAuthStateChanged?: (
+        callback: (state: ElectronRendererAuthState) => void
+      ) => () => void;
+      platform: NodeJS.Platform;
+      syncAuthSession?: () => Promise<void>;
+      titlebarHeight: number;
+    };
+  }
 }

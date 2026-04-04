@@ -4,6 +4,11 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { env } from "@/lib/env";
+import {
+  ELECTRON_AUTH_CLIENT_ID,
+  ELECTRON_AUTH_COOKIE_PREFIX,
+  ELECTRON_TRUSTED_ORIGIN,
+} from "./electron-auth";
 import { config } from "./config";
 import { db } from "./db/client";
 import { schema } from "./db/schema";
@@ -18,7 +23,7 @@ export const auth = betterAuth({
     // Vercel URL for preview branches
     ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
     config.appUrl,
-    `${config.appPrefix}:/`,
+    ELECTRON_TRUSTED_ORIGIN,
   ],
   secret: env.AUTH_SECRET,
 
@@ -63,7 +68,13 @@ export const auth = betterAuth({
 
     return { google, github, vercel } as const;
   })(),
-  plugins: [nextCookies(), electron()],
+  plugins: [
+    nextCookies(),
+    electron({
+      clientID: ELECTRON_AUTH_CLIENT_ID,
+      cookiePrefix: ELECTRON_AUTH_COOKIE_PREFIX,
+    }),
+  ],
 });
 
 // Infer session type from the auth instance for type safety

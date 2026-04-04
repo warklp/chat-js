@@ -1,11 +1,16 @@
 "use client";
 
 import { Github } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
+import {
+  ELECTRON_AUTH_CLIENT_ID,
+  ELECTRON_TRANSFER_STORAGE_KEY,
+} from "@/lib/electron-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -42,9 +47,12 @@ function VercelIcon({ className }: { className?: string }) {
 
 export function SocialAuthProviders({
   callbackURL,
+  electronBrowserLabel,
 }: {
   callbackURL?: string;
+  electronBrowserLabel?: string;
 } = {}) {
+  const pathname = usePathname();
   const params = useSearchParams();
 
   // Detect Electron synchronously so there's no flash of the wrong UI.
@@ -53,73 +61,73 @@ export function SocialAuthProviders({
   const [isElectron] = useState(
     () =>
       typeof window !== "undefined" &&
-      typeof (window as Record<string, unknown>).requestAuth === "function"
+      typeof window.requestAuth === "function"
   );
 
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
   // URL in the user's default browser with the proper PKCE params.
   if (isElectron) {
-    const requestAuth = (window as Record<string, unknown>)
-      .requestAuth as (opts?: { provider?: string }) => void;
-
-    return (
-      <div className="space-y-2">
-        {config.authentication.google ? (
-          <Button
-            className="w-full"
-            onClick={() => requestAuth({ provider: "google" })}
-            type="button"
-            variant="outline"
-          >
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Continue with Google
-          </Button>
-        ) : null}
-        {config.authentication.github ? (
-          <Button
-            className="w-full"
-            onClick={() => requestAuth({ provider: "github" })}
-            type="button"
-            variant="outline"
-          >
-            <Github className="mr-2 h-4 w-4" />
-            Continue with GitHub
-          </Button>
-        ) : null}
-        {config.authentication.vercel ? (
-          <Button
-            className="w-full"
-            onClick={() => requestAuth({ provider: "vercel" })}
-            type="button"
-            variant="outline"
-          >
-            <VercelIcon className="mr-2 h-4 w-4" />
-            Continue with Vercel
-          </Button>
-        ) : null}
-        <Button
-          className="w-full"
-          onClick={() => requestAuth()}
-          type="button"
-          variant="outline"
-        >
-          Sign in via browser
-        </Button>
-      </div>
-    );
+    return <ElectronBrowserSignIn buttonLabel={electronBrowserLabel} />;
   }
 
   // In the browser: pass electron query params (client_id, state, etc.)
   // through to social sign-in calls so the electron plugin can redirect back.
   const query = Object.fromEntries(params.entries());
+  const isElectronTransfer = params.get("client_id") === ELECTRON_AUTH_CLIENT_ID;
+  const deviceLoginCallbackURL =
+    typeof window !== "undefined"
+      ? new URL("/device-login", window.location.origin).toString()
+      : "/device-login";
 
-  function signIn(provider: "google" | "github" | "vercel") {
-    authClient.signIn.social({
+  async function signIn(provider: "google" | "github" | "vercel") {
+    if (isElectronTransfer) {
+      window.sessionStorage.setItem(
+        ELECTRON_TRANSFER_STORAGE_KEY,
+        JSON.stringify(query)
+      );
+    }
+
+    const result = await authClient.signIn.social({
       provider,
-      ...(callbackURL ? { callbackURL } : {}),
-      fetchOptions: { query },
+      callbackURL: isElectronTransfer ? deviceLoginCallbackURL : callbackURL,
+      ...(isElectronTransfer
+        ? {
+            disableRedirect: true,
+            errorCallbackURL: deviceLoginCallbackURL,
+            newUserCallbackURL: deviceLoginCallbackURL,
+          }
+        : {}),
+      fetchOptions: {
+        query,
+        onSuccess: (ctx) => {
+          console.log("[auth-providers] social sign-in response", {
+            provider,
+            data: ctx.data,
+            isElectronTransfer,
+          });
+        },
+        onError: (ctx) => {
+          console.error("[auth-providers] social sign-in error", {
+            provider,
+            error: ctx.error,
+            isElectronTransfer,
+          });
+        },
+      },
     });
+
+    if (isElectronTransfer) {
+      const redirectUrl = result.data?.url;
+      console.log("[auth-providers] redirecting browser to provider", {
+        provider,
+        redirectUrl,
+      });
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+    }
   }
 
   return (
