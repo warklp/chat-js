@@ -44,9 +44,12 @@ describe("getStreamErrorToastContent", () => {
   });
 
   it("keeps a specific message and moves the cause to the description", () => {
-    const error = new Error("Rate limit exceeded. Please wait a moment and try again.", {
-      cause: "Provider returned HTTP 429",
-    });
+    const error = new Error(
+      "Rate limit exceeded. Please wait a moment and try again.",
+      {
+        cause: "Provider returned HTTP 429",
+      }
+    );
 
     expect(getStreamErrorToastContent(error)).toEqual({
       message: "Rate limit exceeded. Please wait a moment and try again.",

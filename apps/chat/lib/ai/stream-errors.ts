@@ -61,7 +61,7 @@ function mapKnownStreamErrorMessage(message: string): string {
     return "The selected model is not available right now. Choose another model and try again.";
   }
 
-  return message;
+  return FALLBACK_STREAM_ERROR_MESSAGE;
 }
 
 export function getStreamErrorMessage(error: unknown): string {
@@ -74,20 +74,19 @@ export function getStreamErrorToastContent(error: Error): {
   description?: string;
   message: string;
 } {
-  const rawMessage = typeof error.message === "string" ? error.message.trim() : "";
+  const rawMessage =
+    typeof error.message === "string" ? error.message.trim() : "";
   const rawCause =
     typeof error.cause === "string" ? error.cause.trim() : undefined;
 
-  const message =
-    rawMessage.length <= 1 && rawCause
+  const rawResolved =
+    (rawMessage.length <= 1 || genericErrorMessages.has(rawMessage)) && rawCause
       ? rawCause
       : rawMessage || rawCause || FALLBACK_STREAM_ERROR_MESSAGE;
 
-  if (
-    rawCause &&
-    rawCause !== message &&
-    !genericErrorMessages.has(message)
-  ) {
+  const message = mapKnownStreamErrorMessage(rawResolved);
+
+  if (rawCause && rawCause !== message && !genericErrorMessages.has(message)) {
     return { message, description: rawCause };
   }
 
