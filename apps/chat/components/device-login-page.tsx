@@ -134,6 +134,11 @@ function DeviceAuthScreen({
           </CardHeader>
           {!isLoading && (
             <CardContent className="text-center">
+              <div className="mb-4">
+                <Button asChild className="w-full" variant="outline">
+                  <a href="/">Continue on web</a>
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground/60">
                 Didn&apos;t open?{" "}
                 <Button
