@@ -6,7 +6,7 @@ import {
   type ConsoleOutput,
   type ConsoleOutputContent,
 } from "@/components/console";
-import { Artifact } from "@/components/create-artifact";
+import { Artifact, type ArtifactMetadata } from "@/components/create-artifact";
 import { config } from "@/lib/config";
 import { generateUUID, getLanguageFromFileName } from "@/lib/utils";
 
@@ -56,12 +56,36 @@ function detectRequiredHandlers(code: string): string[] {
   return handlers;
 }
 
-interface Metadata {
+export interface CodeArtifactMetadata {
   language: string;
   outputs: ConsoleOutput[];
 }
 
-export const codeArtifact = new Artifact<"code", Metadata>({
+export function isCodeArtifactMetadata(
+  metadata: ArtifactMetadata
+): metadata is CodeArtifactMetadata {
+  return (
+    metadata !== null &&
+    typeof metadata === "object" &&
+    "language" in metadata &&
+    typeof metadata.language === "string" &&
+    "outputs" in metadata &&
+    Array.isArray(metadata.outputs)
+  );
+}
+
+export function getCodeArtifactMetadata(
+  metadata: ArtifactMetadata
+): CodeArtifactMetadata {
+  return isCodeArtifactMetadata(metadata)
+    ? metadata
+    : {
+        language: "python",
+        outputs: [],
+      };
+}
+
+export const codeArtifact = new Artifact<"code", CodeArtifactMetadata>({
   kind: "code",
   description:
     "Useful for code generation; Code execution is only available for Python code.",
@@ -184,14 +208,20 @@ export const codeArtifact = new Artifact<"code", Metadata>({
               },
             ],
           }));
-        } catch (error: any) {
+        } catch (error: unknown) {
           setMetadata((metadata) => ({
             ...metadata,
             outputs: [
               ...metadata.outputs.filter((output) => output.id !== runId),
               {
                 id: runId,
-                contents: [{ type: "text", value: error.message }],
+                contents: [
+                  {
+                    type: "text",
+                    value:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                ],
                 status: "failed",
               },
             ],

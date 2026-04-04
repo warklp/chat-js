@@ -5,14 +5,21 @@ import {
 } from "@ai-sdk-tools/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistance } from "date-fns";
+import type { Dispatch, SetStateAction } from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useDocuments, useSaveDocument } from "@/hooks/chat-sync-hooks";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
-import { codeArtifact } from "@/lib/artifacts/code/client";
-import { sheetArtifact } from "@/lib/artifacts/sheet/client";
+import {
+  codeArtifact,
+  getCodeArtifactMetadata,
+} from "@/lib/artifacts/code/client";
+import {
+  getSheetArtifactMetadata,
+  sheetArtifact,
+} from "@/lib/artifacts/sheet/client";
 import { textArtifact } from "@/lib/artifacts/text/client";
 import type { Document } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
@@ -27,6 +34,7 @@ import {
   ArtifactTitle,
 } from "./ai-elements/artifact";
 import { ArtifactActions as ArtifactPanelActions } from "./artifact-actions";
+import type { ArtifactMetadata } from "./create-artifact";
 //
 import { Toolbar } from "./toolbar";
 import { ScrollArea } from "./ui/scroll-area";
@@ -43,6 +51,18 @@ export interface UIArtifact {
   messageId: string;
   status: "streaming" | "idle";
   title: string;
+}
+
+function createTypedMetadataSetter<M extends ArtifactMetadata>(
+  setMetadata: Dispatch<SetStateAction<ArtifactMetadata>>,
+  coerce: (metadata: ArtifactMetadata) => M
+): Dispatch<SetStateAction<M>> {
+  return (value) => {
+    setMetadata((current) => {
+      const typedCurrent = coerce(current);
+      return typeof value === "function" ? value(typedCurrent) : value;
+    });
+  };
 }
 
 function PureArtifactPanel({
@@ -77,15 +97,7 @@ function PureArtifactPanel({
         (doc) => doc.messageId === artifact.messageId
       );
 
-      if (mostRecentDocumentIndex !== -1) {
-        const mostRecentDocument = documents[mostRecentDocumentIndex];
-        setDocument(mostRecentDocument);
-        setCurrentVersionIndex(mostRecentDocumentIndex);
-        setArtifact((currentArtifact) => ({
-          ...currentArtifact,
-          content: mostRecentDocument.content ?? "",
-        }));
-      } else {
+      if (mostRecentDocumentIndex === -1) {
         // Fallback to the most recent document
         const latestDocument = documents.at(-1);
         if (latestDocument) {
@@ -96,6 +108,14 @@ function PureArtifactPanel({
             content: latestDocument.content ?? "",
           }));
         }
+      } else {
+        const mostRecentDocument = documents[mostRecentDocumentIndex];
+        setDocument(mostRecentDocument);
+        setCurrentVersionIndex(mostRecentDocumentIndex);
+        setArtifact((currentArtifact) => ({
+          ...currentArtifact,
+          content: mostRecentDocument.content ?? "",
+        }));
       }
     }
   }, [documents, setArtifact, artifact.messageId]);
@@ -111,17 +131,6 @@ function PureArtifactPanel({
       },
     }
   );
-
-  const artifactDefinition = artifactDefinitions.find(
-    (definition) => definition.kind === artifact.kind
-  );
-
-  if (!artifactDefinition) {
-    throw new Error("Artifact definition not found!");
-  }
-
-  const ArtifactContentComponent = artifactDefinition.content;
-  const ArtifactFooterComponent = artifactDefinition.footer;
 
   const handleContentChange = useCallback(
     (updatedContent: string) => {
@@ -225,22 +234,48 @@ function PureArtifactPanel({
       : true;
 
   useEffect(() => {
-    if (
-      artifact.documentId !== "init" &&
-      artifact.status !== "streaming" &&
-      artifactDefinition.initialize
-    ) {
-      artifactDefinition.initialize({
-        documentId: artifact.documentId,
-        setMetadata,
-        trpc,
-        queryClient,
-        isAuthenticated,
-      });
+    if (artifact.documentId !== "init" && artifact.status !== "streaming") {
+      switch (artifact.kind) {
+        case "code":
+          codeArtifact.initialize?.({
+            documentId: artifact.documentId,
+            setMetadata: createTypedMetadataSetter(
+              setMetadata,
+              getCodeArtifactMetadata
+            ),
+            trpc,
+            queryClient,
+            isAuthenticated,
+          });
+          break;
+        case "sheet":
+          sheetArtifact.initialize?.({
+            documentId: artifact.documentId,
+            setMetadata: createTypedMetadataSetter(
+              setMetadata,
+              getSheetArtifactMetadata
+            ),
+            trpc,
+            queryClient,
+            isAuthenticated,
+          });
+          break;
+        case "text":
+          textArtifact.initialize?.({
+            documentId: artifact.documentId,
+            setMetadata,
+            trpc,
+            queryClient,
+            isAuthenticated,
+          });
+          break;
+        default:
+          break;
+      }
     }
   }, [
     artifact.documentId,
-    artifactDefinition,
+    artifact.kind,
     setMetadata,
     trpc,
     queryClient,
@@ -272,6 +307,76 @@ function PureArtifactPanel({
     title: artifact.title,
   };
 
+  const renderArtifactContent = () => {
+    switch (artifact.kind) {
+      case "code":
+        return (
+          <>
+            <codeArtifact.content
+              {...sharedArtifactProps}
+              metadata={getCodeArtifactMetadata(metadata)}
+              setMetadata={createTypedMetadataSetter(
+                setMetadata,
+                getCodeArtifactMetadata
+              )}
+            />
+            {codeArtifact.footer ? (
+              <codeArtifact.footer
+                {...sharedArtifactProps}
+                metadata={getCodeArtifactMetadata(metadata)}
+                setMetadata={createTypedMetadataSetter(
+                  setMetadata,
+                  getCodeArtifactMetadata
+                )}
+              />
+            ) : null}
+          </>
+        );
+      case "sheet":
+        return (
+          <>
+            <sheetArtifact.content
+              {...sharedArtifactProps}
+              metadata={getSheetArtifactMetadata(metadata)}
+              setMetadata={createTypedMetadataSetter(
+                setMetadata,
+                getSheetArtifactMetadata
+              )}
+            />
+            {sheetArtifact.footer ? (
+              <sheetArtifact.footer
+                {...sharedArtifactProps}
+                metadata={getSheetArtifactMetadata(metadata)}
+                setMetadata={createTypedMetadataSetter(
+                  setMetadata,
+                  getSheetArtifactMetadata
+                )}
+              />
+            ) : null}
+          </>
+        );
+      case "text":
+        return (
+          <>
+            <textArtifact.content
+              {...sharedArtifactProps}
+              metadata={metadata}
+              setMetadata={setMetadata}
+            />
+            {textArtifact.footer ? (
+              <textArtifact.footer
+                {...sharedArtifactProps}
+                metadata={metadata}
+                setMetadata={setMetadata}
+              />
+            ) : null}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <ArtifactCard
       className={cn(
@@ -283,7 +388,7 @@ function PureArtifactPanel({
       <ArtifactHeader className="items-start bg-background/80 p-2">
         <div className="flex flex-row items-start gap-4">
           <ArtifactClose
-            className="h-fit p-2 dark:hover:bg-zinc-700"
+            className="h-fit p-2 hover:bg-accent"
             data-testid="artifact-close-button"
             onClick={closeArtifact}
             variant="outline"
@@ -336,7 +441,7 @@ function PureArtifactPanel({
       <ArtifactContent className="flex h-full flex-col p-0">
         <ScrollArea className="h-full max-w-full!">
           <div className="flex flex-col items-center bg-background/80">
-            <ArtifactContentComponent {...sharedArtifactProps} />
+            {renderArtifactContent()}
 
             {isCurrentVersion && !isReadonly && (
               <Toolbar
@@ -350,10 +455,6 @@ function PureArtifactPanel({
             )}
           </div>
         </ScrollArea>
-
-        {ArtifactFooterComponent ? (
-          <ArtifactFooterComponent {...sharedArtifactProps} />
-        ) : null}
 
         {!(isCurrentVersion || isReadonly) && (
           <VersionFooter

@@ -2,7 +2,7 @@
 
 import { useChat, useChatActions } from "@ai-sdk-tools/store";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDataStream } from "@/components/data-stream-provider";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
@@ -34,6 +34,8 @@ export function ChatSync({
   const addMessageToTree = useAddMessageToTree();
 
   const lastMessage = threadInitialMessages.at(-1);
+  const lastMessageRef = useRef(lastMessage);
+  lastMessageRef.current = lastMessage;
   const isLastMessagePartial = !!lastMessage?.metadata?.activeStreamId;
 
   // Backstop: if we remount ChatSync (e.g. threadEpoch changes), ensure the prior
@@ -77,8 +79,9 @@ export function ChatSync({
         };
       },
       prepareReconnectToStreamRequest({ id: chatId }) {
-        const partialMessageId = lastMessage?.metadata?.activeStreamId
-          ? lastMessage.id
+        const current = lastMessageRef.current;
+        const partialMessageId = current?.metadata?.activeStreamId
+          ? current.id
           : null;
         return {
           api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,

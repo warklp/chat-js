@@ -46,6 +46,7 @@ const config = defineConfig({
   },
   features: {
     attachments: true, // Requires BLOB_READ_WRITE_TOKEN
+    parallelResponses: true,
   },
   legal: {
     minimumAge: 13,

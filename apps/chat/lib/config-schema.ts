@@ -224,9 +224,14 @@ export const featuresConfigSchema = z
     attachments: z
       .boolean()
       .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
+    parallelResponses: z
+      .boolean()
+      .default(true)
+      .describe("Send one message to multiple models simultaneously"),
   })
   .default({
     attachments: false,
+    parallelResponses: true,
   });
 
 export const authenticationConfigSchema = z
@@ -384,7 +389,6 @@ interface AiToolsInputFor<G extends GatewayType> {
 }
 
 // Only gateway is required; everything else is an override on top of GATEWAY_MODEL_DEFAULTS
-// biome-ignore lint/style/useConsistentTypeDefinitions: type is used intentionally here
 type AiInputFor<G extends GatewayType> = {
   gateway: G;
   providerOrder?: AiShape["providerOrder"];

@@ -331,6 +331,17 @@ export function useSaveMessageMutation() {
         }
       }
     },
+    onSettled: (_data, _error, { message, chatId }) => {
+      if (message.role === "assistant" && isAuthenticated) {
+        // Sync the full message tree after the mutation settles so parallel
+        // response siblings get their updated activeStreamId from the server.
+        // Placed in onSettled (not onSuccess) so this runs after the real
+        // backend write when the mutationFn is eventually made server-side.
+        qc.invalidateQueries({
+          queryKey: trpc.chat.getChatMessages.queryKey({ chatId }),
+        });
+      }
+    },
   });
 }
 

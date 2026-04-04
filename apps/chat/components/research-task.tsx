@@ -71,7 +71,7 @@ export const ResearchTask = ({
           {update.type === "web" && update.status === "running" && (
             <div className="py-2">
               <div className="flex items-center gap-3">
-                <Loader2 className="size-4 animate-spin text-neutral-500" />
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
                 <p className="text-xsize-neutral-500">Searching the web...</p>
               </div>
             </div>

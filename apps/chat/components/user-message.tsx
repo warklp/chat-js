@@ -8,6 +8,7 @@ import { AttachmentList } from "./attachment-list";
 import { ImageModal } from "./image-modal";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
+import { ParallelResponseCards } from "./parallel-response-cards";
 
 export interface BaseMessageProps {
   isLoading: boolean;
@@ -59,6 +60,8 @@ const PureUserMessage = ({
             message.role === "user" && mode !== "edit" && "items-end"
           )}
         >
+          {mode === "view" && <ParallelResponseCards messageId={message.id} />}
+
           {mode === "view" && isReadonly && (
             <MessageContent
               className="text-left group-[.is-user]:bg-card"

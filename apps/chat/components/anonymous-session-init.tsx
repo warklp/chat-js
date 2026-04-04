@@ -13,13 +13,17 @@ import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
 
 // Schema validation function
-function isValidAnonymousSession(obj: any): obj is AnonymousSession {
+function isValidAnonymousSession(obj: unknown): obj is AnonymousSession {
+  if (!obj || typeof obj !== "object") {
+    return false;
+  }
+
+  const session = obj as Partial<AnonymousSession>;
+
   return (
-    obj &&
-    typeof obj === "object" &&
-    typeof obj.id === "string" &&
-    typeof obj.remainingCredits === "number" &&
-    (obj.createdAt instanceof Date || typeof obj.createdAt === "string")
+    typeof session.id === "string" &&
+    typeof session.remainingCredits === "number" &&
+    (session.createdAt instanceof Date || typeof session.createdAt === "string")
   );
 }
 

@@ -16,7 +16,9 @@ evalite("Test Capitals", {
   ],
   task: async (input) => {
     const result = streamText({
-      model: wrapAISDKModel(openai("gpt-4o-mini") as any),
+      model: wrapAISDKModel(
+        openai("gpt-4o-mini") as unknown as Parameters<typeof wrapAISDKModel>[0]
+      ),
       system: "Answer the question concisely.",
       prompt: input,
     });

@@ -66,7 +66,7 @@ function AttachmentPill({
   return (
     <div
       className={cn(
-        "group relative flex h-8 cursor-default select-none items-center gap-1.5 rounded-md border border-border px-1.5 font-medium text-sm transition-all hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        "group relative flex h-8 cursor-default select-none items-center gap-1.5 rounded-md border border-border px-1.5 font-medium text-sm transition-all hover:bg-accent hover:text-accent-foreground",
         isUploading && "opacity-60"
       )}
       data-testid="input-attachment-preview"

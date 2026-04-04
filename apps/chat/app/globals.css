@@ -246,17 +246,17 @@
 }
 
 :root {
-  --background: hsl(0 0% 97.0392%);
+  --background: hsl(0 0% 100%);
   --foreground: hsl(0 0% 20%);
-  --card: hsl(0 0% 100%);
+  --card: hsl(0 0% 97.0392%);
   --card-foreground: hsl(0 0% 20%);
-  --popover: hsl(0 0% 100%);
+  --popover: hsl(0 0% 97.0392%);
   --popover-foreground: hsl(0 0% 20%);
   --primary: hsl(217.2193 91.2195% 59.8039%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(220 14.2857% 95.8824%);
+  --secondary: hsl(0 0% 97.0392%);
   --secondary-foreground: hsl(215 13.7931% 34.1176%);
-  --muted: hsl(210 20% 98.0392%);
+  --muted: hsl(0 0% 97.0392%);
   --muted-foreground: hsl(220 8.9362% 46.0784%);
   --accent: hsl(204 93.75% 93.7255%);
   --accent-foreground: hsl(224.4444 64.2857% 32.9412%);
@@ -270,7 +270,7 @@
   --chart-3: hsl(224.2781 76.3265% 48.0392%);
   --chart-4: hsl(225.931 70.7317% 40.1961%);
   --chart-5: hsl(224.4444 64.2857% 32.9412%);
-  --sidebar: hsl(210 20% 98.0392%);
+  --sidebar: hsl(0 0% 97.0392%);
   --sidebar-foreground: hsl(0 0% 20%);
   --sidebar-primary: hsl(217.2193 91.2195% 59.8039%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
@@ -384,13 +384,13 @@
 
 .cm-editor,
 .cm-gutters {
-  @apply bg-background! dark:bg-zinc-800! outline-hidden! selection:bg-zinc-900!;
+  @apply bg-card! outline-hidden! selection:bg-zinc-900!;
 }
 
 .ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
 .ͼo.cm-content::selection {
-  @apply bg-zinc-200! dark:bg-zinc-900!;
+  @apply bg-accent!;
 }
 
 .cm-activeLine,
@@ -415,7 +415,7 @@
 }
 
 .suggestion-highlight {
-  @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
+  @apply bg-accent text-accent-foreground hover:bg-accent/80;
 }
 
 /* Lexical Editor Styles */

@@ -40,7 +40,7 @@ const VARIANT_CONFIG: Record<
         <span>
           You only have{" "}
           <strong>
-            {remaining} credit{remaining !== 1 ? "s" : ""}
+            {remaining} credit{remaining === 1 ? "" : "s"}
           </strong>{" "}
           left.{" "}
           <Link

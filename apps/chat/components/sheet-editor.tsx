@@ -57,8 +57,8 @@ const PureSpreadsheetEditor = ({
       frozen: true,
       width: 50,
       renderCell: ({ rowIdx }: { rowIdx: number }) => rowIdx + 1,
-      cellClass: "border-t border-r dark:bg-zinc-950 dark:text-zinc-50",
-      headerCellClass: "border-t border-r dark:bg-zinc-900 dark:text-zinc-50",
+      cellClass: "border-t border-r bg-background text-foreground",
+      headerCellClass: "border-t border-r bg-muted text-foreground",
     };
 
     const dataColumns = Array.from({ length: MIN_COLS }, (_, i) => ({
@@ -66,10 +66,10 @@ const PureSpreadsheetEditor = ({
       name: String.fromCharCode(65 + i),
       renderEditCell: isReadonly ? undefined : textEditor,
       width: 120,
-      cellClass: cn("border-t dark:bg-zinc-950 dark:text-zinc-50", {
+      cellClass: cn("border-t bg-background text-foreground", {
         "border-l": i !== 0,
       }),
-      headerCellClass: cn("border-t dark:bg-zinc-900 dark:text-zinc-50", {
+      headerCellClass: cn("border-t bg-muted text-foreground", {
         "border-l": i !== 0,
       }),
     }));
@@ -80,7 +80,7 @@ const PureSpreadsheetEditor = ({
   const initialRows = useMemo(
     () =>
       parseData.map((row, rowIndex) => {
-        const rowData: any = {
+        const rowData: Record<string, string | number> = {
           id: rowIndex,
           rowNumber: rowIndex + 1,
         };
@@ -100,9 +100,9 @@ const PureSpreadsheetEditor = ({
     setLocalRows(initialRows);
   }, [initialRows]);
 
-  const generateCsv = (data: any[][]) => unparse(data);
+  const generateCsv = (data: Array<Array<string | number>>) => unparse(data);
 
-  const handleRowsChange = (newRows: any[]) => {
+  const handleRowsChange = (newRows: Record<string, string | number>[]) => {
     if (isReadonly) {
       return;
     }

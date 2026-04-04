@@ -27,7 +27,7 @@ export const FaviconGroup: React.FC<FaviconGroupProps> = ({
         <Favicon
           alt={`Favicon for ${source.title || new URL(source.url).hostname}`}
           className={cn(
-            "h-5 w-5 rounded-full border-2 border-white dark:border-neutral-800", // Slightly thicker border for contrast
+            "h-5 w-5 rounded-full border-2 border-background",
             index > 0 ? "-ml-2" : ""
           )}
           key={source.url || index}
