@@ -7,18 +7,24 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 import { Button } from "./ui/button";
 
 export function SidebarToggle({
-  className: _className,
+  className,
 }: ComponentProps<typeof SidebarTrigger>) {
   const { toggleSidebar } = useSidebar();
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button onClick={toggleSidebar} size="icon" variant="ghost">
+        <Button
+          className={cn(className)}
+          onClick={toggleSidebar}
+          size="icon"
+          variant="ghost"
+        >
           <PanelLeft size={16} />
         </Button>
       </TooltipTrigger>
