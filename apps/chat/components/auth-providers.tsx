@@ -7,10 +7,7 @@ import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
-import {
-  ELECTRON_AUTH_CLIENT_ID,
-  ELECTRON_TRANSFER_STORAGE_KEY,
-} from "@/lib/electron-auth";
+import { ELECTRON_AUTH_CLIENT_ID } from "@/lib/electron-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -81,13 +78,6 @@ export function SocialAuthProviders({
       : "/device-login";
 
   async function signIn(provider: "google" | "github" | "vercel") {
-    if (isElectronTransfer) {
-      window.sessionStorage.setItem(
-        ELECTRON_TRANSFER_STORAGE_KEY,
-        JSON.stringify(query)
-      );
-    }
-
     const result = await authClient.signIn.social({
       provider,
       callbackURL: isElectronTransfer ? deviceLoginCallbackURL : callbackURL,

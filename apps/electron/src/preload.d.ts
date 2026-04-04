@@ -14,6 +14,7 @@ declare global {
       };
   interface Window extends Bridges {
     electronAPI?: {
+      cancelAuthFlow?: () => Promise<void>;
       getAuthState?: () => Promise<ElectronRendererAuthState>;
       isElectron: boolean;
       onAuthStateChanged?: (

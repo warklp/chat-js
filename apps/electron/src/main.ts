@@ -57,6 +57,21 @@ function broadcastAuthState(): void {
   mainWindow.webContents.send("chatjs:auth-state-changed", currentAuthState);
 }
 
+async function resetAuthFlow(): Promise<void> {
+  if (pendingAuthRefreshTimer) {
+    clearTimeout(pendingAuthRefreshTimer);
+    pendingAuthRefreshTimer = null;
+  }
+
+  isAuthFlowInProgress = false;
+  currentAuthFlowId += 1;
+
+  await setAuthState({
+    status: "idle",
+    message: null,
+  });
+}
+
 async function setAuthState(nextState: AuthRendererState): Promise<void> {
   currentAuthState = nextState;
   broadcastAuthState();
@@ -203,6 +218,10 @@ ipcMain.handle("better-auth:requestAuth", async (_event, options) => {
   }
 });
 
+ipcMain.handle("chatjs:cancel-auth-flow", async () => {
+  await resetAuthFlow();
+});
+
 ipcMain.removeHandler("better-auth:signOut");
 ipcMain.handle("better-auth:signOut", async () => {
   const result = await electronAuthClient.signOut();
@@ -287,6 +306,10 @@ function hasSessionCookie(cookieHeader: string): boolean {
 
 async function authenticateFromDeepLink(url: string): Promise<boolean> {
   try {
+    if (!isAuthFlowInProgress) {
+      return false;
+    }
+
     const parsed = new URL(url);
     const token = parsed.hash.startsWith("#token=")
       ? parsed.hash.slice("#token=".length)
@@ -522,8 +545,11 @@ app.whenReady().then(async () => {
 });
 
 app.on("open-url", (_event, url) => {
-  void authenticateFromDeepLink(url);
-  scheduleAuthRefresh();
+  void authenticateFromDeepLink(url).then((didAuthenticate) => {
+    if (didAuthenticate) {
+      scheduleAuthRefresh();
+    }
+  });
 });
 
 app.on("second-instance", (_event, commandLine) => {
@@ -532,10 +558,12 @@ app.on("second-instance", (_event, commandLine) => {
   );
 
   if (deepLinkUrl) {
-    void authenticateFromDeepLink(deepLinkUrl);
+    void authenticateFromDeepLink(deepLinkUrl).then((didAuthenticate) => {
+      if (didAuthenticate) {
+        scheduleAuthRefresh();
+      }
+    });
   }
-
-  scheduleAuthRefresh();
 });
 
 app.on("before-quit", () => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
   Card,
@@ -18,6 +18,11 @@ export function LoginForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const searchParams = useSearchParams();
+  const [isElectron] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.requestAuth === "function"
+  );
   const registerHref = (() => {
     const query = searchParams.toString();
     return query ? `/register?${query}` : "/register";
@@ -27,20 +32,32 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-xl">
+            {isElectron ? "Continue in browser" : "Welcome back"}
+          </CardTitle>
+          <CardDescription>
+            {isElectron
+              ? "Use your browser to sign in or create an account."
+              : "Sign in to your account"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
             <Suspense>
               <SocialAuthProviders electronBrowserLabel="Continue in browser" />
             </Suspense>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <a className="underline underline-offset-4" href={registerHref}>
-                Sign up
-              </a>
-            </div>
+            {isElectron ? (
+              <div className="text-center text-sm text-muted-foreground">
+                New and existing accounts both continue through the browser flow.
+              </div>
+            ) : (
+              <div className="text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <a className="underline underline-offset-4" href={registerHref}>
+                  Sign up
+                </a>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -25,6 +25,7 @@ declare global {
     requestAuth?: (options?: { provider?: string }) => Promise<void> | void;
     signOut?: () => Promise<void>;
     electronAPI?: {
+      cancelAuthFlow?: () => Promise<void>;
       getAuthState?: () => Promise<ElectronRendererAuthState>;
       isElectron: boolean;
       onAuthStateChanged?: (

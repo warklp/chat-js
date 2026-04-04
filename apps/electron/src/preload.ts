@@ -8,6 +8,7 @@ setupRenderer();
 
 // Expose additional app metadata to the renderer process.
 contextBridge.exposeInMainWorld("electronAPI", {
+  cancelAuthFlow: () => ipcRenderer.invoke("chatjs:cancel-auth-flow"),
   isElectron: true,
   getAuthState: () => ipcRenderer.invoke("chatjs:get-auth-state"),
   onAuthStateChanged: (callback: (state: unknown) => void) => {

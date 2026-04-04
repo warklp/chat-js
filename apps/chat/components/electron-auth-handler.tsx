@@ -6,10 +6,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import authClient from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import {
-  ELECTRON_TRANSFER_STORAGE_KEY,
-  isElectronTransferQuery,
-} from "@/lib/electron-auth";
 
 /**
  * Handles the electron auth redirect after OAuth completes in the browser.
@@ -77,55 +73,6 @@ export function ElectronAuthHandler() {
     };
   }, [router]);
 
-  useEffect(() => {
-    if (typeof window.requestAuth === "function") {
-      return;
-    }
-
-    const rawTransferState = window.sessionStorage.getItem(
-      ELECTRON_TRANSFER_STORAGE_KEY
-    );
-
-    if (!rawTransferState) {
-      return;
-    }
-
-    let query: Record<string, string> | null = null;
-
-    try {
-      query = JSON.parse(rawTransferState) as Record<string, string>;
-    } catch {
-      window.sessionStorage.removeItem(ELECTRON_TRANSFER_STORAGE_KEY);
-      return;
-    }
-
-    if (!query || !isElectronTransferQuery(query)) {
-      window.sessionStorage.removeItem(ELECTRON_TRANSFER_STORAGE_KEY);
-      return;
-    }
-
-    let cancelled = false;
-
-    void authClient.getSession().then(async ({ data: session }) => {
-      if (cancelled || !session?.user) {
-        return;
-      }
-
-      await authClient.electron.transferUser({
-        fetchOptions: {
-          query,
-        },
-      });
-
-      window.sessionStorage.removeItem(ELECTRON_TRANSFER_STORAGE_KEY);
-      router.refresh();
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
   return <ElectronAuthOverlay state={authState} />;
 }
 
@@ -146,6 +93,7 @@ function ElectronAuthOverlay({
 
   const isLoading =
     state.status === "awaiting-browser" || state.status === "finishing";
+  const canCancel = state.status === "awaiting-browser";
 
   if (!isLoading && isDismissed) {
     return null;
@@ -171,6 +119,19 @@ function ElectronAuthOverlay({
                   ? "Your browser has returned to ChatJS. We're finalizing the session now."
                   : state.detail || "If nothing changes, try the browser flow again."}
             </p>
+            {canCancel ? (
+              <Button
+                className="mt-2"
+                onClick={() => {
+                  void window.electronAPI?.cancelAuthFlow?.();
+                }}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Go back
+              </Button>
+            ) : null}
             {!isLoading ? (
               <Button
                 className="mt-2"
