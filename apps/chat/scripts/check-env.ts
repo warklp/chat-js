@@ -22,6 +22,12 @@ interface ValidationError {
   missing: string[];
 }
 
+function isPlaywrightTestEnvironment(env: NodeJS.ProcessEnv): boolean {
+  return Boolean(
+    env.PLAYWRIGHT_TEST_BASE_URL || env.PLAYWRIGHT || env.CI_PLAYWRIGHT
+  );
+}
+
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
   // Prevent TS from narrowing to the current literal config value.
   const gateway = (() => config.ai.gateway as GatewayType)();
@@ -158,6 +164,13 @@ function checkGatewaySnapshot(): string | null {
 
 function checkEnv(): void {
   const env = process.env;
+  if (isPlaywrightTestEnvironment(env)) {
+    console.log(
+      "✅ Skipping optional environment validation in Playwright test mode"
+    );
+    return;
+  }
+
   const baseUrlError = validateBaseUrl(env);
   const errors = [
     ...(baseUrlError ? [baseUrlError] : []),
