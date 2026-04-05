@@ -45,7 +45,10 @@ export async function proxy(req: NextRequest) {
     return;
   }
 
-  if (isPlaywrightTestEnvironment && (isPublicPage(pathname) || isAuthPage(pathname))) {
+  if (
+    isPlaywrightTestEnvironment &&
+    (isPublicPage(pathname) || isAuthPage(pathname))
+  ) {
     return;
   }
 
