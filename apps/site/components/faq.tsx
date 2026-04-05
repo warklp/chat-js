@@ -25,9 +25,12 @@ export function Faq() {
   return (
     <section
       aria-labelledby="faq-heading"
-      className="bg-secondary/50 py-24 sm:py-32"
+      className="relative bg-secondary/50 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-4xl px-6">
+      {/* Edge blending for smooth transitions */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-background to-transparent" />
+      <div className="relative mx-auto max-w-4xl px-6">
         <div className="text-center">
           <p className="font-mono text-foreground/70 text-xs uppercase tracking-[0.25em]">
             FAQ
