@@ -16,16 +16,11 @@ import {
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
+import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
 
 interface ValidationError {
   feature: string;
   missing: string[];
-}
-
-function isPlaywrightTestEnvironment(env: NodeJS.ProcessEnv): boolean {
-  return Boolean(
-    env.PLAYWRIGHT_TEST_BASE_URL || env.PLAYWRIGHT || env.CI_PLAYWRIGHT
-  );
 }
 
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
@@ -168,6 +163,8 @@ function checkEnv(): void {
     console.log(
       "✅ Skipping optional environment validation in Playwright test mode"
     );
+    // Playwright CI only exercises anonymous flows, so optional feature checks
+    // and the gateway snapshot warning stay enforced in non-Playwright builds.
     return;
   }
 

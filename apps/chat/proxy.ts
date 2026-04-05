@@ -45,10 +45,8 @@ export async function proxy(req: NextRequest) {
     return;
   }
 
-  if (
-    isPlaywrightTestEnvironment &&
-    (isPublicPage(pathname) || isAuthPage(pathname))
-  ) {
+  if (isPlaywrightTestEnvironment) {
+    // Playwright CI runs the app anonymously and should never reach session I/O.
     return;
   }
 

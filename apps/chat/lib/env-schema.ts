@@ -1,10 +1,5 @@
 import { z } from "zod";
-
-const isPlaywrightTestEnvironment = Boolean(
-  process.env.PLAYWRIGHT_TEST_BASE_URL ||
-    process.env.PLAYWRIGHT ||
-    process.env.CI_PLAYWRIGHT
-);
+import { isPlaywrightTestEnvironment } from "@/lib/playwright-test-environment";
 
 /**
  * Server environment variable schemas with descriptions.
