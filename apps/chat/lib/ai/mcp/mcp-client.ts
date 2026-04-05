@@ -6,7 +6,7 @@ import type {
   ListPromptsResult,
   ListResourcesResult,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Tool } from "ai";
+import type { Tool, ToolSet } from "ai";
 import { config } from "@/lib/config";
 import { createModuleLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/url";
@@ -217,7 +217,7 @@ export class MCPClient {
       throw new Error("Client not connected");
     }
     try {
-      return await this.client.tools();
+      return (await this.client.tools()) as ToolSet as Record<string, Tool>;
     } catch (error) {
       this.handlePotentialAuthError(error);
       throw error;

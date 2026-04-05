@@ -5,6 +5,9 @@
  * Run via `bun run check-env` or automatically in prebuild.
  */
 import "dotenv/config";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { readStaticToolMetadata } from "../../../packages/registry/src/static-tool-metadata";
 import type { GatewayType } from "../lib/ai/gateways/registry";
 import { generatedForGateway } from "../lib/ai/models.generated";
 import { config } from "../lib/config";
@@ -20,6 +23,24 @@ import {
 interface ValidationError {
   feature: string;
   missing: string[];
+}
+
+const projectRoot = path.resolve(import.meta.dir, "..");
+
+function resolveToolsDir(toolsPath: string): string {
+  if (toolsPath.startsWith("@/")) {
+    return path.resolve(projectRoot, toolsPath.slice(2));
+  }
+
+  if (toolsPath.startsWith("./") || toolsPath.startsWith("../")) {
+    return path.resolve(projectRoot, toolsPath);
+  }
+
+  if (path.isAbsolute(toolsPath)) {
+    return toolsPath;
+  }
+
+  return path.resolve(projectRoot, toolsPath);
 }
 
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
@@ -130,6 +151,45 @@ function validateAuthentication(env: NodeJS.ProcessEnv): ValidationError[] {
   return errors;
 }
 
+async function validateInstalledTools(
+  env: NodeJS.ProcessEnv
+): Promise<ValidationError[]> {
+  const toolsDir = resolveToolsDir(config.paths.tools);
+  const entries = await fs.readdir(toolsDir, { withFileTypes: true }).catch(() => []);
+  const errors: ValidationError[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith("_")) {
+      continue;
+    }
+
+    const toolPath = path.join(toolsDir, entry.name, "tool.ts");
+    const exists = await fs
+      .access(toolPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (!exists) {
+      continue;
+    }
+
+    const toolSource = await fs.readFile(toolPath, "utf8");
+    const mod = readStaticToolMetadata(toolSource);
+
+    for (const requirement of mod.envRequirements) {
+      const missing = getMissingRequirement(requirement, env);
+      if (missing) {
+        errors.push({
+          feature: `tools.${entry.name}`,
+          missing: [missing],
+        });
+      }
+    }
+  }
+
+  return errors;
+}
+
 function validateBaseUrl(env: NodeJS.ProcessEnv): ValidationError | null {
   const isProduction = env.NODE_ENV === "production" || env.VERCEL === "1";
   if (!isProduction) {
@@ -156,14 +216,16 @@ function checkGatewaySnapshot(): string | null {
   return `models.generated.ts was built for "${generatedForGateway}" but config uses "${config.ai.gateway}". Run \`bun fetch:models\` to update the fallback snapshot.`;
 }
 
-function checkEnv(): void {
+async function checkEnv(): Promise<void> {
   const env = process.env;
   const baseUrlError = validateBaseUrl(env);
+  const installedToolErrors = await validateInstalledTools(env);
   const errors = [
     ...(baseUrlError ? [baseUrlError] : []),
     ...validateFeatures(env),
     ...validateAiTools(env),
     ...validateAuthentication(env),
+    ...installedToolErrors,
   ];
 
   if (errors.length > 0) {
@@ -185,4 +247,4 @@ function checkEnv(): void {
   console.log("✅ Environment validation passed");
 }
 
-checkEnv();
+await checkEnv();

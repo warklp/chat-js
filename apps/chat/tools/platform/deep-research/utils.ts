@@ -1,4 +1,5 @@
 import { experimental_createMCPClient } from "@ai-sdk/mcp";
+import type { ToolSet } from "ai";
 import type { ModelId } from "@/lib/ai/app-models";
 import type { StreamWriter } from "@/lib/ai/types";
 import { getAppModelDefinition } from "@/lib/ai/app-models";
@@ -13,7 +14,7 @@ type McpToolSet = Awaited<ReturnType<McpClient["tools"]>>;
 async function loadMcpTools(
   config: DeepResearchRuntimeConfig,
   existingToolNames: Set<string>
-) {
+): Promise<ToolSet> {
   if (!config.mcp_config?.url) {
     return {};
   }
@@ -30,10 +31,10 @@ async function loadMcpTools(
     });
 
     // Get all available tools from the MCP server
-    const tools = await client.tools();
+    const tools = (await client.tools()) as ToolSet;
 
     // Filter tools based on configuration and existing tools
-    const filteredTools: McpToolSet = {};
+    const filteredTools: ToolSet = {};
 
     for (const [toolName, tool] of Object.entries(tools)) {
       // Skip if tool already exists
@@ -80,7 +81,7 @@ function getSearchTool(
   _config: DeepResearchRuntimeConfig,
   dataStream: StreamWriter,
   parentToolCallId?: string
-) {
+): ToolSet {
   if (searchApi === "tavily") {
     return {
       webSearch: tavilyWebSearch({
@@ -106,7 +107,7 @@ export async function getAllTools(
   config: DeepResearchRuntimeConfig,
   dataStream: StreamWriter,
   id?: string
-) {
+): Promise<ToolSet> {
   if (config.search_api === "none") {
     const mcpTools = await loadMcpTools(config, new Set<string>());
     return mcpTools;

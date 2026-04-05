@@ -15,6 +15,10 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  readStaticToolMetadata,
+  type StaticEnvRequirement,
+} from "./src/static-tool-metadata";
 
 const srcDir = new URL("./src", import.meta.url).pathname;
 const appToolsDir = new URL(
@@ -116,6 +120,7 @@ async function main(): Promise<void> {
     }> = [];
 
     const detected = new Set<string>();
+    let envRequirements: StaticEnvRequirement[] = [];
 
     const registryToolPath = path.join(dir, "tool.ts");
     const registryRendererPath = path.join(dir, "renderer.tsx");
@@ -139,6 +144,8 @@ async function main(): Promise<void> {
       for (const dependency of extractNpmImports(toolContent)) {
         detected.add(dependency);
       }
+      const metadata = readStaticToolMetadata(toolContent);
+      envRequirements = metadata.envRequirements;
     }
 
     if (await fileExists(rendererPath)) {
@@ -184,6 +191,7 @@ async function main(): Promise<void> {
             ].sort(),
           }
         : {}),
+      ...(envRequirements.length > 0 ? { envRequirements } : {}),
       files: registryFiles,
     };
 

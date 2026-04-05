@@ -5,5 +5,8 @@
   "description": "ChatJS tool registry items",
   "scripts": {
     "build": "bun build.ts"
+  },
+  "dependencies": {
+    "ts-morph": "^27.0.2"
   }
 }

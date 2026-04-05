@@ -4,6 +4,13 @@ import { z } from "zod";
 import { env } from "@/lib/env";
 import { createModuleLogger } from "@/lib/logger";
 
+export const envRequirements = [
+  {
+    description: "FIRECRAWL_API_KEY",
+    options: [["FIRECRAWL_API_KEY"]],
+  },
+] as const;
+
 const log = createModuleLogger("tools/retrieve-url");
 
 const app = env.FIRECRAWL_API_KEY
