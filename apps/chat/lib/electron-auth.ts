@@ -31,10 +31,14 @@ export function buildAuthPageHref(
   pathname: string,
   searchParams: Record<string, SearchParamValue>
 ): string {
-  const query = new URLSearchParams(toSearchParamRecord(searchParams)).toString();
+  const query = new URLSearchParams(
+    toSearchParamRecord(searchParams)
+  ).toString();
   return query ? `${pathname}?${query}` : pathname;
 }
 
-export function isElectronTransferQuery(query: Record<string, string>): boolean {
+export function isElectronTransferQuery(
+  query: Record<string, string>
+): boolean {
   return query.client_id === ELECTRON_AUTH_CLIENT_ID;
 }

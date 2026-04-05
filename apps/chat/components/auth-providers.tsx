@@ -1,7 +1,7 @@
 "use client";
 
 import { Github } from "lucide-react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,6 @@ export function SocialAuthProviders({
   callbackURL?: string;
   electronBrowserLabel?: string;
 } = {}) {
-  const pathname = usePathname();
   const params = useSearchParams();
 
   // Detect Electron synchronously so there's no flash of the wrong UI.
@@ -57,8 +56,7 @@ export function SocialAuthProviders({
   // the client where window bridges are set by the preload script.
   const [isElectron] = useState(
     () =>
-      typeof window !== "undefined" &&
-      typeof window.requestAuth === "function"
+      typeof window !== "undefined" && typeof window.requestAuth === "function"
   );
 
   // In the Electron app, use the @better-auth/electron bridges exposed by
@@ -71,19 +69,22 @@ export function SocialAuthProviders({
   // In the browser: pass electron query params (client_id, state, etc.)
   // through to social sign-in calls so the electron plugin can redirect back.
   const query = Object.fromEntries(params.entries());
-  const isElectronTransfer = params.get("client_id") === ELECTRON_AUTH_CLIENT_ID;
+  const isElectronTransfer =
+    params.get("client_id") === ELECTRON_AUTH_CLIENT_ID;
   const returnTo = params.get("returnTo");
   const deviceLoginCallbackURL =
-    typeof window !== "undefined"
-      ? new URL("/device-login", window.location.origin).toString()
-      : "/device-login";
+    typeof window === "undefined"
+      ? "/device-login"
+      : new URL("/device-login", window.location.origin).toString();
   const resolvedCallbackURL =
     returnTo && !isElectronTransfer ? returnTo : callbackURL;
 
   async function signIn(provider: "google" | "github" | "vercel") {
     const result = await authClient.signIn.social({
       provider,
-      callbackURL: isElectronTransfer ? deviceLoginCallbackURL : resolvedCallbackURL,
+      callbackURL: isElectronTransfer
+        ? deviceLoginCallbackURL
+        : resolvedCallbackURL,
       ...(isElectronTransfer
         ? {
             disableRedirect: true,

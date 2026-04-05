@@ -19,10 +19,12 @@ export default async function DeviceLoginRoute({
   const query = toSearchParamRecord(resolvedSearchParams);
   const isCompletedView = query.done === "1";
   const queryString = new URLSearchParams(query).toString();
-  const currentHref = queryString ? `/device-login?${queryString}` : "/device-login";
+  const currentHref = queryString
+    ? `/device-login?${queryString}`
+    : "/device-login";
   const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user && !isCompletedView) {
+  if (!(session?.user || isCompletedView)) {
     redirect(`/login?returnTo=${encodeURIComponent(currentHref)}`);
   }
 

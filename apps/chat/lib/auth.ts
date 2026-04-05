@@ -1,17 +1,16 @@
 import { electron } from "@better-auth/electron";
-import type { BetterAuthPlugin } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { env } from "@/lib/env";
+import { config } from "./config";
+import { db } from "./db/client";
+import { schema } from "./db/schema";
 import {
   ELECTRON_AUTH_CLIENT_ID,
   ELECTRON_AUTH_COOKIE_PREFIX,
   ELECTRON_TRUSTED_ORIGIN,
 } from "./electron-auth";
-import { config } from "./config";
-import { db } from "./db/client";
-import { schema } from "./db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

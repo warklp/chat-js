@@ -4,8 +4,8 @@ import { AlertCircle, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import authClient from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import authClient from "@/lib/auth-client";
 
 /**
  * Handles the electron auth redirect after OAuth completes in the browser.
@@ -41,11 +41,16 @@ export function ElectronAuthHandler() {
       return;
     }
 
-    void window.electronAPI?.getAuthState?.().then((state) => {
-      if (state) {
-        setAuthState(state);
-      }
-    });
+    window.electronAPI
+      ?.getAuthState?.()
+      .then((state) => {
+        if (state) {
+          setAuthState(state);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to read Electron auth state", error);
+      });
 
     const syncAndRefresh = async () => {
       await window.electronAPI?.syncAuthSession?.();
@@ -53,17 +58,28 @@ export function ElectronAuthHandler() {
     };
 
     const unsubscribeAuthenticated = window.onAuthenticated(() => {
-      void syncAndRefresh();
+      syncAndRefresh().catch((error) => {
+        console.error(
+          "Failed to sync auth session after authentication",
+          error
+        );
+      });
     });
     const unsubscribeUserUpdated = window.onUserUpdated(() => {
-      void syncAndRefresh();
+      syncAndRefresh().catch((error) => {
+        console.error("Failed to sync auth session after user update", error);
+      });
     });
-    const unsubscribeAuthError = window.onAuthError((ctx: ElectronAuthErrorContext) => {
-      toast.error(ctx.message || "Authentication failed");
-    });
-    const unsubscribeAuthState = window.electronAPI.onAuthStateChanged((state) => {
-      setAuthState(state);
-    });
+    const unsubscribeAuthError = window.onAuthError(
+      (ctx: ElectronAuthErrorContext) => {
+        toast.error(ctx.message || "Authentication failed");
+      }
+    );
+    const unsubscribeAuthState = window.electronAPI.onAuthStateChanged(
+      (state) => {
+        setAuthState(state);
+      }
+    );
 
     return () => {
       unsubscribeAuthenticated();
@@ -73,19 +89,13 @@ export function ElectronAuthHandler() {
     };
   }, [router]);
 
-  return <ElectronAuthOverlay state={authState} />;
+  const overlayKey = `${authState.status}:${authState.message ?? ""}:${authState.detail ?? ""}`;
+
+  return <ElectronAuthOverlay key={overlayKey} state={authState} />;
 }
 
-function ElectronAuthOverlay({
-  state,
-}: {
-  state: ElectronRendererAuthState;
-}) {
+function ElectronAuthOverlay({ state }: { state: ElectronRendererAuthState }) {
   const [isDismissed, setIsDismissed] = useState(false);
-
-  useEffect(() => {
-    setIsDismissed(false);
-  }, [state.detail, state.message, state.status]);
 
   if (state.status === "idle" || !state.message) {
     return null;
@@ -94,6 +104,17 @@ function ElectronAuthOverlay({
   const isLoading =
     state.status === "awaiting-browser" || state.status === "finishing";
   const canCancel = state.status === "awaiting-browser";
+  let detailMessage: string;
+
+  if (state.status === "awaiting-browser") {
+    detailMessage = "Complete sign-in in your browser, then come back here.";
+  } else if (state.status === "finishing") {
+    detailMessage =
+      "Your browser has returned to ChatJS. We're finalizing the session now.";
+  } else {
+    detailMessage =
+      state.detail || "If nothing changes, try the browser flow again.";
+  }
 
   if (!isLoading && isDismissed) {
     return null;
@@ -112,18 +133,14 @@ function ElectronAuthOverlay({
           </div>
           <div className="space-y-2">
             <p className="font-medium">{state.message}</p>
-            <p className="text-sm text-muted-foreground">
-              {state.status === "awaiting-browser"
-                ? "Complete sign-in in your browser, then come back here."
-                : state.status === "finishing"
-                  ? "Your browser has returned to ChatJS. We're finalizing the session now."
-                  : state.detail || "If nothing changes, try the browser flow again."}
-            </p>
+            <p className="text-muted-foreground text-sm">{detailMessage}</p>
             {canCancel ? (
               <Button
                 className="mt-2"
                 onClick={() => {
-                  void window.electronAPI?.cancelAuthFlow?.();
+                  window.electronAPI?.cancelAuthFlow?.().catch((error) => {
+                    console.error("Failed to cancel Electron auth flow", error);
+                  });
                 }}
                 size="sm"
                 type="button"
@@ -132,7 +149,7 @@ function ElectronAuthOverlay({
                 Go back
               </Button>
             ) : null}
-            {!isLoading ? (
+            {isLoading ? null : (
               <Button
                 className="mt-2"
                 onClick={() => setIsDismissed(true)}
@@ -142,7 +159,7 @@ function ElectronAuthOverlay({
               >
                 Dismiss
               </Button>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

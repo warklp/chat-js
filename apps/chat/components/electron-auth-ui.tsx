@@ -16,15 +16,19 @@ export function ElectronBrowserSignIn({
 
   return (
     <div className="space-y-3">
-      <p className="text-center text-sm text-muted-foreground">
-        Sign-in opens in your browser. On macOS, ChatJS may ask to use Keychain so it can
-        store your session securely.
+      <p className="text-center text-muted-foreground text-sm">
+        Sign-in opens in your browser. On macOS, ChatJS may ask to use Keychain
+        so it can store your session securely.
       </p>
       <Button
         className="w-full"
         onClick={() => {
-          if (typeof window.requestAuth !== "function") return;
-          void window.requestAuth();
+          if (typeof window.requestAuth !== "function") {
+            return;
+          }
+          Promise.resolve(window.requestAuth()).catch((error) => {
+            console.error("Failed to launch browser sign-in", error);
+          });
           window.setTimeout(() => setOpened(true), 300);
         }}
         type="button"
@@ -35,9 +39,9 @@ export function ElectronBrowserSignIn({
       </Button>
 
       {opened ? (
-        <p className="text-center text-sm text-muted-foreground">
-          Finish signing in through your browser. If macOS asks about Keychain access, allow
-          it to keep your session saved securely.
+        <p className="text-center text-muted-foreground text-sm">
+          Finish signing in through your browser. If macOS asks about Keychain
+          access, allow it to keep your session saved securely.
         </p>
       ) : null}
     </div>
@@ -66,7 +70,9 @@ export function ElectronTransferUser({
   }, [query]);
 
   useEffect(() => {
-    if (hasStartedTransferRef.current) return;
+    if (hasStartedTransferRef.current) {
+      return;
+    }
     hasStartedTransferRef.current = true;
 
     startTransition(async () => {

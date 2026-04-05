@@ -42,7 +42,7 @@ function isAuthPage(pathname: string): boolean {
 
 function getSafeReturnTo(url: URL): string | null {
   const returnTo = url.searchParams.get("returnTo");
-  if (!returnTo || !returnTo.startsWith("/")) {
+  if (!returnTo?.startsWith("/")) {
     return null;
   }
   return returnTo;

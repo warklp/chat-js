@@ -92,7 +92,7 @@ export function Platforms() {
         {/* ── Header ── */}
         <div className="mb-20 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="font-mono text-foreground/50 text-[11px] uppercase tracking-[0.35em]">
+            <p className="font-mono text-[11px] text-foreground/50 uppercase tracking-[0.35em]">
               Platforms
             </p>
             <h2
@@ -104,9 +104,9 @@ export function Platforms() {
               <span className="italic">desktop</span>
             </h2>
           </div>
-          <p className="max-w-sm text-foreground/60 text-[15px] leading-relaxed lg:text-right">
-            Start in the browser instantly. Download the desktop app
-            for a faster, focused experience.
+          <p className="max-w-sm text-[15px] text-foreground/60 leading-relaxed lg:text-right">
+            Start in the browser instantly. Download the desktop app for a
+            faster, focused experience.
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export function Platforms() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-3 py-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_1px] shadow-emerald-500/40" />
-                <span className="font-mono text-foreground/60 text-[10px] uppercase tracking-[0.2em]">
+                <span className="font-mono text-[10px] text-foreground/60 uppercase tracking-[0.2em]">
                   Live
                 </span>
               </div>
@@ -131,7 +131,7 @@ export function Platforms() {
               <h3 className="mt-8 font-display text-3xl tracking-tight sm:text-4xl">
                 Web
               </h3>
-              <p className="mt-4 max-w-md text-foreground/55 text-[15px] leading-relaxed">
+              <p className="mt-4 max-w-md text-[15px] text-foreground/55 leading-relaxed">
                 Open ChatJS instantly at{" "}
                 <span className="font-mono text-foreground/70 text-sm">
                   demo.chatjs.dev
@@ -145,7 +145,7 @@ export function Platforms() {
             <div className="relative z-10 mt-8 flex items-end justify-between">
               <span className="inline-flex items-center gap-2 font-medium text-foreground/70 text-sm transition-colors duration-300 group-hover:text-foreground">
                 Launch web app
-                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
               <BrowserFrame className="hidden h-20 w-auto text-foreground/60 transition-transform duration-500 group-hover:scale-105 sm:block" />
             </div>
@@ -159,15 +159,15 @@ export function Platforms() {
             <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-500/[0.04] blur-[80px] dark:bg-indigo-400/[0.06]" />
 
             <div className="relative z-10">
-              <p className="font-mono text-foreground/45 text-[10px] uppercase tracking-[0.25em]">
+              <p className="font-mono text-[10px] text-foreground/45 uppercase tracking-[0.25em]">
                 Desktop
               </p>
               <h3 className="mt-5 font-display text-3xl tracking-tight sm:text-4xl">
                 Desktop
               </h3>
-              <p className="mt-4 text-foreground/55 text-[15px] leading-relaxed">
-                Packaged for your OS with auto-updates. Runs outside the
-                browser so it's always one click away.
+              <p className="mt-4 text-[15px] text-foreground/55 leading-relaxed">
+                Packaged for your OS with auto-updates. Runs outside the browser
+                so it's always one click away.
               </p>
             </div>
 

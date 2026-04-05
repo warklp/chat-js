@@ -19,8 +19,7 @@ export function SignupForm({
   const searchParams = useSearchParams();
   const [isElectron] = useState(
     () =>
-      typeof window !== "undefined" &&
-      typeof window.requestAuth === "function"
+      typeof window !== "undefined" && typeof window.requestAuth === "function"
   );
   const loginHref = (() => {
     const query = searchParams.toString();
@@ -46,8 +45,9 @@ export function SignupForm({
               <SocialAuthProviders electronBrowserLabel="Continue in browser" />
             </Suspense>
             {isElectron ? (
-              <div className="text-center text-sm text-muted-foreground">
-                New and existing accounts both continue through the browser flow.
+              <div className="text-center text-muted-foreground text-sm">
+                New and existing accounts both continue through the browser
+                flow.
               </div>
             ) : (
               <div className="text-center text-sm">

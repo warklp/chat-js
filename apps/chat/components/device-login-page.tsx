@@ -15,10 +15,7 @@ import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
 import { isElectronTransferQuery } from "@/lib/electron-auth";
 
-type DeviceLoginState =
-  | "checking-session"
-  | "transferring"
-  | "waiting-for-app";
+type DeviceLoginState = "checking-session" | "transferring" | "waiting-for-app";
 
 const DEVICE_LOGIN_COMPLETED_PARAM = "done";
 
@@ -32,7 +29,8 @@ export function DeviceLoginPage() {
     () => Object.fromEntries(searchParams.entries()),
     [searchParams]
   );
-  const isCompletedView = searchParams.get(DEVICE_LOGIN_COMPLETED_PARAM) === "1";
+  const isCompletedView =
+    searchParams.get(DEVICE_LOGIN_COMPLETED_PARAM) === "1";
 
   useEffect(() => {
     if (isCompletedView) {
@@ -47,11 +45,12 @@ export function DeviceLoginPage() {
 
     let cancelled = false;
 
-    void authClient.getSession().then(async ({ data: session }) => {
-      if (cancelled) return;
-      if (!session?.user) return;
+    const checkSession = async () => {
+      const { data: session } = await authClient.getSession();
 
-      if (transferStartedRef.current) return;
+      if (cancelled || !session?.user || transferStartedRef.current) {
+        return;
+      }
 
       transferStartedRef.current = true;
       setState("transferring");
@@ -60,7 +59,11 @@ export function DeviceLoginPage() {
         fetchOptions: {
           query,
           onSuccess: () => {
-            window.history.replaceState({}, "", `${pathname}?${DEVICE_LOGIN_COMPLETED_PARAM}=1`);
+            window.history.replaceState(
+              {},
+              "",
+              `${pathname}?${DEVICE_LOGIN_COMPLETED_PARAM}=1`
+            );
             setState("waiting-for-app");
           },
           onError: () => {
@@ -69,6 +72,15 @@ export function DeviceLoginPage() {
           },
         },
       });
+    };
+
+    checkSession().catch(() => {
+      if (cancelled) {
+        return;
+      }
+
+      transferStartedRef.current = false;
+      setState("checking-session");
     });
 
     return () => {
@@ -81,15 +93,28 @@ export function DeviceLoginPage() {
       onRetry={() => {
         transferStartedRef.current = false;
         setState("transferring");
-        void authClient.electron.transferUser({
-          fetchOptions: {
-            query,
-            onSuccess: () => {
-              window.history.replaceState({}, "", `${pathname}?${DEVICE_LOGIN_COMPLETED_PARAM}=1`);
-              setState("waiting-for-app");
+        authClient.electron
+          .transferUser({
+            fetchOptions: {
+              query,
+              onSuccess: () => {
+                window.history.replaceState(
+                  {},
+                  "",
+                  `${pathname}?${DEVICE_LOGIN_COMPLETED_PARAM}=1`
+                );
+                setState("waiting-for-app");
+              },
+              onError: () => {
+                transferStartedRef.current = false;
+                setState("checking-session");
+              },
             },
-          },
-        });
+          })
+          .catch(() => {
+            transferStartedRef.current = false;
+            setState("checking-session");
+          });
       }}
       state={state}
     />
@@ -104,6 +129,14 @@ function DeviceAuthScreen({
   onRetry: () => void;
 }) {
   const isLoading = state === "checking-session" || state === "transferring";
+  let title = "You're signed in";
+
+  if (isLoading) {
+    title =
+      state === "checking-session"
+        ? "Checking your session..."
+        : "Opening the desktop app...";
+  }
 
   return (
     <div className="flex min-h-dvh w-screen items-center justify-center bg-background">
@@ -119,13 +152,7 @@ function DeviceAuthScreen({
                 </div>
               )}
             </div>
-            <CardTitle className="text-xl">
-              {isLoading
-                ? state === "checking-session"
-                  ? "Checking your session…"
-                  : "Opening the desktop app…"
-                : "You're signed in"}
-            </CardTitle>
+            <CardTitle className="text-xl">{title}</CardTitle>
             {!isLoading && (
               <CardDescription>
                 You can close this tab and return to {config.appName}.
@@ -139,10 +166,10 @@ function DeviceAuthScreen({
                   <a href="/">Continue on web</a>
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground/60">
+              <p className="text-muted-foreground/60 text-xs">
                 Didn&apos;t open?{" "}
                 <Button
-                  className="h-auto p-0 text-xs text-muted-foreground/60 underline underline-offset-2 hover:text-muted-foreground hover:no-underline"
+                  className="h-auto p-0 text-muted-foreground/60 text-xs underline underline-offset-2 hover:text-muted-foreground hover:no-underline"
                   onClick={onRetry}
                   type="button"
                   variant="link"

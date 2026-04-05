@@ -6,7 +6,10 @@ import { ElectronTransferUser } from "@/components/electron-auth-ui";
 import { LoginForm } from "@/components/login-form";
 import { buttonVariants } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import { ELECTRON_AUTH_CLIENT_ID, toSearchParamRecord } from "@/lib/electron-auth";
+import {
+  ELECTRON_AUTH_CLIENT_ID,
+  toSearchParamRecord,
+} from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {

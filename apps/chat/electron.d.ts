@@ -13,17 +13,6 @@ declare global {
   }
 
   interface Window {
-    onAuthenticated?: (
-      callback: (user: unknown) => void
-    ) => () => void;
-    onAuthError?: (
-      callback: (context: ElectronAuthErrorContext) => void
-    ) => () => void;
-    onUserUpdated?: (
-      callback: (user: unknown) => void
-    ) => () => void;
-    requestAuth?: (options?: { provider?: string }) => Promise<void> | void;
-    signOut?: () => Promise<void>;
     electronAPI?: {
       cancelAuthFlow?: () => Promise<void>;
       getAuthState?: () => Promise<ElectronRendererAuthState>;
@@ -34,6 +23,13 @@ declare global {
       platform: string;
       syncAuthSession?: () => Promise<void>;
     };
+    onAuthError?: (
+      callback: (context: ElectronAuthErrorContext) => void
+    ) => () => void;
+    onAuthenticated?: (callback: (user: unknown) => void) => () => void;
+    onUserUpdated?: (callback: (user: unknown) => void) => () => void;
+    requestAuth?: (options?: { provider?: string }) => Promise<void> | void;
+    signOut?: () => Promise<void>;
   }
 }
 
