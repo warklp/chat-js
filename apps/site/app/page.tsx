@@ -7,6 +7,7 @@ import { GetStarted } from "@/components/get-started";
 import { Hero } from "@/components/hero";
 import { LogoCloud } from "@/components/logo-cloud";
 import { Navbar } from "@/components/navbar";
+import { Platforms } from "@/components/platforms";
 import { TechStack } from "@/components/tech-stack";
 import { UseCases } from "@/components/use-cases";
 import { siteConfig, siteLinks } from "@/lib/site-config";
@@ -71,6 +72,7 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-1">
         <Hero />
+        <Platforms />
         <LogoCloud />
         <TechStack />
         <Features />

@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 
 import { siteLinks } from "@/lib/site-config";
@@ -97,30 +97,23 @@ export function Hero() {
           120+ models, streaming, tool calling — everything you need to launch.
         </p>
 
-        {/* CTAs */}
+        {/* CTA */}
         <div
-          className="mt-10 flex animate-fade-in-up flex-wrap items-center justify-center gap-4"
+          className="mt-10 flex animate-fade-in-up flex-col items-center gap-4"
           style={{ animationDelay: "0.3s" }}
         >
           <a
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-medium text-primary-foreground text-sm shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-primary/20 hover:shadow-xl"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 font-medium text-primary-foreground text-sm shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-primary/20 hover:shadow-xl"
             href={siteLinks.docsGettingStarted}
           >
             Get Started
             <ArrowRight className="h-4 w-4" />
           </a>
           <a
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-6 py-3 font-medium text-foreground text-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card"
+            className="text-foreground/50 text-sm transition-colors hover:text-foreground/80"
             href={siteLinks.demo}
           >
-            View Demo
-          </a>
-          <a
-            className="inline-flex items-center gap-2 text-foreground/75 text-sm transition-colors hover:text-foreground"
-            href={siteLinks.docs}
-          >
-            <BookOpen className="h-4 w-4" />
-            Read the Docs
+            or try the live demo
           </a>
         </div>
 

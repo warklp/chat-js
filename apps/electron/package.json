@@ -13,8 +13,9 @@
     "package": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --dir",
     "dist:mac": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac",
     "dist:win": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win",
-    "dist:linux": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --linux",
     "publish": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --publish=always",
+    "publish:mac": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac --publish=always",
+    "publish:win": "NODE_ENV=production bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win --publish=always",
     "electron:build": "bun run build",
     "electron:dev": "bun run dev",
     "electron:publish": "bun run publish"

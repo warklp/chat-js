@@ -50,7 +50,8 @@ module.exports = {
   },
 
   mac: {
-    target: [{ target: "dmg", arch: ["x64", "arm64"] }],
+    artifactName: `${appName}-mac.\${ext}`,
+    target: [{ target: "dmg", arch: ["universal"] }],
     category: "public.app-category.productivity",
     hardenedRuntime: true,
     entitlements: "entitlements.mac.plist",
@@ -64,19 +65,16 @@ module.exports = {
   },
 
   win: {
+    artifactName: `${appName}-windows.\${ext}`,
     target: [{ target: "nsis", arch: ["x64"] }],
     protocols: [{ name: `${appName} Auth`, schemes: [appPrefix] }],
   },
 
   nsis: {
+    artifactName: `${appName}-windows.\${ext}`,
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: "always",
     createStartMenuShortcut: true,
-  },
-
-  linux: {
-    target: [{ target: "AppImage", arch: ["x64"] }],
-    category: "Network",
   },
 };

@@ -2,15 +2,71 @@ name: Electron Release
 
 on:
   push:
-    tags:
-      - "electron-v*"
+    branches:
+      - main
+    paths:
+      # Trigger from the merged Changesets version PR, which updates the
+      # Electron package version in apps/electron/package.json.
+      - "apps/electron/package.json"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
+  prepare:
+    name: Prepare Electron release
+    runs-on: ubuntu-22.04
+    outputs:
+      should_release: ${{ steps.versions.outputs.should_release }}
+      tag: ${{ steps.versions.outputs.tag }}
+      version: ${{ steps.versions.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: versions
+        name: Determine release version
+        shell: bash
+        run: |
+          VERSION=$(python3 - <<'PY'
+          import json
+          with open("apps/electron/package.json") as f:
+              print(json.load(f)["version"])
+          PY
+          )
+
+          SHOULD_RELEASE=true
+
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            PREVIOUS_VERSION=$(python3 -c 'import json, subprocess, sys
+try:
+    raw = subprocess.check_output(
+        ["git", "show", "${{ github.event.before }}:apps/electron/package.json"],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    )
+except subprocess.CalledProcessError:
+    print("")
+    sys.exit(0)
+print(json.loads(raw)["version"])')
+
+            if [ -n "$PREVIOUS_VERSION" ] && [ "$PREVIOUS_VERSION" = "$VERSION" ]; then
+              SHOULD_RELEASE=false
+            fi
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=electron-v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
+
   build-mac:
     name: Build macOS
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,20 +85,24 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Set version from tag
+      - name: Build macOS artifacts
         working-directory: apps/electron
-        run: |
-          VERSION="${GITHUB_REF_NAME#electron-v}"
-          npm version "$VERSION" --no-git-tag-version
+        run: bun run dist:mac
 
-      - name: Build and publish macOS
-        working-directory: apps/electron
-        run: bun run publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload macOS release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-release-mac
+          path: |
+            apps/electron/release/ChatJS-mac.dmg
+            apps/electron/release/*.blockmap
+            apps/electron/release/latest-mac.yml
+          if-no-files-found: error
 
   build-win:
     name: Build Windows
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,46 +121,59 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Set version from tag
+      - name: Build Windows artifacts
         working-directory: apps/electron
-        run: |
-          VERSION="${GITHUB_REF_NAME#electron-v}"
-          npm version "$VERSION" --no-git-tag-version
+        run: bun run dist:win
 
-      - name: Build and publish Windows
-        working-directory: apps/electron
-        run: bun run publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Windows release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-release-win
+          path: |
+            apps/electron/release/ChatJS-windows.exe
+            apps/electron/release/*.blockmap
+            apps/electron/release/latest*.yml
+          if-no-files-found: error
 
-  build-linux:
-    name: Build Linux
-    runs-on: ubuntu-latest
+  publish:
+    name: Publish Electron release
+    needs: [prepare, build-mac, build-win]
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.1
+          fetch-depth: 0
 
-      - uses: actions/cache@v3
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            ~/.bun
-            **/node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: ${{ runner.os }}-bun-
+          path: /tmp/electron-release-assets
 
-      - run: bun install --frozen-lockfile
-
-      - name: Set version from tag
-        working-directory: apps/electron
-        run: |
-          VERSION="${GITHUB_REF_NAME#electron-v}"
-          npm version "$VERSION" --no-git-tag-version
-
-      - name: Build and publish Linux
-        working-directory: apps/electron
-        run: bun run publish
+      - name: Create tag and GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if ! git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "$RELEASE_TAG"
+          fi
+
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "Electron $RELEASE_VERSION" \
+              --notes "Desktop release for ChatJS $RELEASE_VERSION." \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          files=(/tmp/electron-release-assets/**/*)
+          gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
