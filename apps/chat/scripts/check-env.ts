@@ -16,6 +16,7 @@ import {
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
+import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
 
 interface ValidationError {
   feature: string;
@@ -158,6 +159,15 @@ function checkGatewaySnapshot(): string | null {
 
 function checkEnv(): void {
   const env = process.env;
+  if (isPlaywrightTestEnvironment(env)) {
+    console.log(
+      "✅ Skipping optional environment validation in Playwright test mode"
+    );
+    // Playwright CI only exercises anonymous flows, so optional feature checks
+    // and the gateway snapshot warning stay enforced in non-Playwright builds.
+    return;
+  }
+
   const baseUrlError = validateBaseUrl(env);
   const errors = [
     ...(baseUrlError ? [baseUrlError] : []),

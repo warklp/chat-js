@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isPlaywrightTestEnvironment } from "@/lib/constants";
 
 function isPublicApiRoute(pathname: string): boolean {
   return (
@@ -41,6 +42,11 @@ export async function proxy(req: NextRequest) {
   const { pathname } = url;
 
   if (isPublicApiRoute(pathname) || isMetadataRoute(pathname)) {
+    return;
+  }
+
+  if (isPlaywrightTestEnvironment) {
+    // Playwright CI runs the app anonymously and should never reach session I/O.
     return;
   }
 

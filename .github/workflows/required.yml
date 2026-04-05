@@ -13,6 +13,6 @@ jobs:
           # ============================================
           # REQUIRED CHECKS - Add/remove check names here
           # ============================================
-          check-regexp: ^(Lint|Typecheck|Docs)$
+          check-regexp: ^(Lint|Typecheck|Docs|Vitest|Playwright)$
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
