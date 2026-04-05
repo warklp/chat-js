@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const isPlaywrightTestEnvironment = Boolean(
+  process.env.PLAYWRIGHT_TEST_BASE_URL ||
+    process.env.PLAYWRIGHT ||
+    process.env.CI_PLAYWRIGHT
+);
+
 /**
  * Server environment variable schemas with descriptions.
  *
@@ -12,10 +18,23 @@ import { z } from "zod";
  */
 export const serverEnvSchema = {
   // Required core
-  DATABASE_URL: z.string().min(1).describe("Postgres connection string"),
+  DATABASE_URL: z
+    .preprocess(
+      (value) =>
+        isPlaywrightTestEnvironment && (value == null || value === "")
+          ? "postgres://postgres:postgres@127.0.0.1:5432/playwright"
+          : value,
+      z.string().min(1)
+    )
+    .describe("Postgres connection string"),
   AUTH_SECRET: z
-    .string()
-    .min(1)
+    .preprocess(
+      (value) =>
+        isPlaywrightTestEnvironment && (value == null || value === "")
+          ? "playwright-test-auth-secret"
+          : value,
+      z.string().min(1)
+    )
     .describe("NextAuth.js secret for signing session tokens"),
 
   // Optional blob storage (enable in chat.config.ts)
