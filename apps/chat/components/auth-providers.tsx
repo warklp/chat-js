@@ -1,13 +1,11 @@
 "use client";
 
 import { Github } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
-import { ELECTRON_AUTH_CLIENT_ID } from "@/lib/electron-auth";
+import type { SocialAuthSignInOptions } from "@/lib/social-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -45,20 +43,18 @@ function VercelIcon({ className }: { className?: string }) {
 export function SocialAuthProviders({
   callbackURL,
   electronBrowserLabel,
+  isElectron = false,
+  onRedirectToUrl,
+  query = {},
+  signInOptions,
 }: {
   callbackURL?: string;
   electronBrowserLabel?: string;
+  isElectron?: boolean;
+  onRedirectToUrl?: (url: string) => void;
+  query?: Record<string, string>;
+  signInOptions?: SocialAuthSignInOptions;
 } = {}) {
-  const params = useSearchParams();
-
-  // Detect Electron synchronously so there's no flash of the wrong UI.
-  // Defaults to false on the server (SSR); the lazy initializer runs only on
-  // the client where window bridges are set by the preload script.
-  const [isElectron] = useState(
-    () =>
-      typeof window !== "undefined" && typeof window.requestAuth === "function"
-  );
-
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
   // URL in the user's default browser with the proper PKCE params.
@@ -66,44 +62,18 @@ export function SocialAuthProviders({
     return <ElectronBrowserSignIn buttonLabel={electronBrowserLabel} />;
   }
 
-  // In the browser: pass electron query params (client_id, state, etc.)
-  // through to social sign-in calls so the electron plugin can redirect back.
-  const query = Object.fromEntries(params.entries());
-  const isElectronTransfer =
-    params.get("client_id") === ELECTRON_AUTH_CLIENT_ID;
-  const returnTo = params.get("returnTo");
-  const deviceLoginCallbackURL =
-    typeof window === "undefined"
-      ? "/device-login"
-      : new URL("/device-login", window.location.origin).toString();
-  const resolvedCallbackURL =
-    returnTo && !isElectronTransfer ? returnTo : callbackURL;
-
   async function signIn(provider: "google" | "github" | "vercel") {
     const result = await authClient.signIn.social({
       provider,
-      callbackURL: isElectronTransfer
-        ? deviceLoginCallbackURL
-        : resolvedCallbackURL,
-      ...(isElectronTransfer
-        ? {
-            disableRedirect: true,
-            errorCallbackURL: deviceLoginCallbackURL,
-            newUserCallbackURL: deviceLoginCallbackURL,
-          }
-        : {}),
+      callbackURL,
+      ...signInOptions,
       fetchOptions: {
         query,
       },
     });
 
-    if (isElectronTransfer) {
-      const redirectUrl = result.data?.url;
-
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
-    }
+    const redirectUrl = result.data?.url;
+    if (redirectUrl) onRedirectToUrl?.(redirectUrl);
   }
 
   return (

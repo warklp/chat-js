@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { buildSocialAuthRequest } from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({
@@ -18,10 +19,13 @@ export function LoginForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const searchParams = useSearchParams();
+  const query = Object.fromEntries(searchParams.entries());
   const [isElectron] = useState(
     () =>
       typeof window !== "undefined" && typeof window.requestAuth === "function"
   );
+  const { callbackURL, onRedirectToUrl, signInOptions } =
+    buildSocialAuthRequest(query, globalThis.location?.origin);
   const registerHref = (() => {
     const query = searchParams.toString();
     return query ? `/register?${query}` : "/register";
@@ -43,7 +47,14 @@ export function LoginForm({
         <CardContent>
           <div className="grid gap-6">
             <Suspense>
-              <SocialAuthProviders electronBrowserLabel="Continue in browser" />
+              <SocialAuthProviders
+                callbackURL={callbackURL}
+                electronBrowserLabel="Continue in browser"
+                isElectron={isElectron}
+                onRedirectToUrl={onRedirectToUrl}
+                query={query}
+                signInOptions={signInOptions}
+              />
             </Suspense>
             {isElectron ? (
               <div className="text-center text-muted-foreground text-sm">

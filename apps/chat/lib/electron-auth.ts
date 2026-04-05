@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import type { SocialAuthSignInOptions } from "@/lib/social-auth";
 
 export const ELECTRON_AUTH_CLIENT_ID = "electron";
 export const ELECTRON_AUTH_COOKIE_PREFIX = "better-auth";
@@ -41,4 +42,36 @@ export function isElectronTransferQuery(
   query: Record<string, string>
 ): boolean {
   return query.client_id === ELECTRON_AUTH_CLIENT_ID;
+}
+
+export function buildSocialAuthRequest(
+  query: Record<string, string>,
+  origin?: string
+): {
+  callbackURL?: string;
+  onRedirectToUrl?: (url: string) => void;
+  signInOptions?: SocialAuthSignInOptions;
+} {
+  const isElectronTransfer = isElectronTransferQuery(query);
+  const deviceLoginCallbackURL = origin
+    ? new URL("/device-login", origin).toString()
+    : "/device-login";
+
+  if (isElectronTransfer) {
+    return {
+      callbackURL: deviceLoginCallbackURL,
+      onRedirectToUrl: (url: string) => {
+        globalThis.location?.assign(url);
+      },
+      signInOptions: {
+        disableRedirect: true,
+        errorCallbackURL: deviceLoginCallbackURL,
+        newUserCallbackURL: deviceLoginCallbackURL,
+      },
+    };
+  }
+
+  return {
+    callbackURL: query.returnTo,
+  };
 }
