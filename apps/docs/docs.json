@@ -72,9 +72,10 @@
             ]
           },
           {
-            "group": "Desktop",
+            "group": "Platforms",
             "pages": [
-              "desktop/electron"
+              "platforms/web",
+              "platforms/desktop"
             ]
           },
           {

@@ -99,7 +99,7 @@ export function Hero() {
 
         {/* CTA */}
         <div
-          className="mt-10 flex animate-fade-in-up flex-col items-center gap-4"
+          className="mt-10 flex animate-fade-in-up flex-col items-center gap-6 sm:flex-row sm:justify-center"
           style={{ animationDelay: "0.3s" }}
         >
           <a
@@ -110,10 +110,11 @@ export function Hero() {
             <ArrowRight className="h-4 w-4" />
           </a>
           <a
-            className="text-foreground/50 text-sm transition-colors hover:text-foreground/80"
+            className="inline-flex items-center gap-2 rounded-xl border border-foreground/15 px-8 py-3.5 font-medium text-foreground/70 text-sm transition-all hover:-translate-y-0.5 hover:border-foreground/25 hover:text-foreground/90"
             href={siteLinks.demo}
           >
-            or try the live demo
+            Live Demo
+            <ArrowRight className="h-4 w-4" />
           </a>
         </div>
 

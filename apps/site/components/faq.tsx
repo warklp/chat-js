@@ -36,7 +36,7 @@ export function Faq() {
             className="mt-4 font-display text-3xl tracking-tight sm:text-5xl"
             id="faq-heading"
           >
-            Questions developers ask before adopting an AI chat starter
+            Frequently asked questions
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-foreground/75 text-lg leading-relaxed">
             These answers cover the common evaluation points for teams looking

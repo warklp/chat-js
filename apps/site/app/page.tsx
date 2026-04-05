@@ -72,10 +72,10 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-1">
         <Hero />
-        <Platforms />
         <LogoCloud />
-        <TechStack />
         <Features />
+        <TechStack />
+        <Platforms />
         <UseCases />
         <Faq />
         <GetStarted />
