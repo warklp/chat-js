@@ -17,7 +17,7 @@
 		"forge": "node ./scripts/run-forge.cjs",
 		"generate-icons": "bun scripts/generate-icons.ts",
 		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
-		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external update-electron-app --external electron-squirrel-startup && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
+		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
 		"start": "bun run forge start",
 		"dev": "bun run start",
 		"package": "bun run forge package",
@@ -31,10 +31,7 @@
 		"electron:make": "bun run make",
 		"electron:publish": "bun run publish"
 	},
-	"dependencies": {
-		"electron-squirrel-startup": "^1.0.1",
-		"update-electron-app": "^3.1.2"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@better-auth/electron": "^1.5.6",
 		"@electron-forge/cli": "^7.11.1",
@@ -48,7 +45,9 @@
 		"better-auth": "^1.5.6",
 		"conf": "^15.1.0",
 		"electron": "36.0.0",
+		"electron-squirrel-startup": "^1.0.1",
 		"supports-color": "^7.2.0",
+		"update-electron-app": "^3.1.2",
 		"typescript": "5.8.3"
 	}
 }
