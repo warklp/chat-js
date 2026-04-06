@@ -5,6 +5,61 @@ description: "Package your ChatJS app as a native desktop application with Elect
 
 The desktop integration wraps your ChatJS web app in an Electron shell. The Electron process loads your deployed or local app in a `BrowserWindow` and adds desktop-specific behavior such as deep-link authentication, system tray support, native window chrome, and auto-updates.
 
+## Installing a prebuilt release
+
+Prebuilt installers for the ChatJS reference app are published on the [GitHub Releases page](https://github.com/franciscomoretti/chat-js/releases/latest).
+
+<Warning>
+  The current releases are **not code-signed or notarized**. Your operating system will show a security warning on first launch. This is expected for unsigned builds and does not mean the app is malicious, but you should only install builds from a source you trust.
+</Warning>
+
+Pick your platform below for the install steps.
+
+### macOS
+
+1. Download [`ChatJS-mac.dmg`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-mac.dmg) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
+2. Open the `.dmg` and drag **ChatJS** into `Applications`.
+3. The first time you launch it, macOS will say the app "cannot be opened because Apple cannot check it for malicious software". Close that dialog.
+4. Open **System Settings** and go to **Privacy & Security**. Scroll to the **Security** section. You will see a message about ChatJS being blocked, with an **Open Anyway** button. Click it.
+5. Launch ChatJS again and confirm with **Open**.
+
+If the app was quarantined and the "Open Anyway" button does not appear, you can remove the quarantine flag from a terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ChatJS.app
+```
+
+Only run that command on a build you downloaded yourself from the official releases page.
+
+### Windows
+
+1. Download [`ChatJS-windows.exe`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-windows.exe) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
+2. Windows SmartScreen will show a **Windows protected your PC** dialog because the installer is unsigned.
+3. Click **More info**, then **Run anyway**.
+4. Complete the installer as usual.
+
+### Linux
+
+1. Download [`ChatJS-linux.AppImage`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-linux.AppImage) or [`ChatJS-linux.deb`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-linux.deb) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
+2. For the `.AppImage`, make it executable and run it:
+
+   ```bash
+   chmod +x ChatJS-linux.AppImage
+   ./ChatJS-linux.AppImage
+   ```
+
+3. For the `.deb`, install it with `apt` or your package manager of choice:
+
+   ```bash
+   sudo apt install ./ChatJS-linux.deb
+   ```
+
+Linux does not enforce code signing for desktop apps the same way macOS and Windows do, so there is usually no extra warning step.
+
+### Shipping signed builds
+
+If you are distributing your own fork to end users, see [macOS Distribution Notes](#macos-distribution-notes) below for what is required to ship signed and notarized builds so your users do not see these warnings.
+
 ## Scaffold with the CLI
 
 When you run `npx @chat-js/cli@latest create`, the CLI asks:
