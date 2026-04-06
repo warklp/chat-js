@@ -167,6 +167,7 @@
         "conf": "^15.1.0",
         "electron-squirrel-startup": "^1.0.1",
         "update-electron-app": "^3.1.2",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@electron-forge/cli": "^7.11.1",
@@ -178,6 +179,7 @@
         "@electron-forge/shared-types": "^7.11.1",
         "@types/node": "^22.8.6",
         "electron": "36.0.0",
+        "supports-color": "^7.2.0",
         "typescript": "5.8.3",
       },
     },
