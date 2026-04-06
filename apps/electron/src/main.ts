@@ -126,6 +126,7 @@ async function setAuthOverlay(
   const script = options.visible
     ? `
 (() => {
+  const message = ${JSON.stringify(options.message)};
   const existing = document.getElementById("chatjs-electron-auth-overlay");
   if (existing) existing.remove();
   const styles = getComputedStyle(document.documentElement);
@@ -151,10 +152,11 @@ async function setAuthOverlay(
   overlay.innerHTML = \`
     <div style="display:flex;min-width:320px;max-width:360px;flex-direction:column;align-items:center;gap:14px;padding:28px 32px;border:1px solid \${border};border-radius:calc(\${radius} + 4px);background:\${card};box-shadow:0 18px 50px rgba(15,23,42,0.12);font-family:var(--font-geist, ui-sans-serif, system-ui, sans-serif);color:\${foreground};">
       <div style="width:28px;height:28px;border-radius:9999px;border:3px solid color-mix(in srgb, \${mutedForeground} 28%, transparent);border-top-color:\${primary};animation:chatjs-electron-spin 0.8s linear infinite;"></div>
-      <div style="font-size:15px;font-weight:600;">${options.message.replace(/`/g, "\\`")}</div>
+      <div id="chatjs-electron-auth-overlay-message" style="font-size:15px;font-weight:600;"></div>
       <div style="font-size:13px;color:\${mutedForeground};text-align:center;">You can return here once the browser finishes.</div>
     </div>
   \`;
+  overlay.querySelector("#chatjs-electron-auth-overlay-message").textContent = message;
   if (!document.getElementById("chatjs-electron-auth-overlay-style")) {
     const style = document.createElement("style");
     style.id = "chatjs-electron-auth-overlay-style";
@@ -173,7 +175,9 @@ async function setAuthOverlay(
   try {
     if (win.webContents.isLoadingMainFrame()) {
       win.webContents.once("did-finish-load", () => {
-        void win.webContents.executeJavaScript(script);
+        win.webContents.executeJavaScript(script).catch((error) => {
+          console.warn("[electron-main] failed to update auth overlay", error);
+        });
       });
       return;
     }

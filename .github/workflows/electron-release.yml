@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -187,6 +187,8 @@ jobs:
 
   publish:
     name: Publish Electron release
+    permissions:
+      contents: write
     needs: [prepare, build-mac, build-win, build-linux]
     if: needs.prepare.outputs.should_release == 'true'
     runs-on: ubuntu-22.04
