@@ -151,21 +151,18 @@ async function applyElectronTemplateTransforms(
   tsconfig = tsconfig.replace(/"\.\.\/chat\/\*"/, '"../*"');
   await writeFile(tsconfigPath, tsconfig);
 
-  // electron-builder.config.js: replace hardcoded publish config with placeholders
-  const builderPath = join(destination, "electron-builder.config.js");
-  let builder = await readFile(builderPath, "utf8");
-  builder = builder
-    .replace(/owner: "FranciscoMoretti"/, 'owner: "__GITHUB_OWNER__"')
-    .replace(/repo: "chat-js"/, 'repo: "__GITHUB_REPO__"');
-  await writeFile(builderPath, builder);
-
-  // package.json: replace hardcoded package name
+  // package.json: replace hardcoded package name and repository
   const packageJsonPath = join(destination, "package.json");
   let packageJson = await readFile(packageJsonPath, "utf8");
   packageJson = packageJson.replace(
     /"name": "@chatjs\/electron"/,
     '"name": "__PROJECT_NAME__-electron"'
   );
+  packageJson = packageJson
+    .replace(
+      /"url": "https:\/\/github.com\/FranciscoMoretti\/chat-js.git"/,
+      '"url": "https://github.com/__GITHUB_OWNER__/__GITHUB_REPO__.git"'
+    );
   await writeFile(packageJsonPath, packageJson);
 }
 

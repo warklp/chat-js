@@ -3,6 +3,10 @@
 	"version": "0.1.3",
 	"private": true,
 	"description": "ChatJS desktop application",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/FranciscoMoretti/chat-js.git"
+	},
 	"author": {
 		"name": "ChatJS",
 		"email": "support@chatjs.dev"
@@ -12,31 +16,37 @@
 	"scripts": {
 		"generate-icons": "bun scripts/generate-icons.ts",
 		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
-		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external electron-updater && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
-		"dev": "NODE_ENV=development bun run build && NODE_ENV=development electron .",
-		"package": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --dir --publish=never",
-		"dist:mac": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --mac --publish=never",
-		"dist:mac:zip": "MAC_TARGETS=zip bun run dist:mac",
-		"dist:win": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --win --publish=never",
-		"dist:linux": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --linux --publish=never",
-		"dist:linux:dir": "LINUX_TARGETS=dir bun run dist:linux",
-		"publish": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --publish=always",
-		"publish:mac": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --mac --publish=always",
-		"publish:win": "NODE_ENV=production ELECTRON_CACHE=${ELECTRON_CACHE:-$PWD/.cache/electron} ELECTRON_BUILDER_CACHE=${ELECTRON_BUILDER_CACHE:-$PWD/.cache/electron-builder} bun run prebuild && bun run build && electron-builder --config ./electron-builder.config.js --win --publish=always",
+		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external update-electron-app --external electron-squirrel-startup && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
+		"start": "electron-forge start",
+		"dev": "bun run start",
+		"package": "electron-forge package",
+		"make": "electron-forge make",
+		"make:mac": "electron-forge make --platform=darwin --arch=universal",
+		"make:win": "electron-forge make --platform=win32 --arch=x64",
+		"make:linux": "electron-forge make --platform=linux --arch=x64",
+		"publish": "electron-forge publish",
 		"electron:build": "bun run build",
 		"electron:dev": "bun run dev",
+		"electron:make": "bun run make",
 		"electron:publish": "bun run publish"
 	},
 	"dependencies": {
 		"@better-auth/electron": "^1.5.6",
 		"better-auth": "^1.5.6",
 		"conf": "^15.1.0",
-		"electron-updater": "^6.3.9"
+		"electron-squirrel-startup": "^1.0.1",
+		"update-electron-app": "^3.1.2"
 	},
 	"devDependencies": {
+		"@electron-forge/cli": "^7.11.1",
+		"@electron-forge/maker-deb": "^7.11.1",
+		"@electron-forge/maker-dmg": "^7.11.1",
+		"@electron-forge/maker-rpm": "^7.11.1",
+		"@electron-forge/maker-squirrel": "^7.11.1",
+		"@electron-forge/maker-zip": "^7.11.1",
+		"@electron-forge/shared-types": "^7.11.1",
 		"@types/node": "^22.8.6",
 		"electron": "36.0.0",
-		"electron-builder": "^25.1.8",
 		"typescript": "5.8.3"
 	}
 }

@@ -5,8 +5,6 @@ on:
     branches:
       - main
     paths:
-      # Trigger from the merged Changesets version PR, which updates the
-      # Electron package version in apps/electron/package.json.
       - "apps/electron/package.json"
   workflow_dispatch:
 
@@ -67,14 +65,31 @@ jobs:
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=electron-v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
 
-  build-mac:
-    name: Build macOS
+  build:
+    name: Build ${{ matrix.label }}
     needs: prepare
     if: needs.prepare.outputs.should_release == 'true'
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS
+            os: macos-latest
+            platform: darwin
+            arch: universal
+          - label: Windows
+            os: windows-latest
+            platform: win32
+            arch: x64
+          - label: Linux
+            os: ubuntu-22.04
+            platform: linux
+            arch: x64
+
     steps:
       - uses: actions/checkout@v4
 
@@ -92,112 +107,28 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Build macOS artifacts
-        working-directory: apps/electron
-        run: bun run dist:mac
-
-      - name: Upload macOS release assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: electron-release-mac
-          path: |
-            apps/electron/release/ChatJS-mac.dmg
-            apps/electron/release/*.zip
-            apps/electron/release/*.blockmap
-            apps/electron/release/latest-mac.yml
-          if-no-files-found: error
-
-  build-win:
-    name: Build Windows
-    needs: prepare
-    if: needs.prepare.outputs.should_release == 'true'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.1
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun
-            **/node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: ${{ runner.os }}-bun-
-
-      - run: bun install --frozen-lockfile
-
-      - name: Set version from tag
-        shell: bash
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'linux'
         run: |
-          VERSION="${{ needs.prepare.outputs.version }}"
-          node -e "
-          const fs = require('fs');
-          const path = 'apps/electron/package.json';
-          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
-          pkg.version = process.env.VERSION;
-          fs.writeFileSync(path, JSON.stringify(pkg, null, '\t') + '\n');
-          "
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
 
-      - name: Build Windows artifacts
+      - name: Build Forge distributables
         working-directory: apps/electron
-        run: bun run dist:win
+        run: bun run make -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
 
-      - name: Upload Windows release assets
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
-          name: electron-release-win
-          path: |
-            apps/electron/release/ChatJS-windows.exe
-            apps/electron/release/*.blockmap
-            apps/electron/release/latest*.yml
-          if-no-files-found: error
-
-  build-linux:
-    name: Build Linux
-    needs: prepare
-    if: needs.prepare.outputs.should_release == 'true'
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.1
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun
-            **/node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: ${{ runner.os }}-bun-
-
-      - run: bun install --frozen-lockfile
-
-      - name: Build Linux artifacts
-        working-directory: apps/electron
-        run: bun run dist:linux
-
-      - name: Upload Linux release assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: electron-release-linux
-          path: |
-            apps/electron/release/*.AppImage
-            apps/electron/release/*.deb
-            apps/electron/release/latest-linux.yml
+          name: electron-release-${{ matrix.platform }}-${{ matrix.arch }}
+          path: apps/electron/out/make/**/*
           if-no-files-found: error
 
   publish:
     name: Publish Electron release
     permissions:
       contents: write
-    needs: [prepare, build-mac, build-win, build-linux]
+    needs: [prepare, build]
     if: needs.prepare.outputs.should_release == 'true'
     runs-on: ubuntu-22.04
     steps:

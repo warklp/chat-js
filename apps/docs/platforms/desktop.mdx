@@ -27,8 +27,8 @@ my-app/
 │   │   └── lib/
 │   │       └── auth-client.ts
 │   ├── build/
+│   ├── forge.config.ts
 │   ├── icon.png
-│   ├── electron-builder.config.js
 │   ├── entitlements.mac.plist
 │   └── package.json
 └── chat.config.ts
@@ -93,18 +93,7 @@ That value flows into Electron protocol registration and desktop auth callbacks 
 
 ## Auto-Updates
 
-The desktop integration uses `electron-updater` with GitHub Releases. When a packaged app starts, it can check for updates and apply them on a later quit.
-
-The GitHub repository used for updates is configured in `electron-builder.config.js`:
-
-```js
-publish: {
-  provider: "github",
-  owner: "your-github-username",
-  repo: "your-repo-name",
-  releaseType: "release",
-},
-```
+The desktop integration uses `update-electron-app` with a public GitHub repository. Packaged builds check GitHub Releases for newer versions automatically.
 
 ## Customization
 
@@ -137,16 +126,16 @@ Build desktop installers from the `electron/` directory:
 
 ```bash
 cd electron
-bun run dist:mac
-bun run dist:win
-bun run dist:linux
+bun run make:mac
+bun run make:win
+bun run make:linux
 ```
 
-Build outputs are written to `electron/release/`.
+Build outputs are written to `electron/out/`.
 
-- **macOS**: `.dmg`
+- **macOS**: `.dmg` and `.zip`
 - **Windows**: `.exe` installer
-- **Linux**: `.AppImage` and `.deb`
+- **Linux**: `.deb` and `.rpm`
 
 To test the packaged app without an installer, use:
 
@@ -167,7 +156,7 @@ For a concrete reference, see the workflow used in this repository:
 
 - [`.github/workflows/electron-release.yml`](https://github.com/franciscomoretti/chat-js/blob/main/.github/workflows/electron-release.yml)
 
-If you scaffold a new app with the Electron option, you get the desktop app code and build config, but not this repository's release automation automatically. Use the workflow above as a starting point for your own project if you want the same PR-driven release flow.
+If you scaffold a new app with the Electron option, you get the desktop app code and Forge config, but not this repository's release automation automatically. Use the workflow above as a starting point for your own project if you want the same PR-driven release flow.
 
 ## macOS Distribution Notes
 
