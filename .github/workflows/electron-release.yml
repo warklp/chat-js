@@ -94,7 +94,20 @@ jobs:
 
       - name: Build macOS artifacts
         working-directory: apps/electron
-        run: bun run dist:mac
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if bun run dist:mac; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+
+            echo "macOS build failed on attempt $attempt, retrying after 15s..."
+            sleep 15
+          done
 
       - name: Upload macOS release assets
         uses: actions/upload-artifact@v4
