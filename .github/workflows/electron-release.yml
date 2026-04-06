@@ -99,9 +99,7 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: |
-            ~/.bun
-            **/node_modules
+          path: ~/.bun
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
 

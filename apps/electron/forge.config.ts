@@ -116,7 +116,11 @@ function ensureLocalRuntimeModules(): void {
         rmSync(target, { recursive: true, force: true });
       }
     }
-    symlinkSync(source, target, entry.isDirectory() ? "junction" : "file");
+    symlinkSync(
+      source,
+      target,
+      entry.isDirectory() ? (process.platform === "win32" ? "junction" : "dir") : "file"
+    );
   }
 }
 
@@ -171,6 +175,7 @@ const config: ForgeConfig = {
           bin: appPrefix,
           homepage: branding.appUrl,
           icon: "./icon.png",
+          license: "Apache-2.0",
         },
       },
       ["linux"]
