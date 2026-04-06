@@ -34,7 +34,7 @@ const structuredData = {
       "@type": "SoftwareApplication",
       name: siteConfig.name,
       applicationCategory: "DeveloperApplication",
-      operatingSystem: "Web",
+      operatingSystem: "Web, macOS, Windows, Linux",
       url: siteLinks.home,
       description: siteConfig.description,
       image: `${siteConfig.url}${siteConfig.ogImage}`,

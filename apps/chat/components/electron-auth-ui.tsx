@@ -3,6 +3,7 @@
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import config from "@/chat.config";
 import type { Session } from "@/lib/auth";
 import authClient from "@/lib/auth-client";
 import { Button } from "./ui/button";
@@ -17,8 +18,8 @@ export function ElectronBrowserSignIn({
   return (
     <div className="space-y-3">
       <p className="text-center text-muted-foreground text-sm">
-        Sign-in opens in your browser. On macOS, ChatJS may ask to use Keychain
-        so it can store your session securely.
+        Sign-in opens in your browser. On macOS, {config.appName} may ask to use
+        Keychain so it can store your session securely.
       </p>
       <Button
         className="w-full"

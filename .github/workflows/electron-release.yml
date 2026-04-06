@@ -42,17 +42,24 @@ jobs:
           SHOULD_RELEASE=true
 
           if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            PREVIOUS_VERSION=$(python3 -c 'import json, subprocess, sys
-try:
-    raw = subprocess.check_output(
-        ["git", "show", "${{ github.event.before }}:apps/electron/package.json"],
-        text=True,
-        stderr=subprocess.DEVNULL,
-    )
-except subprocess.CalledProcessError:
-    print("")
-    sys.exit(0)
-print(json.loads(raw)["version"])')
+            PREVIOUS_VERSION=$(python3 - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          try:
+              raw = subprocess.check_output(
+                  ["git", "show", "${{ github.event.before }}:apps/electron/package.json"],
+                  text=True,
+                  stderr=subprocess.DEVNULL,
+              )
+          except subprocess.CalledProcessError:
+              print("")
+              sys.exit(0)
+
+          print(json.loads(raw)["version"])
+          PY
+            )
 
             if [ -n "$PREVIOUS_VERSION" ] && [ "$PREVIOUS_VERSION" = "$VERSION" ]; then
               SHOULD_RELEASE=false
@@ -121,6 +128,12 @@ print(json.loads(raw)["version"])')
 
       - run: bun install --frozen-lockfile
 
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          bun --cwd apps/electron version "$VERSION" --no-git-tag-version
+
       - name: Build Windows artifacts
         working-directory: apps/electron
         run: bun run dist:win
@@ -135,9 +148,45 @@ print(json.loads(raw)["version"])')
             apps/electron/release/latest*.yml
           if-no-files-found: error
 
+  build-linux:
+    name: Build Linux
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.1
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.bun
+            **/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build Linux artifacts
+        working-directory: apps/electron
+        run: bun run dist:linux
+
+      - name: Upload Linux release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-release-linux
+          path: |
+            apps/electron/release/*.AppImage
+            apps/electron/release/*.deb
+            apps/electron/release/latest-linux.yml
+          if-no-files-found: error
+
   publish:
     name: Publish Electron release
-    needs: [prepare, build-mac, build-win]
+    needs: [prepare, build-mac, build-win, build-linux]
     if: needs.prepare.outputs.should_release == 'true'
     runs-on: ubuntu-22.04
     steps:
@@ -174,6 +223,9 @@ print(json.loads(raw)["version"])')
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         shell: bash
         run: |
-          shopt -s globstar nullglob
-          files=(/tmp/electron-release-assets/**/*)
+          mapfile -t files < <(find /tmp/electron-release-assets -type f)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No release assets found."
+            exit 1
+          fi
           gh release upload "$RELEASE_TAG" "${files[@]}" --clobber

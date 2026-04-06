@@ -77,4 +77,14 @@ module.exports = {
     createDesktopShortcut: "always",
     createStartMenuShortcut: true,
   },
+
+  linux: {
+    artifactName: `${appName}-linux.\${ext}`,
+    target: [
+      { target: "AppImage", arch: ["x64"] },
+      { target: "deb", arch: ["x64"] },
+    ],
+    category: "Utility",
+    protocols: [{ name: `${appName} Auth`, schemes: [appPrefix] }],
+  },
 };

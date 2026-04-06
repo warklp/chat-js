@@ -28,7 +28,7 @@ export function UseCases() {
       className="relative overflow-hidden py-24 sm:py-32"
     >
       {/* Warm atmospheric bg to distinguish from FAQ below */}
-      <div className="pointer-events-none absolute inset-0">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute top-0 left-1/3 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-amber-500/[0.02] blur-[120px] dark:bg-amber-400/[0.025]" />
         <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[500px] rounded-full bg-indigo-500/[0.015] blur-[100px] dark:bg-indigo-400/[0.02]" />
       </div>

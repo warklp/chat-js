@@ -192,6 +192,15 @@ export function Platforms() {
                 </span>
                 <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
+              <a
+                className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
+                href={siteLinks.desktop}
+              >
+                <span className="font-medium text-foreground/75 text-sm transition-colors group-hover:text-foreground">
+                  Linux
+                </span>
+                <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
+              </a>
             </div>
           </div>
         </div>
