@@ -13,7 +13,15 @@ import { ELECTRON_AUTH_COOKIE_PREFIX } from "@/lib/electron-auth";
 import { APP_NAME, APP_SCHEME, APP_URL, WINDOW_DEFAULTS } from "./config";
 import { electronAuthClient } from "./lib/auth-client";
 
-if (require("electron-squirrel-startup")) {
+function isSquirrelStartupEvent(): boolean {
+  if (process.platform !== "win32") {
+    return false;
+  }
+
+  return process.argv.some((arg) => arg.startsWith("--squirrel-"));
+}
+
+if (isSquirrelStartupEvent()) {
   app.quit();
 }
 
