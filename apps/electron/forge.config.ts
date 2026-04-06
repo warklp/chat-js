@@ -1,4 +1,13 @@
-import { readdirSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  unlinkSync,
+  symlinkSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ForgeConfig } from "@electron-forge/shared-types";
@@ -7,7 +16,8 @@ import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
-const branding = require("./branding.json") as {
+
+type Branding = {
   appName: string;
   appPrefix: string;
   appUrl: string;
@@ -15,9 +25,62 @@ const branding = require("./branding.json") as {
   orgEmail?: string;
 };
 
-const { appName, appPrefix, orgName, orgEmail } = branding;
 const appRoot = __dirname;
 const repoRoot = resolve(appRoot, "../..");
+const branding = loadBranding();
+const { appName, appPrefix, orgName, orgEmail } = branding;
+
+function matchStringField(source: string, fieldName: string): string | undefined {
+  const pattern = new RegExp(`${fieldName}:\\s*["'\`]([^"'\`]+)["'\`]`);
+  return source.match(pattern)?.[1];
+}
+
+function loadBrandingFromChatConfig(configPath: string): Branding | null {
+  if (!existsSync(configPath)) {
+    return null;
+  }
+
+  const source = readFileSync(configPath, "utf8");
+  const appName = matchStringField(source, "appName");
+  const appPrefix = matchStringField(source, "appPrefix");
+  const appUrl = matchStringField(source, "appUrl");
+  const orgName = source.match(/organization:\s*{[\s\S]*?name:\s*["'`]([^"'`]+)["'`]/)?.[1];
+  const orgEmail =
+    source.match(/privacyEmail:\s*["'`]([^"'`]+)["'`]/)?.[1] ??
+    source.match(/legalEmail:\s*["'`]([^"'`]+)["'`]/)?.[1];
+
+  if (!appName || !appPrefix || !appUrl) {
+    return null;
+  }
+
+  return { appName, appPrefix, appUrl, orgName, orgEmail };
+}
+
+function loadBranding(): Branding {
+  const brandingPath = join(appRoot, "branding.json");
+  if (existsSync(brandingPath)) {
+    return JSON.parse(readFileSync(brandingPath, "utf8")) as Branding;
+  }
+
+  const candidateConfigPaths = [
+    resolve(appRoot, "../chat/chat.config.ts"),
+    resolve(appRoot, "../chat.config.ts"),
+  ];
+
+  for (const configPath of candidateConfigPaths) {
+    const branding = loadBrandingFromChatConfig(configPath);
+    if (branding) {
+      return branding;
+    }
+  }
+
+  return {
+    appName: "ChatJS",
+    appPrefix: "chatjs",
+    appUrl: "https://demo.chatjs.dev",
+    orgName: "ChatJS",
+  };
+}
 
 function runBunScript(script: string, env: NodeJS.ProcessEnv = {}): void {
   const result = spawnSync("bun", ["run", script], {
@@ -45,7 +108,14 @@ function ensureLocalRuntimeModules(): void {
     const target = join(localNodeModules, entry.name);
 
     mkdirSync(dirname(target), { recursive: true });
-    rmSync(target, { recursive: true, force: true });
+    if (existsSync(target)) {
+      const stat = lstatSync(target);
+      if (stat.isSymbolicLink()) {
+        unlinkSync(target);
+      } else {
+        rmSync(target, { recursive: true, force: true });
+      }
+    }
     symlinkSync(source, target, entry.isDirectory() ? "junction" : "file");
   }
 }
