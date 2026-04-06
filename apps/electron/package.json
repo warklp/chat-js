@@ -1,36 +1,36 @@
 {
-  "name": "@chatjs/electron",
-  "version": "0.1.0",
-  "private": true,
-  "description": "ChatJS desktop application",
-  "author": "ChatJS",
-  "main": "dist/main.js",
-  "scripts": {
-    "generate-icons": "bun scripts/generate-icons.ts",
-    "prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
-    "build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external electron-updater && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
-    "dev": "NODE_ENV=development bun run build && NODE_ENV=development electron .",
-    "package": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --dir",
-    "dist:mac": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac",
-    "dist:win": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win",
-    "dist:linux": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --linux",
-    "publish": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --publish=always",
-    "publish:mac": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac --publish=always",
-    "publish:win": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win --publish=always",
-    "electron:build": "bun run build",
-    "electron:dev": "bun run dev",
-    "electron:publish": "bun run publish"
-  },
-  "dependencies": {
-    "@better-auth/electron": "^1.5.6",
-    "better-auth": "^1.5.6",
-    "conf": "^15.1.0",
-    "electron-updater": "^6.3.9"
-  },
-  "devDependencies": {
-    "@types/node": "^22.8.6",
-    "electron": "36.0.0",
-    "electron-builder": "^25.1.8",
-    "typescript": "5.8.3"
-  }
+	"name": "@chatjs/electron",
+	"version": "0.1.1",
+	"private": true,
+	"description": "ChatJS desktop application",
+	"author": "ChatJS",
+	"main": "dist/main.js",
+	"scripts": {
+		"generate-icons": "bun scripts/generate-icons.ts",
+		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
+		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external electron-updater && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
+		"dev": "NODE_ENV=development bun run build && NODE_ENV=development electron .",
+		"package": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --dir",
+		"dist:mac": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac",
+		"dist:win": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win",
+		"dist:linux": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --linux",
+		"publish": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --publish=always",
+		"publish:mac": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --mac --publish=always",
+		"publish:win": "NODE_ENV=production bun run prebuild && bun run build && node ../../node_modules/electron-builder/cli.js --config ./electron-builder.config.js --win --publish=always",
+		"electron:build": "bun run build",
+		"electron:dev": "bun run dev",
+		"electron:publish": "bun run publish"
+	},
+	"dependencies": {
+		"@better-auth/electron": "^1.5.6",
+		"better-auth": "^1.5.6",
+		"conf": "^15.1.0",
+		"electron-updater": "^6.3.9"
+	},
+	"devDependencies": {
+		"@types/node": "^22.8.6",
+		"electron": "36.0.0",
+		"electron-builder": "^25.1.8",
+		"typescript": "5.8.3"
+	}
 }
