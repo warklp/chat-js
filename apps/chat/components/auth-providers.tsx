@@ -73,7 +73,9 @@ export function SocialAuthProviders({
     });
 
     const redirectUrl = result.data?.url;
-    if (redirectUrl) onRedirectToUrl?.(redirectUrl);
+    if (redirectUrl) {
+      onRedirectToUrl?.(redirectUrl);
+    }
   }
 
   return (
