@@ -71,3 +71,4 @@ apps/*/evals/db/
 .devtools
 
 .cursor/hooks/state
+.codex/environments/
