@@ -5,7 +5,13 @@ export const ELECTRON_AUTH_CLIENT_ID = "electron";
 export const ELECTRON_AUTH_COOKIE_PREFIX = "better-auth";
 export const ELECTRON_AUTH_CALLBACK_PATH = "/auth/callback";
 export const ELECTRON_APP_SCHEME = config.appPrefix;
-export const ELECTRON_TRUSTED_ORIGIN = `${ELECTRON_APP_SCHEME}://`;
+// @better-auth/electron uses `${scheme}:/...` for its synthetic Origin header
+// and deep-link callback URLs. Keep the legacy `scheme://` form alongside it so
+// existing packaged registrations continue to validate too.
+export const ELECTRON_TRUSTED_ORIGINS = [
+  `${ELECTRON_APP_SCHEME}:/`,
+  `${ELECTRON_APP_SCHEME}://`,
+] as const;
 
 type SearchParamValue = string | string[] | undefined;
 
