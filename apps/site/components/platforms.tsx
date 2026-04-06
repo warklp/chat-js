@@ -30,6 +30,19 @@ function WindowsLogo({ className }: { className?: string }) {
   );
 }
 
+function LinuxLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333a.506.506 0 00-.391-.135.544.544 0 00-.368.135c-.112.087-.132.204-.182.335a.87.87 0 00-.066.334v.02c.006.08.018.199.045.268-.145-.063-.324-.145-.497-.202a1.309 1.309 0 01-.076-.468v-.067c.006-.354.086-.7.223-.926.145-.325.355-.523.59-.658.21-.135.447-.202.717-.202z" />
+    </svg>
+  );
+}
+
 function BrowserFrame({ className }: { className?: string }) {
   return (
     <svg
@@ -159,10 +172,13 @@ export function Platforms() {
             <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-500/[0.04] blur-[80px] dark:bg-indigo-400/[0.06]" />
 
             <div className="relative z-10">
-              <p className="font-mono text-[10px] text-foreground/45 uppercase tracking-[0.25em]">
-                Desktop
-              </p>
-              <h3 className="mt-5 font-display text-3xl tracking-tight sm:text-4xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-3 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_1px] shadow-indigo-400/40" />
+                <span className="font-mono text-[10px] text-foreground/60 uppercase tracking-[0.2em]">
+                  Native
+                </span>
+              </div>
+              <h3 className="mt-8 font-display text-3xl tracking-tight sm:text-4xl">
                 Desktop
               </h3>
               <p className="mt-4 text-[15px] text-foreground/55 leading-relaxed">
@@ -171,9 +187,9 @@ export function Platforms() {
               </p>
             </div>
 
-            <div className="relative z-10 mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="relative z-10 mt-8 flex flex-col gap-2.5">
               <a
-                className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
+                className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
                 href={siteLinks.desktopMac}
               >
                 <AppleLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
@@ -183,7 +199,7 @@ export function Platforms() {
                 <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
               <a
-                className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
+                className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
                 href={siteLinks.desktopWindows}
               >
                 <WindowsLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
@@ -193,9 +209,10 @@ export function Platforms() {
                 <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
               <a
-                className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
+                className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
                 href={siteLinks.desktop}
               >
+                <LinuxLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
                 <span className="font-medium text-foreground/75 text-sm transition-colors group-hover:text-foreground">
                   Linux
                 </span>
