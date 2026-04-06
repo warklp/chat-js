@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
   Card,
@@ -19,16 +19,14 @@ export function SignupForm({
 }: React.ComponentProps<typeof Card>) {
   const searchParams = useSearchParams();
   const query = Object.fromEntries(searchParams.entries());
-  const [isElectron] = useState(
-    () =>
-      typeof window !== "undefined" && typeof window.requestAuth === "function"
-  );
+  const [isElectron, setIsElectron] = useState(false);
   const { callbackURL, onRedirectToUrl, signInOptions } =
     buildSocialAuthRequest(query, globalThis.location?.origin);
-  const loginHref = (() => {
-    const query = searchParams.toString();
-    return query ? `/login?${query}` : "/login";
-  })();
+  const loginHref = { pathname: "/login" as const, query };
+
+  useEffect(() => {
+    setIsElectron(typeof window.requestAuth === "function");
+  }, []);
 
   return (
     <div className="flex flex-col gap-6" {...props}>
@@ -63,9 +61,9 @@ export function SignupForm({
             ) : (
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a className="underline underline-offset-4" href={loginHref}>
+                <Link className="underline underline-offset-4" href={loginHref}>
                   Sign in
-                </a>
+                </Link>
               </div>
             )}
           </div>

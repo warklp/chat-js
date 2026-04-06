@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
 import {
   Card,
@@ -20,16 +20,14 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const searchParams = useSearchParams();
   const query = Object.fromEntries(searchParams.entries());
-  const [isElectron] = useState(
-    () =>
-      typeof window !== "undefined" && typeof window.requestAuth === "function"
-  );
+  const [isElectron, setIsElectron] = useState(false);
   const { callbackURL, onRedirectToUrl, signInOptions } =
     buildSocialAuthRequest(query, globalThis.location?.origin);
-  const registerHref = (() => {
-    const query = searchParams.toString();
-    return query ? `/register?${query}` : "/register";
-  })();
+  const registerHref = { pathname: "/register" as const, query };
+
+  useEffect(() => {
+    setIsElectron(typeof window.requestAuth === "function");
+  }, []);
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -64,9 +62,12 @@ export function LoginForm({
             ) : (
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a className="underline underline-offset-4" href={registerHref}>
+                <Link
+                  className="underline underline-offset-4"
+                  href={registerHref}
+                >
                   Sign up
-                </a>
+                </Link>
               </div>
             )}
           </div>

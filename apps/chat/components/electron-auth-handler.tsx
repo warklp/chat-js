@@ -41,14 +41,14 @@ export function ElectronAuthHandler() {
       return;
     }
 
-    window.electronAPI
-      ?.getAuthState?.()
-      .then((state) => {
+    const authStatePromise = window.electronAPI?.getAuthState?.();
+    authStatePromise
+      ?.then((state) => {
         if (state) {
           setAuthState(state);
         }
       })
-      .catch((error) => {
+      ?.catch((error) => {
         console.error("Failed to read Electron auth state", error);
       });
 

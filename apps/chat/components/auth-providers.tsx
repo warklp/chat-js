@@ -1,6 +1,7 @@
 "use client";
 
 import { Github } from "lucide-react";
+import { toast } from "sonner";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
@@ -63,18 +64,23 @@ export function SocialAuthProviders({
   }
 
   async function signIn(provider: "google" | "github" | "vercel") {
-    const result = await authClient.signIn.social({
-      provider,
-      callbackURL,
-      ...signInOptions,
-      fetchOptions: {
-        query,
-      },
-    });
+    try {
+      const result = await authClient.signIn.social({
+        provider,
+        callbackURL,
+        ...signInOptions,
+        fetchOptions: {
+          query,
+        },
+      });
 
-    const redirectUrl = result.data?.url;
-    if (redirectUrl) {
-      onRedirectToUrl?.(redirectUrl);
+      const redirectUrl = result.data?.url;
+      if (redirectUrl) {
+        onRedirectToUrl?.(redirectUrl);
+      }
+    } catch (error) {
+      console.error(`Failed to start ${provider} sign-in`, error);
+      toast.error("Couldn't start sign-in. Please try again.");
     }
   }
 

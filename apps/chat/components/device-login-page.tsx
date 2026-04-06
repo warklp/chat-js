@@ -48,7 +48,12 @@ export function DeviceLoginPage() {
     const checkSession = async () => {
       const { data: session } = await authClient.getSession();
 
-      if (cancelled || !session?.user || transferStartedRef.current) {
+      if (cancelled || transferStartedRef.current) {
+        return;
+      }
+
+      if (!session?.user) {
+        setState("waiting-for-app");
         return;
       }
 
@@ -68,7 +73,7 @@ export function DeviceLoginPage() {
           },
           onError: () => {
             transferStartedRef.current = false;
-            setState("checking-session");
+            setState("waiting-for-app");
           },
         },
       });
@@ -80,7 +85,7 @@ export function DeviceLoginPage() {
       }
 
       transferStartedRef.current = false;
-      setState("checking-session");
+      setState("waiting-for-app");
     });
 
     return () => {
@@ -107,13 +112,13 @@ export function DeviceLoginPage() {
               },
               onError: () => {
                 transferStartedRef.current = false;
-                setState("checking-session");
+                setState("waiting-for-app");
               },
             },
           })
           .catch(() => {
             transferStartedRef.current = false;
-            setState("checking-session");
+            setState("waiting-for-app");
           });
       }}
       state={state}

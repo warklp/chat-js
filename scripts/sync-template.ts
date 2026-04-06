@@ -71,6 +71,7 @@ function shouldCopyFilePath(filePath: string): boolean {
 const ELECTRON_EXCLUDED_SEGMENTS = new Set([
   "node_modules",
   ".turbo",
+  "build",
   "dist",
   "release",
 ]);

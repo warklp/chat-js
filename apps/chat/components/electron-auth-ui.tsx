@@ -28,7 +28,7 @@ export function ElectronBrowserSignIn({
           if (typeof requestAuth !== "function") {
             return;
           }
-          void Promise.resolve()
+          Promise.resolve()
             .then(() => requestAuth())
             .catch((error) => {
               console.error("Failed to launch browser sign-in", error);
