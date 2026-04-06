@@ -9,7 +9,7 @@ import { schema } from "./db/schema";
 import {
   ELECTRON_AUTH_CLIENT_ID,
   ELECTRON_AUTH_COOKIE_PREFIX,
-  ELECTRON_TRUSTED_ORIGIN,
+  ELECTRON_TRUSTED_ORIGINS,
 } from "./electron-auth";
 
 export const auth = betterAuth({
@@ -22,7 +22,7 @@ export const auth = betterAuth({
     // Vercel URL for preview branches
     ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
     config.appUrl,
-    ELECTRON_TRUSTED_ORIGIN,
+    ...ELECTRON_TRUSTED_ORIGINS,
   ],
   secret: env.AUTH_SECRET,
 
