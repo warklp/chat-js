@@ -14,7 +14,7 @@
 	"homepage": "https://demo.chatjs.dev",
 	"main": "dist/main.js",
 	"scripts": {
-		"forge": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js",
+		"forge": "node ./scripts/run-forge.cjs",
 		"generate-icons": "bun scripts/generate-icons.ts",
 		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
 		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external update-electron-app --external electron-squirrel-startup && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",

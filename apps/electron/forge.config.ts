@@ -123,7 +123,7 @@ function ensureLocalRuntimeModules(): void {
 const config: ForgeConfig = {
   packagerConfig: {
     name: appName,
-    executableName: appName,
+    executableName: appPrefix,
     appBundleId: `dev.${appPrefix}.app`,
     appCategoryType: "public.app-category.productivity",
     asar: true,
@@ -156,6 +156,7 @@ const config: ForgeConfig = {
     new MakerDeb(
       {
         options: {
+          bin: appPrefix,
           maintainer: orgEmail ? `${orgName} <${orgEmail}>` : orgName,
           homepage: branding.appUrl,
           icon: "./icon.png",
@@ -167,6 +168,7 @@ const config: ForgeConfig = {
     new MakerRpm(
       {
         options: {
+          bin: appPrefix,
           homepage: branding.appUrl,
           icon: "./icon.png",
         },
