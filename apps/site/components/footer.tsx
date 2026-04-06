@@ -4,6 +4,7 @@ import { siteLinks } from "@/lib/site-config";
 
 const PRODUCT_LINKS = [
   { label: "Demo", href: siteLinks.demo },
+  { label: "Desktop App", href: siteLinks.desktop },
   { label: "Documentation", href: siteLinks.docs },
   { label: "Getting Started", href: siteLinks.docsGettingStarted },
 ];

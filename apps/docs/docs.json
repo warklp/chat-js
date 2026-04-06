@@ -72,6 +72,13 @@
             ]
           },
           {
+            "group": "Platforms",
+            "pages": [
+              "platforms/web",
+              "platforms/desktop"
+            ]
+          },
+          {
             "group": "CLI",
             "pages": [
               "cli/index",

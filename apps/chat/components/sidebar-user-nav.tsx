@@ -149,7 +149,12 @@ export function SidebarUserNav() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
-                await authClient.signOut();
+                if (typeof window.signOut === "function") {
+                  await window.signOut();
+                  await window.electronAPI?.syncAuthSession?.();
+                } else {
+                  await authClient.signOut();
+                }
                 window.location.href = "/";
               }}
             >

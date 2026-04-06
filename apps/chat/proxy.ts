@@ -34,7 +34,19 @@ function isPublicPage(pathname: string): boolean {
 }
 
 function isAuthPage(pathname: string): boolean {
-  return pathname.startsWith("/login") || pathname.startsWith("/register");
+  return (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/device-login")
+  );
+}
+
+function getSafeReturnTo(url: URL): string | null {
+  const returnTo = url.searchParams.get("returnTo");
+  if (!returnTo?.startsWith("/") || returnTo.startsWith("//")) {
+    return null;
+  }
+  return returnTo;
 }
 
 export async function proxy(req: NextRequest) {
@@ -52,9 +64,11 @@ export async function proxy(req: NextRequest) {
 
   const session = await auth.api.getSession({ headers: req.headers });
   const isLoggedIn = !!session?.user;
+  const isDeviceLoginPage = pathname.startsWith("/device-login");
+  const returnTo = getSafeReturnTo(url);
 
-  if (isLoggedIn && isAuthPage(pathname)) {
-    return NextResponse.redirect(new URL("/", url));
+  if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginPage) {
+    return NextResponse.redirect(new URL(returnTo ?? "/", url));
   }
 
   if (isAuthPage(pathname) || isPublicPage(pathname)) {
