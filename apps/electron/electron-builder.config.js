@@ -1,4 +1,15 @@
-const { appName, appPrefix, orgName } = require("./branding.json");
+const { appName, appPrefix, appUrl, orgName, orgEmail } = require("./branding.json");
+
+function parseTargets(envName, defaults, arch) {
+  const raw = process.env[envName];
+  if (!raw) return defaults;
+
+  return raw
+    .split(",")
+    .map((target) => target.trim())
+    .filter(Boolean)
+    .map((target) => ({ target, arch: [arch] }));
+}
 
 const updaterRuntimeModules = [
   "electron-updater",
@@ -26,6 +37,10 @@ module.exports = {
   copyright: `Copyright © ${new Date().getFullYear()} ${orgName}`,
   beforeBuild: "./electron-builder.before-build.js",
   icon: "build/icon.png",
+  extraMetadata: {
+    author: orgEmail ? { name: orgName, email: orgEmail } : orgName,
+    homepage: appUrl,
+  },
 
   directories: {
     output: "release",
@@ -52,10 +67,14 @@ module.exports = {
 
   mac: {
     artifactName: `${appName}-mac.\${ext}`,
-    target: [
-      { target: "dmg", arch: ["universal"] },
-      { target: "zip", arch: ["universal"] },
-    ],
+    target: parseTargets(
+      "MAC_TARGETS",
+      [
+        { target: "dmg", arch: ["universal"] },
+        { target: "zip", arch: ["universal"] },
+      ],
+      "universal"
+    ),
     category: "public.app-category.productivity",
     hardenedRuntime: true,
     entitlements: "entitlements.mac.plist",
@@ -70,7 +89,11 @@ module.exports = {
 
   win: {
     artifactName: `${appName}-windows.\${ext}`,
-    target: [{ target: "nsis", arch: ["x64"] }],
+    target: parseTargets(
+      "WIN_TARGETS",
+      [{ target: "nsis", arch: ["x64"] }],
+      "x64"
+    ),
     protocols: [{ name: `${appName} Auth`, schemes: [appPrefix] }],
   },
 
@@ -84,11 +107,16 @@ module.exports = {
 
   linux: {
     artifactName: `${appName}-linux.\${ext}`,
-    target: [
-      { target: "AppImage", arch: ["x64"] },
-      { target: "deb", arch: ["x64"] },
-    ],
+    target: parseTargets(
+      "LINUX_TARGETS",
+      [
+        { target: "AppImage", arch: ["x64"] },
+        { target: "deb", arch: ["x64"] },
+      ],
+      "x64"
+    ),
     category: "Utility",
+    maintainer: orgEmail ? `${orgName} <${orgEmail}>` : orgName,
     protocols: [{ name: `${appName} Auth`, schemes: [appPrefix] }],
   },
 };
