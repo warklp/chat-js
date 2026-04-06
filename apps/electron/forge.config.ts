@@ -1,14 +1,5 @@
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  unlinkSync,
-  symlinkSync,
-} from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { MakerDeb } from "@electron-forge/maker-deb";
@@ -93,35 +84,8 @@ function runBunScript(script: string, env: NodeJS.ProcessEnv = {}): void {
   }
 }
 
-function ensureLocalRuntimeModules(): void {
-  const localNodeModules = join(appRoot, "node_modules");
-  const rootNodeModules = join(repoRoot, "node_modules");
-
-  mkdirSync(localNodeModules, { recursive: true });
-
-  for (const entry of readdirSync(rootNodeModules, { withFileTypes: true })) {
-    if (entry.name === ".bin" || entry.name === ".cache") {
-      continue;
-    }
-
-    const source = join(rootNodeModules, entry.name);
-    const target = join(localNodeModules, entry.name);
-
-    mkdirSync(dirname(target), { recursive: true });
-    if (existsSync(target)) {
-      const stat = lstatSync(target);
-      if (stat.isSymbolicLink()) {
-        unlinkSync(target);
-      } else {
-        rmSync(target, { recursive: true, force: true });
-      }
-    }
-    symlinkSync(
-      source,
-      target,
-      entry.isDirectory() ? (process.platform === "win32" ? "junction" : "dir") : "file"
-    );
-  }
+function removeLocalNodeModules(): void {
+  rmSync(join(appRoot, "node_modules"), { recursive: true, force: true });
 }
 
 const config: ForgeConfig = {
@@ -141,6 +105,7 @@ const config: ForgeConfig = {
       /^\/out($|\/)/,
       /^\/release($|\/)/,
       /^\/src($|\/)/,
+      /^\/node_modules($|\/)/,
       /^\/scripts($|\/)/,
       /^\/README\.md$/,
       /^\/tsconfig\.json$/,
@@ -186,11 +151,10 @@ const config: ForgeConfig = {
       runBunScript("prebuild");
     },
     preStart: async () => {
-      ensureLocalRuntimeModules();
       runBunScript("build", { NODE_ENV: "development" });
     },
     prePackage: async () => {
-      ensureLocalRuntimeModules();
+      removeLocalNodeModules();
       runBunScript("build", { NODE_ENV: "production" });
     },
   },
