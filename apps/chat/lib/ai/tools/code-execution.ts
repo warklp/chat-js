@@ -65,7 +65,8 @@ Restrictions:
 Output rules:
 - Set language to 'python' or 'javascript'
 - Python charts: assign 'chart' dict for interactive charts (takes priority over matplotlib PNG)
-- Python or JavaScript values: assign 'result' or 'results', return a value, or print explicitly
+- Python values: assign 'result' or 'results', or print explicitly
+- JavaScript values: assign 'result' or 'results', return a value, or print explicitly
 - Don't rely on implicit REPL last-expression output`,
     inputSchema: z.object({
       title: z.string().describe("The title of the code snippet."),
@@ -81,11 +82,11 @@ Output rules:
     execute: async ({
       code,
       title,
-      language = defaultExecutionLanguage,
+      language,
     }: {
       code: string;
       title: string;
-      language?: SupportedExecutionLanguage;
+      language: SupportedExecutionLanguage;
     }) => {
       const log = createModuleLogger("code-execution");
       const requestId = `ci-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

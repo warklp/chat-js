@@ -116,7 +116,8 @@ try:
     _orig_savefig = _plt_module.savefig
     def _intercepted_savefig(*args, **kwargs):
         _orig_savefig('${chartPath}', format='png', bbox_inches='tight', dpi=100)
-        if args or kwargs.get('fname') not in (None, '${chartPath}'):
+        _user_target = args[0] if args else kwargs.get('fname')
+        if _user_target not in (None, '${chartPath}'):
             return _orig_savefig(*args, **kwargs)
     _plt_module.savefig = _intercepted_savefig
 except ImportError:
@@ -199,6 +200,16 @@ async function parseExecutionOutput(execResult: {
     outputText = outLines.join("\n");
   } catch {
     outputText = stdout ?? "";
+    if (execResult.exitCode !== 0) {
+      execInfo = {
+        success: false,
+        error: {
+          name: "SandboxExecutionError",
+          value: "Execution completed without a parsable status trailer",
+          traceback: "",
+        },
+      };
+    }
   }
 
   return { outputText, chartData, execInfo };

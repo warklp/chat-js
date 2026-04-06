@@ -6,6 +6,9 @@ import type {
 const EXECUTION_STATUS_PREFIX = "__EXECUTION_STATUS__:";
 
 function createWrappedCode(code: string): string {
+  // Inject user code as a string literal so backticks / ${} in user code
+  // cannot break out of the wrapper template.
+  const userCodeLiteral = JSON.stringify(code);
   return `
 import { inspect } from "node:util";
 
@@ -24,16 +27,15 @@ const __formatOutput = (value) => {
 
 const __run = async () => {
   try {
-    const __execution = await (async () => {
-      let result;
-      let results;
-
-${code
-  .split("\n")
-  .map((line) => `      ${line}`)
-  .join("\n")}
-      return { __kind: "locals", result, results };
-    })();
+    const __userCode = ${userCodeLiteral};
+    const __execution = await (0, eval)(
+      "(async () => {\\n" +
+      __userCode + "\\n" +
+      "return { __kind: \\"locals\\"," +
+      " result: typeof result !== \\"undefined\\" ? result : undefined," +
+      " results: typeof results !== \\"undefined\\" ? results : undefined };\\n" +
+      "})()"
+    );
 
     const __result =
       __execution &&
@@ -72,35 +74,59 @@ await __run();
 `;
 }
 
+type JsExecInfo = {
+  success: boolean;
+  error?: { name: string; value: string; traceback: string };
+};
+
+function execInfoFromExitCode(exitCode: number): JsExecInfo {
+  if (exitCode === 0) {
+    return { success: true };
+  }
+  return {
+    success: false,
+    error: {
+      name: "SandboxExecutionError",
+      value: "Execution completed without a valid status trailer",
+      traceback: "",
+    },
+  };
+}
+
 async function parseExecutionOutput(execResult: {
   stdout: () => Promise<string>;
+  exitCode: number;
 }): Promise<{
   outputText: string;
-  execInfo: {
-    success: boolean;
-    error?: { name: string; value: string; traceback: string };
-  };
+  execInfo: JsExecInfo;
 }> {
   const stdout = await execResult.stdout();
   const lines = (stdout ?? "").split("\n");
-  const statusLineIndex = lines.findIndex((line) =>
+  // Search from the end so a user console.log of the prefix cannot be
+  // mistaken for the real status trailer emitted last by the wrapper.
+  const statusLineIndex = lines.findLastIndex((line) =>
     line.startsWith(EXECUTION_STATUS_PREFIX)
   );
 
   if (statusLineIndex === -1) {
     return {
       outputText: stdout ?? "",
-      execInfo: { success: true },
+      execInfo: execInfoFromExitCode(execResult.exitCode),
     };
   }
 
   const execInfoRaw = lines[statusLineIndex].slice(
     EXECUTION_STATUS_PREFIX.length
   );
-  const execInfo = JSON.parse(execInfoRaw) as {
-    success: boolean;
-    error?: { name: string; value: string; traceback: string };
-  };
+  let execInfo: JsExecInfo;
+  try {
+    execInfo = JSON.parse(execInfoRaw) as JsExecInfo;
+  } catch {
+    return {
+      outputText: stdout ?? "",
+      execInfo: execInfoFromExitCode(execResult.exitCode),
+    };
+  }
   lines.splice(statusLineIndex, 1);
 
   return {
