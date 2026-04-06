@@ -89,7 +89,9 @@ export function ElectronAuthHandler() {
     };
   }, [router]);
 
-  const overlayKey = `${authState.status}:${authState.message ?? ""}:${authState.detail ?? ""}`;
+  const overlayKey = `${authState.status}:${authState.message ?? ""}:${
+    authState.status !== "idle" ? (authState.detail ?? "") : ""
+  }`;
 
   return <ElectronAuthOverlay key={overlayKey} state={authState} />;
 }
