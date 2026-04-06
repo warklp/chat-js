@@ -154,8 +154,8 @@ const config: ForgeConfig = {
       runBunScript("build", { NODE_ENV: "development" });
     },
     prePackage: async () => {
-      removeLocalNodeModules();
       runBunScript("build", { NODE_ENV: "production" });
+      removeLocalNodeModules();
     },
   },
 };
