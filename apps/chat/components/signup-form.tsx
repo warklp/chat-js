@@ -63,9 +63,9 @@ export function SignupForm({
             ) : (
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a className="underline underline-offset-4" href={loginHref}>
+                <Link className="underline underline-offset-4" href={loginHref}>
                   Sign in
-                </a>
+                </Link>
               </div>
             )}
           </div>

@@ -24,12 +24,15 @@ export function ElectronBrowserSignIn({
       <Button
         className="w-full"
         onClick={() => {
-          if (typeof window.requestAuth !== "function") {
+          const requestAuth = window.requestAuth;
+          if (typeof requestAuth !== "function") {
             return;
           }
-          Promise.resolve(window.requestAuth()).catch((error) => {
-            console.error("Failed to launch browser sign-in", error);
-          });
+          Promise.resolve()
+            .then(() => requestAuth())
+            .catch((error) => {
+              console.error("Failed to launch browser sign-in", error);
+            });
           window.setTimeout(() => setOpened(true), 300);
         }}
         type="button"

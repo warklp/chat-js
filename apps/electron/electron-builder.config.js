@@ -51,7 +51,10 @@ module.exports = {
 
   mac: {
     artifactName: `${appName}-mac.\${ext}`,
-    target: [{ target: "dmg", arch: ["universal"] }],
+    target: [
+      { target: "dmg", arch: ["universal"] },
+      { target: "zip", arch: ["universal"] },
+    ],
     category: "public.app-category.productivity",
     hardenedRuntime: true,
     entitlements: "entitlements.mac.plist",

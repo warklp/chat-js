@@ -102,6 +102,7 @@ jobs:
           name: electron-release-mac
           path: |
             apps/electron/release/ChatJS-mac.dmg
+            apps/electron/release/*.zip
             apps/electron/release/*.blockmap
             apps/electron/release/latest-mac.yml
           if-no-files-found: error
@@ -132,7 +133,7 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          bun --cwd apps/electron version "$VERSION" --no-git-tag-version
+          bun --cwd apps/electron pm version "$VERSION" --no-git-tag-version
 
       - name: Build Windows artifacts
         working-directory: apps/electron
@@ -205,6 +206,12 @@ jobs:
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
+          TAG_SHA=$(git rev-list -n 1 "refs/tags/$RELEASE_TAG" 2>/dev/null || true)
+          if [ -n "$TAG_SHA" ] && [ "$TAG_SHA" != "$GITHUB_SHA" ]; then
+            echo "$RELEASE_TAG already points to $TAG_SHA; refusing to publish assets from $GITHUB_SHA." >&2
+            exit 1
+          fi
+
           if ! git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
             git tag "$RELEASE_TAG" "$GITHUB_SHA"
             git push origin "$RELEASE_TAG"
