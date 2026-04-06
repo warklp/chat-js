@@ -410,7 +410,6 @@ function scheduleAuthRefresh(): void {
           status: "idle",
           message: null,
         });
-        targetWindow.webContents.reload();
       })
       .catch((error) => {
         console.error("[electron-main] auth refresh failed", error);
