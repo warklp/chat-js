@@ -8,6 +8,11 @@ export const siteConfig = {
   ogImage: "/chatjs_preview_light.png",
   creator: "@franmoretti_",
   githubUrl: "https://github.com/franciscomoretti/chat-js",
+  desktopUrl: "https://github.com/franciscomoretti/chat-js/releases/latest",
+  desktopMacUrl:
+    "https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-mac.dmg",
+  desktopWindowsUrl:
+    "https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-windows.exe",
   demoUrl: "https://demo.chatjs.dev",
   docsUrl: "https://chatjs.dev/docs",
   keywords: [
@@ -25,6 +30,9 @@ export const siteLinks = {
   home: siteConfig.url,
   docs: siteConfig.docsUrl,
   docsGettingStarted: `${siteConfig.docsUrl}/quickstart`,
+  desktop: siteConfig.desktopUrl,
+  desktopMac: siteConfig.desktopMacUrl,
+  desktopWindows: siteConfig.desktopWindowsUrl,
   demo: siteConfig.demoUrl,
   github: siteConfig.githubUrl,
   sitemap: `${siteConfig.url}/sitemap.xml`,

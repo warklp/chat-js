@@ -25,9 +25,14 @@ export function UseCases() {
   return (
     <section
       aria-labelledby="use-cases-heading"
-      className="border-border/30 border-t py-24 sm:py-32"
+      className="relative overflow-hidden py-24 sm:py-32"
     >
-      <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-[0.9fr_1.1fr]">
+      {/* Warm atmospheric bg to distinguish from FAQ below */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-1/3 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-amber-500/[0.02] blur-[120px] dark:bg-amber-400/[0.025]" />
+        <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[500px] rounded-full bg-indigo-500/[0.015] blur-[100px] dark:bg-indigo-400/[0.02]" />
+      </div>
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <p className="font-mono text-foreground/70 text-xs uppercase tracking-[0.25em]">
             Why developers use ChatJS

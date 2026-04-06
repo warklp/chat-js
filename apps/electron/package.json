@@ -1,0 +1,42 @@
+{
+	"name": "@chatjs/electron",
+	"version": "0.1.4",
+	"private": true,
+	"description": "ChatJS desktop application",
+	"author": {
+		"name": "ChatJS",
+		"email": "support@chatjs.dev"
+	},
+	"homepage": "https://demo.chatjs.dev",
+	"main": "dist/main.js",
+	"scripts": {
+		"generate-icons": "bun scripts/generate-icons.ts",
+		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
+		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external electron-updater && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
+		"dev": "NODE_ENV=development bun run build && NODE_ENV=development electron .",
+		"package": "bun scripts/package.ts dir never",
+		"dist:mac": "bun scripts/package.ts mac never",
+		"dist:mac:zip": "MAC_TARGETS=zip bun run dist:mac",
+		"dist:win": "bun scripts/package.ts win never",
+		"dist:linux": "bun scripts/package.ts linux never",
+		"dist:linux:dir": "LINUX_TARGETS=dir bun run dist:linux",
+		"publish": "bun scripts/package.ts dir always",
+		"publish:mac": "bun scripts/package.ts mac always",
+		"publish:win": "bun scripts/package.ts win always",
+		"electron:build": "bun run build",
+		"electron:dev": "bun run dev",
+		"electron:publish": "bun run publish"
+	},
+	"dependencies": {
+		"@better-auth/electron": "^1.5.6",
+		"better-auth": "^1.5.6",
+		"conf": "^15.1.0",
+		"electron-updater": "^6.3.9"
+	},
+	"devDependencies": {
+		"@types/node": "^22.8.6",
+		"electron": "36.0.0",
+		"electron-builder": "^25.1.8",
+		"typescript": "5.8.3"
+	}
+}

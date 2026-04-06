@@ -1,6 +1,12 @@
 {
   "name": "@chatjs/docs",
   "private": true,
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "volta": {
+    "node": "22.22.2"
+  },
   "scripts": {
     "dev": "bunx mintlify@latest dev",
     "docs:links": "bunx mintlify@latest broken-links",

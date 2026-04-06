@@ -135,8 +135,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function Features() {
   return (
-    <section className="py-24 sm:py-32">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="relative overflow-hidden py-24 sm:py-32">
+      {/* Subtle atmosphere to differentiate from TechStack grid below */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-[20%] left-[10%] h-[500px] w-[600px] -rotate-12 rounded-full bg-amber-500/[0.015] blur-[120px] dark:bg-amber-400/[0.02]" />
+        <div className="absolute right-[15%] bottom-[10%] h-[400px] w-[500px] rotate-6 rounded-full bg-indigo-500/[0.012] blur-[120px] dark:bg-indigo-400/[0.018]" />
+      </div>
+      <div className="relative mx-auto max-w-6xl px-6">
         <h2 className="text-center font-display text-3xl tracking-tight sm:text-5xl">
           Everything you need, <span className="italic">out of the box</span>
         </h2>
