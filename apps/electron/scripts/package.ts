@@ -15,13 +15,6 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-function getElectronBuilderBin() {
-  const root = resolve(__dirname, "..");
-  return process.platform === "win32"
-    ? join(root, "..", "..", "node_modules", ".bin", "electron-builder.cmd")
-    : join(root, "..", "..", "node_modules", ".bin", "electron-builder");
-}
-
 const [, , target = "dir", publishMode = "never"] = process.argv;
 
 if (publishMode !== "always" && publishMode !== "never") {
@@ -40,8 +33,11 @@ const env = {
 
 run("bun", ["run", "prebuild"], env);
 run("bun", ["run", "build"], env);
-run(
-  getElectronBuilderBin(),
-  ["--config", "./electron-builder.config.js", `--${target}`, `--publish=${publishMode}`],
-  env
-);
+run("bun", [
+  "x",
+  "electron-builder",
+  "--config",
+  "./electron-builder.config.js",
+  `--${target}`,
+  `--publish=${publishMode}`,
+], env);
