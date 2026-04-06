@@ -37,6 +37,7 @@
 		"dist:electron": "turbo run electron:publish --filter=@chatjs/electron"
 	},
 	"overrides": {
+		"//@better-auth/core": "Pinned because @better-auth/electron and other @better-auth/* packages declare a strict peerDependency on @better-auth/core@1.5.6. Do not remove without auditing all @better-auth/* peer ranges.",
 		"@better-auth/core": "1.5.6"
 	},
 	"devDependencies": {

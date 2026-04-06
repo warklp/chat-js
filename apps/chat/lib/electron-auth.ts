@@ -5,7 +5,7 @@ export const ELECTRON_AUTH_CLIENT_ID = "electron";
 export const ELECTRON_AUTH_COOKIE_PREFIX = "better-auth";
 export const ELECTRON_AUTH_CALLBACK_PATH = "/auth/callback";
 export const ELECTRON_APP_SCHEME = config.appPrefix;
-export const ELECTRON_TRUSTED_ORIGIN = `${ELECTRON_APP_SCHEME}:/`;
+export const ELECTRON_TRUSTED_ORIGIN = `${ELECTRON_APP_SCHEME}://`;
 
 type SearchParamValue = string | string[] | undefined;
 

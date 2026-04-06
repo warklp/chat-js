@@ -6,11 +6,16 @@ declare global {
     statusText?: string;
   }
 
-  interface ElectronRendererAuthState {
-    detail?: string | null;
-    message: string | null;
-    status: "idle" | "awaiting-browser" | "finishing" | "timed-out" | "error";
-  }
+  type ElectronRendererAuthState =
+    | {
+        status: "idle";
+        message: null;
+      }
+    | {
+        status: "awaiting-browser" | "finishing" | "timed-out" | "error";
+        message: string;
+        detail?: string | null;
+      };
 
   interface Window {
     electronAPI?: {

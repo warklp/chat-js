@@ -6,7 +6,7 @@
   "author": "ChatJS",
   "main": "dist/main.js",
   "scripts": {
-    "generate-icons": "bash scripts/generate-icons.sh",
+    "generate-icons": "bun scripts/generate-icons.ts",
     "prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
     "build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron --external electron-updater && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
     "dev": "NODE_ENV=development bun run build && NODE_ENV=development electron .",

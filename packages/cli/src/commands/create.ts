@@ -123,10 +123,7 @@ export const create = new Command()
 				}
 				if (withElectron) {
 					await scaffoldElectron(targetDir, {
-						appName,
-						appUrl,
 						projectName,
-						appScheme: appPrefix,
 					});
 				}
 				scaffoldSpinner.succeed("Project scaffolded.");

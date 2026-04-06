@@ -42,6 +42,9 @@ export const authClient = createAuthClient({
         scheme: APP_SCHEME,
       },
       storage: electronAuthStorage,
+      // `as any`: @better-auth/electron does not export a typed Storage union
+      // compatible with both `storage()` and our in-memory shim, and the
+      // plugin's inferred return type leaks through to createAuthClient.
     }) as any,
   ],
 });

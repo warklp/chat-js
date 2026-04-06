@@ -26,7 +26,7 @@ export async function scaffoldFromTemplate(
 
 export async function scaffoldElectron(
   projectDir: string,
-  opts: { appName: string; appUrl: string; projectName: string; appScheme: string }
+  opts: { projectName: string }
 ): Promise<void> {
   const templateDir = findTemplateDir("electron");
   const destination = join(projectDir, "electron");
