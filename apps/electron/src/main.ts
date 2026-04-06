@@ -56,6 +56,24 @@ if (!gotSingleInstanceLock) {
   app.quit();
 }
 
+function registerProtocolClient(): void {
+  if (process.defaultApp) {
+    if (process.platform === "win32" && process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(APP_SCHEME, process.execPath, [
+        path.resolve(process.argv[1]),
+      ]);
+      return;
+    }
+
+    console.info(
+      `[electron-main] skipping ${APP_SCHEME} protocol registration in development on ${process.platform}; packaged builds handle deep links normally.`
+    );
+    return;
+  }
+
+  app.setAsDefaultProtocolClient(APP_SCHEME);
+}
+
 function broadcastAuthState(): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
@@ -196,7 +214,7 @@ electronAuthClient.setupMain({
   scheme: false,
 });
 
-app.setAsDefaultProtocolClient(APP_SCHEME);
+registerProtocolClient();
 
 // Better Auth should register these bridges in setupMain(), but we also
 // register them explicitly so the preload bridge stays reliable in dev builds.

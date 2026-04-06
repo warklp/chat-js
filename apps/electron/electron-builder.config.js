@@ -25,6 +25,7 @@ module.exports = {
   productName: appName,
   copyright: `Copyright © ${new Date().getFullYear()} ${orgName}`,
   beforeBuild: "./electron-builder.before-build.js",
+  icon: "build/icon.png",
 
   directories: {
     output: "release",
