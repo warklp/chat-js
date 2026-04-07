@@ -120,8 +120,19 @@ export const serverEnvSchema = {
     .describe("Vercel API token for sandbox (non-Vercel deployments)"),
   VERCEL_SANDBOX_RUNTIME: z
     .string()
+    .min(1)
     .optional()
-    .describe("Vercel sandbox runtime identifier"),
+    .describe("Legacy default Vercel sandbox runtime identifier for Python"),
+  VERCEL_SANDBOX_RUNTIME_PYTHON: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Vercel sandbox runtime identifier for Python execution"),
+  VERCEL_SANDBOX_RUNTIME_JAVASCRIPT: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Vercel sandbox runtime identifier for JavaScript execution"),
 
   // App URL (for non-Vercel deployments) - full URL including https://
   APP_URL: z

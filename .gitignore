@@ -77,3 +77,4 @@ apps/electron/branding.json
 .devtools
 
 .cursor/hooks/state
+.codex/environments/
