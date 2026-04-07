@@ -113,12 +113,18 @@ const config: ForgeConfig = {
   },
   makers: [
     new MakerZIP({}, ["darwin"]),
-    new MakerDMG({}, ["darwin"]),
+    new MakerDMG(
+      {
+        name: `${appName}-mac`,
+      },
+      ["darwin"]
+    ),
     new MakerSquirrel(
       {
         name: appPrefix,
         authors: orgName ?? appName,
         description: "ChatJS desktop application",
+        setupExe: `${appName}-windows.exe`,
       },
       ["win32"]
     ),
