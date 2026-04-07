@@ -92,6 +92,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     name: appName,
     executableName: appPrefix,
+    icon: "./build/icon",
     appBundleId: `dev.${appPrefix}.app`,
     appCategoryType: "public.app-category.productivity",
     asar: true,
@@ -137,7 +138,7 @@ const config: ForgeConfig = {
               ? `${orgName} <${orgEmail}>`
               : (orgName ?? orgEmail ?? appName),
           homepage: branding.appUrl,
-          icon: "./icon.png",
+          icon: "./build/icon.png",
           categories: ["Utility"],
         },
       },
@@ -148,7 +149,7 @@ const config: ForgeConfig = {
         options: {
           bin: appPrefix,
           homepage: branding.appUrl,
-          icon: "./icon.png",
+          icon: "./build/icon.png",
           license: "Apache-2.0",
         },
       },
