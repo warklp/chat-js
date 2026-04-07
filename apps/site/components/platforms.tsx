@@ -1,4 +1,4 @@
-import { ArrowUpRight, Download } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import { siteLinks } from "@/lib/site-config";
 
@@ -118,8 +118,8 @@ export function Platforms() {
             </h2>
           </div>
           <p className="max-w-sm text-[15px] text-foreground/60 leading-relaxed lg:text-right">
-            Start in the browser instantly. Download the desktop app for a
-            faster, focused experience.
+            Start in the browser instantly. Or read the desktop guide to learn
+            how to install the native app.
           </p>
         </div>
 
@@ -182,41 +182,39 @@ export function Platforms() {
                 Desktop
               </h3>
               <p className="mt-4 text-[15px] text-foreground/55 leading-relaxed">
-                Packaged for your OS with auto-updates. Runs outside the browser
-                so it's always one click away.
+                Packaged for macOS, Windows, and Linux. Builds are currently
+                unsigned, so the install guide walks you through the OS
+                warnings.
               </p>
             </div>
 
             <div className="relative z-10 mt-8 flex flex-col gap-2.5">
               <a
                 className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
-                href={siteLinks.desktopMac}
+                href={siteLinks.docsDesktopMac}
               >
                 <AppleLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
                 <span className="font-medium text-foreground/75 text-sm transition-colors group-hover:text-foreground">
                   macOS
                 </span>
-                <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
               <a
                 className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
-                href={siteLinks.desktopWindows}
+                href={siteLinks.docsDesktopWindows}
               >
                 <WindowsLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
                 <span className="font-medium text-foreground/75 text-sm transition-colors group-hover:text-foreground">
                   Windows
                 </span>
-                <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
               <a
                 className="group inline-flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-5 py-3.5 transition-all duration-300 hover:border-foreground/20 hover:bg-foreground/[0.07]"
-                href={siteLinks.desktop}
+                href={siteLinks.docsDesktopLinux}
               >
                 <LinuxLogo className="h-5 w-5 text-foreground/70 transition-colors group-hover:text-foreground" />
                 <span className="font-medium text-foreground/75 text-sm transition-colors group-hover:text-foreground">
                   Linux
                 </span>
-                <Download className="ml-auto h-3.5 w-3.5 text-foreground/40 transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-foreground/70" />
               </a>
             </div>
           </div>
