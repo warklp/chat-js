@@ -147,14 +147,14 @@ export async function executeJavaScriptInSandbox({
   });
 
   const { outputText, execInfo } = await parseExecutionOutput(execResult);
-  const stderr = await execResult.stderr();
+  const stderrTrimmed = (await execResult.stderr())?.trim();
   let message = "";
 
   if (outputText) {
     message += `${outputText}\n`;
   }
-  if (stderr && stderr.trim().length > 0) {
-    message += `${stderr}\n`;
+  if (stderrTrimmed) {
+    message += `${stderrTrimmed}\n`;
   }
   if (execInfo.error) {
     message += `Error: ${execInfo.error.name}: ${execInfo.error.value}\n`;
