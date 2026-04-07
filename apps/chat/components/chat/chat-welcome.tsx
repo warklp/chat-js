@@ -34,12 +34,12 @@ function PureChatWelcome({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col items-center justify-center",
+        "flex min-h-0 flex-1 flex-col justify-end md:justify-center",
         className
       )}
     >
-      <div className="mx-auto w-full p-2 @[500px]:px-4 md:max-w-3xl">
-        <div className="mb-6">
+      <div className="mx-auto w-full p-2 @[500px]:px-4 @[500px]:pb-6 pb-4 md:max-w-3xl">
+        <div className="mb-4 md:mb-6">
           <WelcomeMessage />
         </div>
         <MultimodalInput

@@ -7,6 +7,7 @@ import { GetStarted } from "@/components/get-started";
 import { Hero } from "@/components/hero";
 import { LogoCloud } from "@/components/logo-cloud";
 import { Navbar } from "@/components/navbar";
+import { Platforms } from "@/components/platforms";
 import { TechStack } from "@/components/tech-stack";
 import { UseCases } from "@/components/use-cases";
 import { siteConfig, siteLinks } from "@/lib/site-config";
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     url: siteLinks.home,
-    title: "ChatJS — Stop Rebuilding the Same AI Chat Infrastructure",
+    title: "ChatJS - Stop Rebuilding the Same AI Chat Infrastructure",
     description:
       "A production-ready foundation with auth, streaming, tool calling, and 120+ models. Scaffold it, customize it, ship it.",
   },
@@ -33,7 +34,7 @@ const structuredData = {
       "@type": "SoftwareApplication",
       name: siteConfig.name,
       applicationCategory: "DeveloperApplication",
-      operatingSystem: "Web",
+      operatingSystem: "Web, macOS, Windows, Linux",
       url: siteLinks.home,
       description: siteConfig.description,
       image: `${siteConfig.url}${siteConfig.ogImage}`,
@@ -72,8 +73,9 @@ export default function HomePage() {
       <main className="flex-1">
         <Hero />
         <LogoCloud />
-        <TechStack />
         <Features />
+        <TechStack />
+        <Platforms />
         <UseCases />
         <Faq />
         <GetStarted />

@@ -11,14 +11,27 @@ import {
 import { Button } from "./ui/button";
 
 export function SidebarToggle({
-  className: _className,
+  className,
+  onClick,
+  ...props
 }: ComponentProps<typeof SidebarTrigger>) {
   const { toggleSidebar } = useSidebar();
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button onClick={toggleSidebar} size="icon" variant="ghost">
+        <Button
+          {...props}
+          className={className}
+          onClick={(event) => {
+            onClick?.(event);
+            if (!event.defaultPrevented) {
+              toggleSidebar();
+            }
+          }}
+          size="icon"
+          variant="ghost"
+        >
           <PanelLeft size={16} />
         </Button>
       </TooltipTrigger>

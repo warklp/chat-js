@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { isPlaywrightTestEnvironment } from "@/lib/playwright-test-environment";
+
+const isPlaywrightTestEnvironmentEnabled = isPlaywrightTestEnvironment(
+  process.env
+);
 
 /**
  * Server environment variable schemas with descriptions.
@@ -12,10 +17,23 @@ import { z } from "zod";
  */
 export const serverEnvSchema = {
   // Required core
-  DATABASE_URL: z.string().min(1).describe("Postgres connection string"),
+  DATABASE_URL: z
+    .preprocess(
+      (value) =>
+        isPlaywrightTestEnvironmentEnabled && (value == null || value === "")
+          ? "postgres://postgres:postgres@127.0.0.1:5432/playwright"
+          : value,
+      z.string().min(1)
+    )
+    .describe("Postgres connection string"),
   AUTH_SECRET: z
-    .string()
-    .min(1)
+    .preprocess(
+      (value) =>
+        isPlaywrightTestEnvironmentEnabled && (value == null || value === "")
+          ? "playwright-test-auth-secret"
+          : value,
+      z.string().min(1)
+    )
     .describe("NextAuth.js secret for signing session tokens"),
 
   // Optional blob storage (enable in chat.config.ts)
@@ -102,8 +120,19 @@ export const serverEnvSchema = {
     .describe("Vercel API token for sandbox (non-Vercel deployments)"),
   VERCEL_SANDBOX_RUNTIME: z
     .string()
+    .min(1)
     .optional()
-    .describe("Vercel sandbox runtime identifier"),
+    .describe("Legacy default Vercel sandbox runtime identifier for Python"),
+  VERCEL_SANDBOX_RUNTIME_PYTHON: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Vercel sandbox runtime identifier for Python execution"),
+  VERCEL_SANDBOX_RUNTIME_JAVASCRIPT: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Vercel sandbox runtime identifier for JavaScript execution"),
 
   // App URL (for non-Vercel deployments) - full URL including https://
   APP_URL: z

@@ -3,7 +3,7 @@
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "npx ultracite@7.2.3 fix"
+        "command": "bash scripts/ai-post-codegen.sh cursor"
       }
     ]
   }
