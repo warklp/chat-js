@@ -123,7 +123,7 @@ const config: ForgeConfig = {
       {
         name: appPrefix,
         authors: orgName ?? appName,
-        description: "ChatJS desktop application",
+        description: `${appName} desktop application`,
         setupExe: `${appName}-windows.exe`,
       },
       ["win32"]
@@ -132,7 +132,10 @@ const config: ForgeConfig = {
       {
         options: {
           bin: appPrefix,
-          maintainer: orgEmail ? `${orgName} <${orgEmail}>` : orgName,
+          maintainer:
+            orgName && orgEmail
+              ? `${orgName} <${orgEmail}>`
+              : (orgName ?? orgEmail ?? appName),
           homepage: branding.appUrl,
           icon: "./icon.png",
           categories: ["Utility"],
