@@ -1,15 +1,15 @@
-name: Lint
+name: Unit
 
 on:
   pull_request:
 
 concurrency:
-  group: lint-${{ github.event.pull_request.number || github.ref }}
+  group: unit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  unit:
+    name: Unit
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -27,15 +27,15 @@ jobs:
         run: |
           set -euo pipefail
           TURBO_VERSION="$(node -p "require('./package.json').devDependencies.turbo")"
-          if npx -y "turbo@${TURBO_VERSION}" query affected --tasks lint --exit-code >/tmp/lint-query.json 2>/tmp/lint-query.log; then
+          if npx -y "turbo@${TURBO_VERSION}" query affected --tasks test:unit --exit-code >/tmp/unit-query.json 2>/tmp/unit-query.log; then
             echo "run=false" >>"$GITHUB_OUTPUT"
           else
             status=$?
             if [ "$status" -eq 1 ]; then
               echo "run=true" >>"$GITHUB_OUTPUT"
             else
-              cat /tmp/lint-query.log
-              cat /tmp/lint-query.json
+              cat /tmp/unit-query.log
+              cat /tmp/unit-query.json
               exit "$status"
             fi
           fi
@@ -54,4 +54,4 @@ jobs:
       - if: steps.affected.outputs.run == 'true'
         run: bun install --frozen-lockfile
       - if: steps.affected.outputs.run == 'true'
-        run: bunx turbo run lint --affected
+        run: bunx turbo run test:unit --affected

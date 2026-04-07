@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "bunx ultracite@7.4.3 check",
+    "test:types": "next typegen . && tsc --noEmit",
     "format": "bunx ultracite@7.4.3 fix"
   },
   "dependencies": {
