@@ -78,7 +78,7 @@ const TOOLS: Feature[] = [
     icon: Code,
     title: "Code Execution",
     description:
-      "Python in a secure sandbox with pandas, numpy, matplotlib, and more pre-installed.",
+      "Python and JavaScript in a secure sandbox, with pandas, numpy, matplotlib, and more pre-installed for Python.",
   },
   {
     icon: Globe,
