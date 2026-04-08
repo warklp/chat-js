@@ -5,7 +5,6 @@ import { ThemeToggle } from "./theme-toggle";
 
 const NAV_LINKS = [
   { label: "Demo", href: siteLinks.demo },
-  { label: "Desktop", href: siteLinks.desktop },
   { label: "Docs", href: siteLinks.docs },
   {
     label: "GitHub",
