@@ -24,6 +24,13 @@ function isRequirementSatisfied(
   );
 }
 
+function formatRequirementDescription(requirement: EnvRequirement): string {
+  return (
+    requirement.description ??
+    requirement.options.map((option) => option.join(" + ")).join(" or ")
+  );
+}
+
 export const add = new Command()
   .name("add")
   .description("add a tool to an existing ChatJS project")
@@ -129,7 +136,7 @@ export const add = new Command()
             )
             .map((requirement) => ({
               tool: item.name,
-              requirement: requirement.description,
+              requirement: formatRequirementDescription(requirement),
             }))
         );
         const mainItem = resolution.items.find((item) => item.name === name);

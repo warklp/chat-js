@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const envRequirementSchema = z.object({
-  description: z.string(),
+  description: z.string().optional(),
   options: z.array(z.array(z.string())),
 });
 

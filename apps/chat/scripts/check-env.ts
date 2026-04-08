@@ -176,8 +176,8 @@ async function validateInstalledTools(
     const toolSource = await fs.readFile(toolPath, "utf8");
     const mod = readStaticToolMetadata(toolSource);
 
-    for (const requirement of mod.envRequirements) {
-      const missing = getMissingRequirement(requirement, env);
+    for (const toolEnvVar of mod.toolEnvVars) {
+      const missing = getMissingRequirement(toolEnvVar, env);
       if (missing) {
         errors.push({
           feature: `tools.${entry.name}`,

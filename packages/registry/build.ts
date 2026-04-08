@@ -15,9 +15,11 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { Node, Project, SyntaxKind } from "ts-morph";
 import {
   readStaticToolMetadata,
-  type StaticEnvRequirement,
+  type StaticToolEnvVar,
+  type StaticToolEnvVars,
 } from "./src/static-tool-metadata";
 
 const srcDir = new URL("./src", import.meta.url).pathname;
@@ -44,34 +46,72 @@ const NODE_BUILTINS = new Set([
  */
 function extractNpmImports(source: string): string[] {
   const specifiers = new Set<string>();
+  const project = new Project({
+    useInMemoryFileSystem: true,
+    skipAddingFilesFromTsConfig: true,
+  });
+  const sourceFile = project.createSourceFile("file.ts", source);
 
-  // Match: import ... from "specifier" / export ... from "specifier" / import("specifier")
-  const staticRe = /(?:import|export)\s+(?:.*?\s+from\s+)?["']([^"']+)["']/g;
-  const dynamicRe = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
+  for (const importDeclaration of sourceFile.getImportDeclarations()) {
+    if (importDeclaration.isTypeOnly()) {
+      continue;
+    }
 
-  for (const re of [staticRe, dynamicRe]) {
-    for (const m of source.matchAll(re)) {
-      const spec = m[1];
-      if (
-        spec.startsWith(".") ||    // relative
-        spec.startsWith("/") ||    // absolute path
-        spec.startsWith("node:") || // explicit node: protocol
-        spec.startsWith("@/") ||      // app path alias
-        spec.startsWith("@toolkit/")  // registry-owned shared helpers
-      ) continue;
+    const moduleSpecifier = importDeclaration.getModuleSpecifierValue();
+    const pkg = getImportPackage(moduleSpecifier);
+    if (pkg) {
+      specifiers.add(pkg);
+    }
+  }
 
-      // Extract the package name (handles scoped packages like @org/pkg)
-      const pkg = spec.startsWith("@")
-        ? spec.split("/").slice(0, 2).join("/")
-        : spec.split("/")[0];
+  for (const exportDeclaration of sourceFile.getExportDeclarations()) {
+    if (exportDeclaration.isTypeOnly()) {
+      continue;
+    }
 
-      if (!NODE_BUILTINS.has(pkg)) {
-        specifiers.add(pkg);
-      }
+    const moduleSpecifier = exportDeclaration.getModuleSpecifierValue();
+    const pkg = moduleSpecifier ? getImportPackage(moduleSpecifier) : null;
+    if (pkg) {
+      specifiers.add(pkg);
+    }
+  }
+
+  for (const node of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const expression = node.getExpression();
+    if (!Node.isImportExpression(expression)) {
+      continue;
+    }
+
+    const [argument] = node.getArguments();
+    if (!argument || !Node.isStringLiteral(argument)) {
+      continue;
+    }
+
+    const pkg = getImportPackage(argument.getLiteralValue());
+    if (pkg) {
+      specifiers.add(pkg);
     }
   }
 
   return [...specifiers].sort();
+}
+
+function getImportPackage(spec: string): string | null {
+  if (
+    spec.startsWith(".") || // relative
+    spec.startsWith("/") || // absolute path
+    spec.startsWith("node:") || // explicit node: protocol
+    spec.startsWith("@/") || // app path alias
+    spec.startsWith("@toolkit/") // registry-owned shared helpers
+  ) {
+    return null;
+  }
+
+  const pkg = spec.startsWith("@")
+    ? spec.split("/").slice(0, 2).join("/")
+    : spec.split("/")[0];
+
+  return NODE_BUILTINS.has(pkg) ? null : pkg;
 }
 
 type Meta = {
@@ -120,7 +160,7 @@ async function main(): Promise<void> {
     }> = [];
 
     const detected = new Set<string>();
-    let envRequirements: StaticEnvRequirement[] = [];
+    let toolEnvVars: StaticToolEnvVars = [];
 
     const registryToolPath = path.join(dir, "tool.ts");
     const registryRendererPath = path.join(dir, "renderer.tsx");
@@ -145,7 +185,7 @@ async function main(): Promise<void> {
         detected.add(dependency);
       }
       const metadata = readStaticToolMetadata(toolContent);
-      envRequirements = metadata.envRequirements;
+      toolEnvVars = metadata.toolEnvVars;
     }
 
     if (await fileExists(rendererPath)) {
@@ -191,7 +231,7 @@ async function main(): Promise<void> {
             ].sort(),
           }
         : {}),
-      ...(envRequirements.length > 0 ? { envRequirements } : {}),
+      ...(toolEnvVars.length > 0 ? { envRequirements: toolEnvVars } : {}),
       files: registryFiles,
     };
 

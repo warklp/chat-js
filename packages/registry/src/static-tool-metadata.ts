@@ -8,13 +8,15 @@ import {
 	type VariableStatement,
 } from "ts-morph";
 
-export type StaticEnvRequirement = {
-	description: string;
+export type StaticToolEnvVar = {
+	description?: string;
 	options: string[][];
 };
 
+export type StaticToolEnvVars = StaticToolEnvVar[];
+
 export type StaticToolMetadata = {
-	envRequirements: StaticEnvRequirement[];
+	toolEnvVars: StaticToolEnvVars;
 };
 
 function isExportedConst(node: VariableStatement): boolean {
@@ -56,7 +58,7 @@ function readStringArray(node: Expression): string[] | null {
 	return values;
 }
 
-function readEnvRequirement(node: Expression): StaticEnvRequirement | null {
+function readToolEnvVar(node: Expression): StaticToolEnvVar | null {
 	const expr = unwrapExpression(node);
 	if (!Node.isObjectLiteralExpression(expr)) {
 		return null;
@@ -95,24 +97,24 @@ function readEnvRequirement(node: Expression): StaticEnvRequirement | null {
 		}
 	}
 
-	return description && options ? { description, options } : null;
+	return options ? { ...(description ? { description } : {}), options } : null;
 }
 
-function readEnvRequirements(node: Expression): StaticEnvRequirement[] {
+function readToolEnvVars(node: Expression): StaticToolEnvVars {
 	const expr = unwrapExpression(node);
 	if (!Node.isArrayLiteralExpression(expr)) {
 		return [];
 	}
 
-	const requirements: StaticEnvRequirement[] = [];
+	const toolEnvVars: StaticToolEnvVars = [];
 	for (const element of expr.getElements()) {
 		if (!Node.isExpression(element)) return [];
-		const requirement = readEnvRequirement(element);
-		if (!requirement) return [];
-		requirements.push(requirement);
+		const toolEnvVar = readToolEnvVar(element);
+		if (!toolEnvVar) return [];
+		toolEnvVars.push(toolEnvVar);
 	}
 
-	return requirements;
+	return toolEnvVars;
 }
 
 export function readStaticToolMetadata(sourceText: string): StaticToolMetadata {
@@ -128,15 +130,15 @@ export function readStaticToolMetadata(sourceText: string): StaticToolMetadata {
 		scriptKind: ScriptKind.TS,
 	});
 
-	const envRequirements: StaticEnvRequirement[] = [];
+	const toolEnvVars: StaticToolEnvVars = [];
 
 	sourceFile.forEachDescendant((node) => {
 		if (Node.isVariableStatement(node) && isExportedConst(node)) {
 			for (const declaration of node.getDeclarations()) {
-				if (declaration.getName() === "envRequirements") {
+				if (declaration.getName() === "toolEnvVars") {
 					const initializer = declaration.getInitializer();
 					if (initializer && Node.isExpression(initializer)) {
-						envRequirements.push(...readEnvRequirements(initializer));
+						toolEnvVars.push(...readToolEnvVars(initializer));
 					}
 				}
 			}
@@ -144,6 +146,6 @@ export function readStaticToolMetadata(sourceText: string): StaticToolMetadata {
 	});
 
 	return {
-		envRequirements,
+		toolEnvVars,
 	};
 }

@@ -326,6 +326,7 @@ async function createChatStream({
         selectedModelId,
         explicitlyRequestedTools,
         userId,
+        isAnonymous,
         abortSignal: abortController.signal,
         messageId,
         dataStream,

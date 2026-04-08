@@ -8,8 +8,19 @@ import type {
 type EnvVarName = keyof NodeJS.ProcessEnv;
 
 export interface EnvRequirement {
-  description: string;
+  description?: string;
   options: EnvVarName[][];
+}
+
+export function formatRequirementDescription(
+  requirement: EnvRequirement
+): string {
+  return (
+    requirement.description ??
+    requirement.options
+      .map((option) => option.join(" + "))
+      .join(" or ")
+  );
 }
 
 export const gatewayEnvRequirements: Record<GatewayType, EnvRequirement> = {
@@ -102,5 +113,5 @@ export function getMissingRequirement(
 ): string | null {
   return isRequirementSatisfied(requirement, env)
     ? null
-    : requirement.description;
+    : formatRequirementDescription(requirement);
 }

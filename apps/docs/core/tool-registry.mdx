@@ -15,7 +15,8 @@ When you run `chatjs add`, the CLI:
 2. Resolves any registry dependencies that item depends on
 3. Writes the tool files into the installable tools directory from `chat.config.ts`
 4. Installs any npm dependencies declared by the registry item
-5. Updates the CLI-managed registry files so the tool is available to the model and renderer
+5. Warns if installed items declare missing environment variables
+6. Updates the CLI-managed registry files so the tool is available to the model and renderer
 
 ```bash
 npx @chat-js/cli@latest add word-count
@@ -77,6 +78,22 @@ export default defineConfig({
 ```
 
 The CLI uses this path both to decide where files should be written and which import alias should be used inside the generated registry index.
+
+## Tool Environment Variables
+
+Installable tools can declare their own environment requirements directly in `tool.ts`.
+
+```ts title="tools/chatjs/retrieve-url/tool.ts"
+import type { ToolEnvVars } from "@chat-js/registry";
+
+export const toolEnvVars: ToolEnvVars = [
+  {
+    options: [["FIRECRAWL_API_KEY"]],
+  },
+];
+```
+
+The registry build extracts `toolEnvVars` into the generated registry manifest as `envRequirements`. `chatjs add` uses that metadata for install-time warnings, and `check-env` validates installed tools from their `tool.ts` source at app startup and build time.
 
 ## Using a Different Registry
 

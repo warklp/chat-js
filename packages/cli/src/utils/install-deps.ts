@@ -17,7 +17,7 @@ export async function installDependencies(
     return;
   }
 
-  const pm = inferPackageManager();
+  const pm = inferPackageManager(cwd);
   if (dependencies.length) {
     const args = pm === "yarn" ? ["add", ...dependencies] : ["add", ...dependencies];
     await runCommand(pm, args, cwd);

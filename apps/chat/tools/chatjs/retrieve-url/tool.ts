@@ -1,15 +1,16 @@
+import type { ToolEnvVars } from "@chat-js/registry";
 import FirecrawlApp from "@mendable/firecrawl-js";
 import { tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { createModuleLogger } from "@/lib/logger";
 
-export const envRequirements = [
+export const toolEnvVars: ToolEnvVars = [
   {
     description: "FIRECRAWL_API_KEY",
     options: [["FIRECRAWL_API_KEY"]],
   },
-] as const;
+];
 
 const log = createModuleLogger("tools/retrieve-url");
 

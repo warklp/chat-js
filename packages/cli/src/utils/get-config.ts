@@ -30,7 +30,7 @@ export type ProjectConfig = {
 };
 
 export async function loadProjectConfig(cwd: string): Promise<ProjectConfig> {
-  const pm = inferPackageManager();
+  const pm = inferPackageManager(cwd);
   const [cmd, args] = getTsEvalCommand(pm);
 
   const stdout = await new Promise<string>((resolve, reject) => {

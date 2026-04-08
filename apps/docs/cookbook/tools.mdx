@@ -41,6 +41,33 @@ Each tool lives in its own folder. The CLI copies two files and injects entries 
 | `tools/chatjs/tools.ts` | Server registry file -- CLI injects tool imports and entries here |
 | `tools/chatjs/ui.ts` | Client registry file -- CLI injects renderer imports and entries here |
 
+## Tool environment variables
+
+If a tool needs environment variables, declare them in `tool.ts` with `toolEnvVars`.
+
+```ts title="tools/chatjs/retrieve-url/tool.ts"
+import type { ToolEnvVars } from "@chat-js/registry";
+import { tool } from "ai";
+
+export const toolEnvVars: ToolEnvVars = [
+  {
+    options: [["FIRECRAWL_API_KEY"]],
+  },
+];
+
+export const retrieveUrl = tool({
+  // ...
+});
+```
+
+This is the source of truth for installable tool env requirements.
+
+- The registry build extracts `toolEnvVars` into the published manifest as `envRequirements`.
+- `chatjs add` uses that metadata to warn about missing env vars during installation.
+- `check-env` validates installed tools by reading `toolEnvVars` from each installed `tool.ts`.
+
+`description` is optional. If omitted, ChatJS formats a readable fallback from `options`, for example `OPENAI_COMPATIBLE_BASE_URL + OPENAI_COMPATIBLE_API_KEY` or `TAVILY_API_KEY or FIRECRAWL_API_KEY`.
+
 ## Code
 
 ### 1. Backend tool
@@ -207,7 +234,7 @@ Do not migrate a platform tool into `tools/chatjs` unless it remains useful as a
 
 ## Registry manifest
 
-When you publish a tool to a registry, the manifest is a self-contained JSON payload with the source files and dependency list the CLI will install.
+When you publish a tool to a registry, the manifest is a self-contained JSON payload with the source files, dependency list, and any extracted environment requirements the CLI will install and validate.
 
 ## Related
 

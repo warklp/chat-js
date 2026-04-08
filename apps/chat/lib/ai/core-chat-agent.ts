@@ -19,6 +19,7 @@ export async function createCoreChatAgent({
   selectedModelId,
   explicitlyRequestedTools,
   userId,
+  isAnonymous = false,
   abortSignal,
   messageId,
   dataStream,
@@ -33,6 +34,7 @@ export async function createCoreChatAgent({
   selectedModelId: AppModelId;
   explicitlyRequestedTools: ToolName[] | null;
   userId: string | null;
+  isAnonymous?: boolean;
   abortSignal?: AbortSignal;
   messageId: string;
   dataStream: StreamWriter;
@@ -89,7 +91,6 @@ export async function createCoreChatAgent({
   };
 
   // Compute final activeTools for streamText
-  const isAnonymous = userId === null;
   let activeBaseTools = Object.keys(baseTools) as ToolName[];
   if (!modelDefinition?.input) {
     activeBaseTools = [];
