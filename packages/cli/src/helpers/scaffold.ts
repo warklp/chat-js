@@ -32,19 +32,12 @@ export async function scaffoldElectron(
   const destination = join(projectDir, "electron");
   await cp(templateDir, destination, { recursive: true });
 
-  // electron-builder.config.js: inject GitHub publish config
-  const builderPath = join(destination, "electron-builder.config.js");
-  const builder = (await readFile(builderPath, "utf8"))
+  // package.json: inject project name and repository metadata
+  const packageJsonPath = join(destination, "package.json");
+  const packageJson = (await readFile(packageJsonPath, "utf8"))
+    .replace("__PROJECT_NAME__-electron", `${opts.projectName}-electron`)
     .replace("__GITHUB_OWNER__", "your-github-username")
     .replace("__GITHUB_REPO__", opts.projectName);
-  await writeFile(builderPath, builder);
-
-  // package.json: inject project name
-  const packageJsonPath = join(destination, "package.json");
-  const packageJson = (await readFile(packageJsonPath, "utf8")).replace(
-    "__PROJECT_NAME__-electron",
-    `${opts.projectName}-electron`
-  );
   await writeFile(packageJsonPath, packageJson);
 }
 

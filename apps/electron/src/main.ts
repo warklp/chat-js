@@ -13,6 +13,18 @@ import { ELECTRON_AUTH_COOKIE_PREFIX } from "@/lib/electron-auth";
 import { APP_NAME, APP_SCHEME, APP_URL, WINDOW_DEFAULTS } from "./config";
 import { electronAuthClient } from "./lib/auth-client";
 
+function isSquirrelStartupEvent(): boolean {
+  if (process.platform !== "win32") {
+    return false;
+  }
+
+  return process.argv.some((arg) => arg.startsWith("--squirrel-"));
+}
+
+if (isSquirrelStartupEvent()) {
+  app.quit();
+}
+
 // Disable GPU acceleration in WSL / headless environments to prevent D3D12 crashes.
 if (process.env.WSL_DISTRO_NAME || process.env.WSLENV) {
   app.disableHardwareAcceleration();
@@ -39,13 +51,6 @@ type AuthRendererState =
       message: string;
       detail?: string | null;
     };
-
-type AppAutoUpdater = {
-  autoDownload: boolean;
-  autoInstallOnAppQuit: boolean;
-  on(event: "error", listener: (error: unknown) => void): void;
-  checkForUpdatesAndNotify(): void | Promise<unknown>;
-};
 
 let currentAuthState: AuthRendererState = {
   status: "idle",
@@ -585,28 +590,26 @@ function setupAutoUpdater(): void {
     return;
   }
 
-  let autoUpdater: AppAutoUpdater;
-
   try {
-    ({ autoUpdater } = require("electron-updater") as {
-      autoUpdater: AppAutoUpdater;
+    const { updateElectronApp } = require("update-electron-app") as {
+      updateElectronApp: (options?: {
+        logger?: Pick<typeof console, "error" | "log" | "warn">;
+        notifyUser?: boolean;
+        updateInterval?: string;
+      }) => void;
+    };
+
+    updateElectronApp({
+      logger: console,
+      notifyUser: true,
+      updateInterval: "1 hour",
     });
   } catch (error) {
     console.warn(
-      "[electron-main] electron-updater is unavailable; automatic updates are disabled.",
+      "[electron-main] update-electron-app is unavailable; automatic updates are disabled.",
       error
     );
-    return;
   }
-
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
-
-  autoUpdater.on("error", (err) => {
-    console.error("AutoUpdater error:", err);
-  });
-
-  void autoUpdater.checkForUpdatesAndNotify();
 }
 
 ipcMain.handle("chatjs:sync-auth-session", async () => {

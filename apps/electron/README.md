@@ -24,18 +24,18 @@ Replace `icon.png` with your own 512×512 PNG. Then regenerate the platform icon
 bun run generate-icons
 ```
 
-This produces `build/icon.png` and `build/icon.icns` (macOS) used by Electron and the installer.
+This produces the generated assets in `build/` used by Electron Forge.
 
 ### App Name & ID
 
-Edit `electron-builder.yml`:
+The app name, protocol prefix, and production URL are generated from your ChatJS config before each build. Use `forge.config.ts` only for packaging-specific overrides:
 
-- `productName` — display name shown in the OS
-- `appId` — reverse-DNS bundle identifier (e.g. `com.yourcompany.yourapp`)
+- `appName` controls the display name shown in the OS
+- `appPrefix` controls the bundle identifier prefix and protocol scheme
 
 ### Protocol Scheme (Deep Links)
 
-The `APP_SCHEME` in `src/config.ts` controls the custom URL scheme used for OAuth deep links (e.g. `yourapp://`). It must match the `schemes` entries in `electron-builder.yml`.
+The `APP_SCHEME` in `src/config.ts` controls the custom URL scheme used for OAuth deep links (e.g. `yourapp://`). It must match the `protocols` entries in `forge.config.ts`.
 
 ### Production URL
 
@@ -46,7 +46,9 @@ builds use that URL by default, while development uses `http://localhost:3000` u
 ## Building for Distribution
 
 ```bash
-bun run dist:mac   # macOS .dmg
-bun run dist:win   # Windows installer
-bun run dist:linux # Linux AppImage
+bun run make:mac   # macOS .dmg and .zip
+bun run make:win   # Windows installer
+bun run make:linux # Linux .deb and .rpm
 ```
+
+Forge outputs are written to `out/`.
