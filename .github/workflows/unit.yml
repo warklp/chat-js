@@ -1,15 +1,15 @@
-name: Docs
+name: Unit
 
 on:
   pull_request:
 
 concurrency:
-  group: docs-${{ github.event.pull_request.number || github.ref }}
+  group: unit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  docs:
-    name: Docs
+  unit:
+    name: Unit
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -27,15 +27,15 @@ jobs:
         run: |
           set -euo pipefail
           TURBO_VERSION="$(node -p "require('./package.json').devDependencies.turbo")"
-          if npx -y "turbo@${TURBO_VERSION}" query affected --tasks docs:links --packages @chatjs/docs --exit-code >/tmp/docs-query.json 2>/tmp/docs-query.log; then
+          if npx -y "turbo@${TURBO_VERSION}" query affected --tasks test:unit --exit-code >/tmp/unit-query.json 2>/tmp/unit-query.log; then
             echo "run=false" >>"$GITHUB_OUTPUT"
           else
             status=$?
             if [ "$status" -eq 1 ]; then
               echo "run=true" >>"$GITHUB_OUTPUT"
             else
-              cat /tmp/docs-query.log
-              cat /tmp/docs-query.json
+              cat /tmp/unit-query.log
+              cat /tmp/unit-query.json
               exit "$status"
             fi
           fi
@@ -57,4 +57,4 @@ jobs:
         env:
           TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
           TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha }}
-        run: bunx turbo run docs:links --affected --filter=@chatjs/docs
+        run: bunx turbo run test:unit --affected

@@ -1,9 +1,11 @@
 name: Required
+
 on:
   pull_request:
 
 jobs:
   gate:
+    name: Required
     runs-on: ubuntu-22.04
     steps:
       - name: Wait for required workflows
@@ -13,6 +15,6 @@ jobs:
           # ============================================
           # REQUIRED CHECKS - Add/remove check names here
           # ============================================
-          check-regexp: ^(Lint|Typecheck|Docs|Vitest|Playwright)$
+          check-regexp: ^(Docs|Lint|Typecheck|Unit|Playwright)$
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
