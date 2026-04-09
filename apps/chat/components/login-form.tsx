@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buildSocialAuthRequest } from "@/lib/electron-auth";
+import { buildSocialAuthRequest, isElectronRenderer } from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({
@@ -26,7 +26,7 @@ export function LoginForm({
   const registerHref = { pathname: "/register" as const, query };
 
   useEffect(() => {
-    setIsElectron(typeof window.requestAuth === "function");
+    setIsElectron(isElectronRenderer());
   }, []);
 
   return (

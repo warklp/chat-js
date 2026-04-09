@@ -183,7 +183,14 @@ export async function promptAuth(
 	return auth;
 }
 
-export async function promptElectron(skipPrompt: boolean): Promise<boolean> {
+export async function promptElectron(
+	skipPrompt: boolean,
+	explicitChoice?: boolean,
+): Promise<boolean> {
+	if (typeof explicitChoice === "boolean") {
+		return explicitChoice;
+	}
+
 	if (skipPrompt) return false;
 
 	const wantsElectron = await confirm({

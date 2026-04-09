@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { config } from "@/lib/config";
 import authClient from "@/lib/auth-client";
 
 /**
@@ -16,6 +17,10 @@ import authClient from "@/lib/auth-client";
  * Mount this in the root layout so it runs on every page.
  */
 export function ElectronAuthHandler() {
+  if (!config.desktopApp.enabled) {
+    return null;
+  }
+
   const router = useRouter();
   const [authState, setAuthState] = useState<ElectronRendererAuthState>({
     status: "idle",

@@ -254,6 +254,16 @@ export const authenticationConfigSchema = z
     vercel: false,
   });
 
+export const desktopAppConfigSchema = z
+  .object({
+    enabled: z
+      .boolean()
+      .describe("Enable Electron desktop auth/runtime integration"),
+  })
+  .default({
+    enabled: false,
+  });
+
 export const configSchema = z.object({
   appPrefix: z.string().default("chatjs"),
   appName: z.string().default("My AI Chat"),
@@ -326,6 +336,8 @@ export const configSchema = z.object({
 
   authentication: authenticationConfigSchema,
 
+  desktopApp: desktopAppConfigSchema,
+
   ai: aiConfigSchema,
 
   anonymous: anonymousConfigSchema,
@@ -341,6 +353,7 @@ export type AnonymousConfig = z.infer<typeof anonymousConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type FeaturesConfig = z.infer<typeof featuresConfigSchema>;
 export type AuthenticationConfig = z.infer<typeof authenticationConfigSchema>;
+export type DesktopAppConfig = z.infer<typeof desktopAppConfigSchema>;
 
 // Gateway-aware input types: model IDs narrowed per gateway for autocomplete
 type ZodConfigInput = z.input<typeof configSchema>;

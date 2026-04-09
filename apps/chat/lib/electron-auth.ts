@@ -13,6 +13,18 @@ export const ELECTRON_TRUSTED_ORIGINS = [
   `${ELECTRON_APP_SCHEME}://`,
 ] as const;
 
+export function isDesktopAppEnabled(): boolean {
+  return config.desktopApp.enabled;
+}
+
+export function isElectronRenderer(): boolean {
+  return (
+    isDesktopAppEnabled() &&
+    typeof window !== "undefined" &&
+    typeof window.requestAuth === "function"
+  );
+}
+
 type SearchParamValue = string | string[] | undefined;
 
 export function toSearchParamRecord(

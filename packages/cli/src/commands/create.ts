@@ -59,6 +59,7 @@ const createOptionsSchema = z.object({
 	target: z.string().optional(),
 	yes: z.boolean(),
 	install: z.boolean(),
+	electron: z.boolean().optional(),
 	fromGit: z.string().optional(),
 });
 
@@ -68,6 +69,8 @@ export const create = new Command()
 	.argument("[directory]", "target directory for the project")
 	.option("-y, --yes", "skip prompts and use defaults", false)
 	.option("--no-install", "skip dependency installation")
+	.option("--electron", "include the Electron desktop app")
+	.option("--no-electron", "do not include the Electron desktop app")
 	.option(
 		"--from-git <url>",
 		"clone from a git repository instead of the built-in scaffold",
@@ -110,7 +113,10 @@ export const create = new Command()
 			const auth = await promptAuth(options.yes);
 
 			// 6. Electron
-			const withElectron = await promptElectron(options.yes);
+			const withElectron = await promptElectron(
+				options.yes,
+				options.electron,
+			);
 
 			// 8. Scaffold project
 			logger.break();
@@ -149,6 +155,7 @@ export const create = new Command()
 					appName,
 					appPrefix,
 					appUrl,
+					withElectron,
 					gateway,
 					features,
 					auth,

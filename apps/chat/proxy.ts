@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { config as appConfig } from "@/lib/config";
 import { isPlaywrightTestEnvironment } from "@/lib/constants";
 
 function isPublicApiRoute(pathname: string): boolean {
@@ -37,7 +38,7 @@ function isAuthPage(pathname: string): boolean {
   return (
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
-    pathname.startsWith("/device-login")
+    (appConfig.desktopApp.enabled && pathname.startsWith("/device-login"))
   );
 }
 
@@ -64,7 +65,8 @@ export async function proxy(req: NextRequest) {
 
   const session = await auth.api.getSession({ headers: req.headers });
   const isLoggedIn = !!session?.user;
-  const isDeviceLoginPage = pathname.startsWith("/device-login");
+  const isDeviceLoginPage =
+    appConfig.desktopApp.enabled && pathname.startsWith("/device-login");
   const returnTo = getSafeReturnTo(url);
 
   if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginPage) {

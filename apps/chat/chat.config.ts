@@ -68,6 +68,9 @@ const config = defineConfig({
     github: true, // Requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET
     vercel: true, // Requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET
   },
+  desktopApp: {
+    enabled: true,
+  },
   ai: {
     gateway: "vercel",
     providerOrder: [
