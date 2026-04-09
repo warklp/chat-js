@@ -118,7 +118,7 @@ export const create = new Command()
 				options.electron,
 			);
 
-			// 8. Scaffold project
+			// 7. Scaffold project
 			logger.break();
 			const scaffoldSpinner = spinner("Scaffolding project...").start();
 			try {
@@ -138,7 +138,7 @@ export const create = new Command()
 				throw error;
 			}
 
-			// 7. Write configuration
+			// 8. Write configuration
 			const configSpinner = spinner("Writing configuration...").start();
 			try {
 				const packageJsonPath = join(targetDir, "package.json");

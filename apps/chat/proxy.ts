@@ -38,8 +38,12 @@ function isAuthPage(pathname: string): boolean {
   return (
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
-    (appConfig.desktopApp.enabled && pathname.startsWith("/device-login"))
+    isDeviceLoginPage(pathname)
   );
+}
+
+function isDeviceLoginPage(pathname: string): boolean {
+  return appConfig.desktopApp.enabled && pathname.startsWith("/device-login");
 }
 
 function getSafeReturnTo(url: URL): string | null {
@@ -65,11 +69,10 @@ export async function proxy(req: NextRequest) {
 
   const session = await auth.api.getSession({ headers: req.headers });
   const isLoggedIn = !!session?.user;
-  const isDeviceLoginPage =
-    appConfig.desktopApp.enabled && pathname.startsWith("/device-login");
+  const isDeviceLoginRoute = isDeviceLoginPage(pathname);
   const returnTo = getSafeReturnTo(url);
 
-  if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginPage) {
+  if (isLoggedIn && isAuthPage(pathname) && !isDeviceLoginRoute) {
     return NextResponse.redirect(new URL(returnTo ?? "/", url));
   }
 

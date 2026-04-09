@@ -27,7 +27,7 @@ describe("buildConfigTs", () => {
       },
     });
 
-    expect(output).toContain("desktopApp: {\n    enabled: false,");
+    expect(output).toMatch(/desktopApp:\s*{\s*enabled:\s*false,/m);
   });
   it("writes desktopApp.enabled=true for Electron scaffolds", () => {
     const output = buildConfigTs({
@@ -54,6 +54,6 @@ describe("buildConfigTs", () => {
       },
     });
 
-    expect(output).toContain("desktopApp: {\n    enabled: true,");
+    expect(output).toMatch(/desktopApp:\s*{\s*enabled:\s*true,/m);
   });
 });

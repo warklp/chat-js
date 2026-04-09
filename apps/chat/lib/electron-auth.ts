@@ -70,7 +70,8 @@ export function buildSocialAuthRequest(
   onRedirectToUrl?: (url: string) => void;
   signInOptions?: SocialAuthSignInOptions;
 } {
-  const isElectronTransfer = isElectronTransferQuery(query);
+  const isElectronTransfer =
+    isDesktopAppEnabled() && isElectronTransferQuery(query);
   const deviceLoginCallbackURL = origin
     ? new URL("/device-login", origin).toString()
     : "/device-login";

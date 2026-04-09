@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useGetCredits } from "@/hooks/chat-sync-hooks";
 import authClient from "@/lib/auth-client";
-import { config } from "@/lib/config";
+import { isElectronRenderer } from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
 
@@ -151,7 +151,7 @@ export function SidebarUserNav() {
             <DropdownMenuItem
               onClick={async () => {
                 if (
-                  config.desktopApp.enabled &&
+                  isElectronRenderer() &&
                   typeof window.signOut === "function"
                 ) {
                   await window.signOut();
