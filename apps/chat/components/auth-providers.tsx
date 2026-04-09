@@ -59,7 +59,7 @@ export function SocialAuthProviders({
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
   // URL in the user's default browser with the proper PKCE params.
-  if (isElectron) {
+  if (config.desktopApp.enabled && isElectron) {
     return <ElectronBrowserSignIn buttonLabel={electronBrowserLabel} />;
   }
 

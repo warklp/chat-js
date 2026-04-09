@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
+import { config } from "@/lib/config";
 
 /**
  * Handles the electron auth redirect after OAuth completes in the browser.
@@ -16,6 +17,7 @@ import authClient from "@/lib/auth-client";
  * Mount this in the root layout so it runs on every page.
  */
 export function ElectronAuthHandler() {
+  const isDesktopAppEnabled = config.desktopApp.enabled;
   const router = useRouter();
   const [authState, setAuthState] = useState<ElectronRendererAuthState>({
     status: "idle",
@@ -23,11 +25,19 @@ export function ElectronAuthHandler() {
   });
 
   useEffect(() => {
+    if (!isDesktopAppEnabled) {
+      return;
+    }
+
     const id = authClient.ensureElectronRedirect();
     return () => clearInterval(id);
-  }, []);
+  }, [isDesktopAppEnabled]);
 
   useEffect(() => {
+    if (!isDesktopAppEnabled) {
+      return;
+    }
+
     if (typeof window.requestAuth !== "function") {
       return;
     }
@@ -87,7 +97,11 @@ export function ElectronAuthHandler() {
       unsubscribeAuthError();
       unsubscribeAuthState();
     };
-  }, [router]);
+  }, [isDesktopAppEnabled, router]);
+
+  if (!isDesktopAppEnabled) {
+    return null;
+  }
 
   const overlayKey = `${authState.status}:${authState.message ?? ""}:${
     authState.status === "idle" ? "" : (authState.detail ?? "")

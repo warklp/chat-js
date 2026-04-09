@@ -11,7 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buildSocialAuthRequest } from "@/lib/electron-auth";
+import {
+  buildSocialAuthRequest,
+  isElectronRenderer,
+} from "@/lib/electron-auth";
 
 export function SignupForm({
   className,
@@ -25,7 +28,7 @@ export function SignupForm({
   const loginHref = { pathname: "/login" as const, query };
 
   useEffect(() => {
-    setIsElectron(typeof window.requestAuth === "function");
+    setIsElectron(isElectronRenderer());
   }, []);
 
   return (

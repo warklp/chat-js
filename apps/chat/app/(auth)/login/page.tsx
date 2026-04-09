@@ -6,6 +6,7 @@ import { ElectronTransferUser } from "@/components/electron-auth-ui";
 import { LoginForm } from "@/components/login-form";
 import { buttonVariants } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { config } from "@/lib/config";
 import {
   ELECTRON_AUTH_CLIENT_ID,
   toSearchParamRecord,
@@ -24,7 +25,8 @@ export default async function LoginPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const query = toSearchParamRecord(resolvedSearchParams);
-  const isElectronTransfer = query.client_id === ELECTRON_AUTH_CLIENT_ID;
+  const isElectronTransfer =
+    config.desktopApp.enabled && query.client_id === ELECTRON_AUTH_CLIENT_ID;
   const session = isElectronTransfer
     ? await auth.api.getSession({ headers: await headers() })
     : null;

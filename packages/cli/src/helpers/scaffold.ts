@@ -6,8 +6,6 @@ import { runCommand } from "../utils/run-command";
 
 function findTemplateDir(name: string): string {
   const __dir = dirname(fileURLToPath(import.meta.url));
-  // Production (dist/index.js): ../templates/<name>
-  // Dev (src/helpers/scaffold.ts): ../../templates/<name>
   for (const relative of [`../templates/${name}`, `../../templates/${name}`]) {
     const candidate = resolve(__dir, relative);
     if (existsSync(candidate)) return candidate;
@@ -32,7 +30,6 @@ export async function scaffoldElectron(
   const destination = join(projectDir, "electron");
   await cp(templateDir, destination, { recursive: true });
 
-  // package.json: inject project name and repository metadata
   const packageJsonPath = join(destination, "package.json");
   const packageJson = (await readFile(packageJsonPath, "utf8"))
     .replace("__PROJECT_NAME__-electron", `${opts.projectName}-electron`)

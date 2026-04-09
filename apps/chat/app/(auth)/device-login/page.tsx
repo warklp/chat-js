@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DeviceLoginPage } from "@/components/device-login-page";
 import { auth } from "@/lib/auth";
+import { config } from "@/lib/config";
 import { toSearchParamRecord } from "@/lib/electron-auth";
 
 export const metadata: Metadata = {
@@ -15,6 +16,10 @@ export default async function DeviceLoginRoute({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  if (!config.desktopApp.enabled) {
+    redirect("/login");
+  }
+
   const resolvedSearchParams = await searchParams;
   const query = toSearchParamRecord(resolvedSearchParams);
   const isCompletedView = query.done === "1";
