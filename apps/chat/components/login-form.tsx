@@ -11,7 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buildSocialAuthRequest, isElectronRenderer } from "@/lib/electron-auth";
+import {
+  buildSocialAuthRequest,
+  isElectronRenderer,
+} from "@/lib/electron-auth";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({

@@ -11,7 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buildSocialAuthRequest, isElectronRenderer } from "@/lib/electron-auth";
+import {
+  buildSocialAuthRequest,
+  isElectronRenderer,
+} from "@/lib/electron-auth";
 
 export function SignupForm({
   className,
