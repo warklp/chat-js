@@ -61,6 +61,7 @@ const createOptionsSchema = z.object({
 	install: z.boolean(),
 	electron: z.boolean().optional(),
 	fromGit: z.string().optional(),
+	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
 });
 
 export const create = new Command()
@@ -72,6 +73,10 @@ export const create = new Command()
 	.option("--electron", "include the Electron desktop app")
 	.option("--no-electron", "do not include the Electron desktop app")
 	.option(
+		"--package-manager <manager>",
+		"package manager for install + next steps (bun, npm, pnpm, yarn)",
+	)
+	.option(
 		"--from-git <url>",
 		"clone from a git repository instead of the built-in scaffold",
 	)
@@ -82,7 +87,7 @@ export const create = new Command()
 				...opts,
 			});
 
-			const packageManager = inferPackageManager();
+			const packageManager = options.packageManager ?? inferPackageManager();
 
 			if (!options.yes) {
 				intro("Create ChatJS App");
@@ -125,11 +130,12 @@ export const create = new Command()
 				if (options.fromGit) {
 					await scaffoldFromGit(options.fromGit, targetDir);
 				} else {
-					await scaffoldFromTemplate(targetDir);
+					await scaffoldFromTemplate(targetDir, { packageManager });
 				}
 				if (withElectron) {
 					await scaffoldElectron(targetDir, {
 						projectName,
+						packageManager,
 					});
 				}
 				scaffoldSpinner.succeed("Project scaffolded.");
@@ -219,7 +225,7 @@ export const create = new Command()
 				logger.break();
 				logger.info("Electron desktop app:");
 				logger.log(
-					`  Run the web app first, then: ${highlighter.info(`cd electron && bun install && bun run dev`)}`,
+					`  Run the web app first, then: ${highlighter.info(`cd electron && ${packageManager} install && ${packageManager} run dev`)}`,
 				);
 			}
 			logger.break();

@@ -14,6 +14,7 @@ import { join, relative, resolve, sep } from "node:path";
 
 const rootDir = resolve(import.meta.dir, "..");
 const isCheck = process.argv.includes("--check");
+const rootPackageJsonPath = join(rootDir, "package.json");
 
 // --- chat-app ---
 const sourceDir = join(rootDir, "apps", "chat");
@@ -140,6 +141,17 @@ async function applyTemplateTransforms(destination: string): Promise<void> {
     '@source "../node_modules/streamdown/dist/*.js";'
   );
   await writeFile(globalsCssPath, globalsCss);
+
+  // Stamp the template with the monorepo-controlled Bun version at build time.
+  const rootPackageJson = JSON.parse(
+    await readFile(rootPackageJsonPath, "utf8")
+  ) as { packageManager?: string };
+  const packageJsonPath = join(destination, "package.json");
+  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8")) as {
+    packageManager?: string;
+  };
+  packageJson.packageManager = rootPackageJson.packageManager;
+  await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }
 
 async function applyElectronTemplateTransforms(
