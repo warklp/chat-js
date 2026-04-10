@@ -1,5 +1,11 @@
 # @chat-js/cli
 
+## 0.6.1
+
+### Patch Changes
+
+- [#165](https://github.com/FranciscoMoretti/chat-js/pull/165) [`357def8`](https://github.com/FranciscoMoretti/chat-js/commit/357def8f78b27310182fcfd2f884d0c864179c85) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - support for all package managers
+
 ## 0.6.0
 
 ### Minor Changes
