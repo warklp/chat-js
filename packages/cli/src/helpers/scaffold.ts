@@ -6,15 +6,84 @@ import type { PackageManager } from "../types";
 import { normalizeScaffoldedPackageJson } from "./package-manifest";
 import { runCommand } from "../utils/run-command";
 
-function findTemplateDir(name: string): string {
+const CHAT_APP_EXCLUDED_SEGMENTS = new Set([
+  "node_modules",
+  ".next",
+  ".turbo",
+  "playwright",
+  "playwright-report",
+  "test-results",
+  "blob-report",
+  "dist",
+  "build",
+]);
+
+const CHAT_APP_EXCLUDED_FILES = new Set([
+  ".env.local",
+  ".DS_Store",
+  "bun.lock",
+  "bun.lockb",
+]);
+
+const ELECTRON_EXCLUDED_SEGMENTS = new Set([
+  "node_modules",
+  ".turbo",
+  "build",
+  "dist",
+  "release",
+]);
+
+const ELECTRON_EXCLUDED_FILES = new Set([
+  ".DS_Store",
+  "bun.lock",
+  "bun.lockb",
+  "branding.json",
+]);
+
+function getCliPackageRoot(): string {
   const __dir = dirname(fileURLToPath(import.meta.url));
-  for (const relative of [`../templates/${name}`, `../../templates/${name}`]) {
+
+  for (const relative of ["..", "../.."]) {
     const candidate = resolve(__dir, relative);
-    if (existsSync(candidate)) return candidate;
+    if (existsSync(join(candidate, "package.json"))) {
+      return candidate;
+    }
   }
-  throw new Error(
-    `Template "${name}" not found. Run \`bun template:sync\` to generate templates.`
-  );
+
+  throw new Error("Could not locate the @chat-js/cli package root.");
+}
+
+function getRepoRoot(): string {
+  return resolve(getCliPackageRoot(), "../..");
+}
+
+function findTemplateDir(name: string): string | null {
+  const cliRoot = getCliPackageRoot();
+  const candidate = join(cliRoot, "templates", name);
+  return existsSync(candidate) ? candidate : null;
+}
+
+function shouldCopyChatAppFilePath(sourceDir: string, filePath: string): boolean {
+  const relativePath = filePath.replace(`${sourceDir}/`, "");
+  const segments = relativePath.split("/");
+  if (segments.some((segment) => CHAT_APP_EXCLUDED_SEGMENTS.has(segment))) {
+    return false;
+  }
+  const fileName = segments.at(-1);
+  return !(fileName && CHAT_APP_EXCLUDED_FILES.has(fileName));
+}
+
+function shouldCopyElectronFilePath(
+  sourceDir: string,
+  filePath: string
+): boolean {
+  const relativePath = filePath.replace(`${sourceDir}/`, "");
+  const segments = relativePath.split("/");
+  if (segments.some((segment) => ELECTRON_EXCLUDED_SEGMENTS.has(segment))) {
+    return false;
+  }
+  const fileName = segments.at(-1);
+  return !(fileName && ELECTRON_EXCLUDED_FILES.has(fileName));
 }
 
 function runScript(packageManager: PackageManager, script: string): string {
@@ -33,6 +102,79 @@ async function replaceInFile(
     content = content.replaceAll(search, replacement);
   }
   await writeFile(filePath, content);
+}
+
+async function applyChatTemplateSourceTransforms(
+  destination: string
+): Promise<void> {
+  await Promise.all(
+    ["components/github-link.tsx", "components/docs-link.tsx"].map((file) =>
+      rm(join(destination, file), { force: true })
+    )
+  );
+
+  const headerPath = join(destination, "components", "header-actions.tsx");
+  await replaceInFile(headerPath, [
+    ['import { DocsLink } from "@/components/docs-link";\n', ""],
+    ['import { GitHubLink } from "@/components/github-link";\n', ""],
+    ["<DocsLink />", ""],
+    ["<GitHubLink />", ""],
+  ]);
+
+  const globalsCssPath = join(destination, "app", "globals.css");
+  await replaceInFile(globalsCssPath, [
+    [
+      '@source "../node_modules/streamdown/dist/*.js";\n@source "../../../node_modules/streamdown/dist/*.js";',
+      '@source "../node_modules/streamdown/dist/*.js";',
+    ],
+  ]);
+
+  const repoPackageJsonPath = join(getRepoRoot(), "package.json");
+  const rootPackageJson = JSON.parse(
+    await readFile(repoPackageJsonPath, "utf8")
+  ) as { packageManager?: string };
+  const packageJsonPath = join(destination, "package.json");
+  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8")) as {
+    packageManager?: string;
+  };
+  packageJson.packageManager = rootPackageJson.packageManager;
+  await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+}
+
+async function applyElectronTemplateSourceTransforms(
+  destination: string
+): Promise<void> {
+  const tsconfigPath = join(destination, "tsconfig.json");
+  await replaceInFile(tsconfigPath, [['"../chat/*"', '"../*"']]);
+
+  const packageJsonPath = join(destination, "package.json");
+  await replaceInFile(packageJsonPath, [
+    ['"name": "@chatjs/electron"', '"name": "__PROJECT_NAME__-electron"'],
+    [
+      '"url": "https://github.com/FranciscoMoretti/chat-js.git"',
+      '"url": "https://github.com/__GITHUB_OWNER__/__GITHUB_REPO__.git"',
+    ],
+  ]);
+}
+
+async function copyChatTemplateFromRepoSource(destination: string): Promise<void> {
+  const sourceDir = join(getRepoRoot(), "apps", "chat");
+  await cp(sourceDir, destination, {
+    recursive: true,
+    filter: (filePath) => shouldCopyChatAppFilePath(sourceDir, filePath),
+  });
+  await applyChatTemplateSourceTransforms(destination);
+}
+
+async function copyElectronTemplateFromRepoSource(
+  destination: string
+): Promise<void> {
+  const sourceDir = join(getRepoRoot(), "apps", "electron");
+  await cp(sourceDir, destination, {
+    recursive: true,
+    filter: (filePath) => shouldCopyElectronFilePath(sourceDir, filePath),
+  });
+  await applyElectronTemplateSourceTransforms(destination);
 }
 
 async function normalizeChatAppFiles(
@@ -151,7 +293,12 @@ export async function scaffoldFromTemplate(
 ): Promise<void> {
   const packageManager = options?.packageManager ?? "bun";
   const templateDir = findTemplateDir("chat-app");
-  await cp(templateDir, destination, { recursive: true });
+
+  if (templateDir) {
+    await cp(templateDir, destination, { recursive: true });
+  } else {
+    await copyChatTemplateFromRepoSource(destination);
+  }
 
   const packageJsonPath = join(destination, "package.json");
   const packageJson = normalizeScaffoldedPackageJson(
@@ -176,9 +323,14 @@ export async function scaffoldElectron(
   ) as {
     devDependencies?: Record<string, string>;
   };
-  const templateDir = findTemplateDir("electron");
   const destination = join(projectDir, "electron");
-  await cp(templateDir, destination, { recursive: true });
+  const templateDir = findTemplateDir("electron");
+
+  if (templateDir) {
+    await cp(templateDir, destination, { recursive: true });
+  } else {
+    await copyElectronTemplateFromRepoSource(destination);
+  }
 
   const packageJsonPath = join(destination, "package.json");
   const packageJson = normalizeScaffoldedPackageJson(
