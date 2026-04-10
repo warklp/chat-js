@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ForgeConfig } from "@electron-forge/shared-types";
@@ -59,10 +59,6 @@ function ensurePrebuild(): void {
 
   runBunScript("prebuild");
   prebuildComplete = true;
-}
-
-function removeLocalNodeModules(): void {
-  rmSync(join(appRoot, "node_modules"), { recursive: true, force: true });
 }
 
 function createForgeConfig(): ForgeConfig {
@@ -146,7 +142,6 @@ function createForgeConfig(): ForgeConfig {
       },
       prePackage: async () => {
         runBunScript("build", { NODE_ENV: "production" });
-        removeLocalNodeModules();
       },
     },
   };

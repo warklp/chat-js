@@ -101,9 +101,11 @@ bun run dev
 
 # Terminal 2 — Electron
 cd electron
-bun install
-bun run dev
+npm install
+npm run dev
 ```
+
+Use the same package manager you selected during `create`. The default scaffold still uses Bun, so if you did not pass `--package-manager`, replace the Electron commands above with `bun install` and `bun run dev`.
 
 In development, the Electron wrapper points at `http://localhost:3000` by default.
 

@@ -20,9 +20,10 @@ npx @chat-js/cli@latest [directory] [options]
 
 | Flag               | Default | Description                                                                          |
 | ------------------ | ------- | ------------------------------------------------------------------------------------ |
-| `-y, --yes`        | `false` | Skip all prompts and use defaults (Vercel gateway, GitHub auth, no extra features).  |
-| `--no-install`     | —       | Skip automatic dependency installation.                                              |
-| `--from-git <url>` | —       | Clone from a git repository instead of the built-in template.                        |
+| `-y, --yes`                         | `false` | Skip all prompts and use defaults (Vercel gateway, GitHub auth, no extra features). |
+| `--no-install`                      | —       | Skip automatic dependency installation.                                             |
+| `--package-manager <bun\|npm\|pnpm\|yarn>` | —       | Override which package manager the CLI uses for install + next steps.               |
+| `--from-git <url>`                  | —       | Clone from a git repository instead of the built-in template.                       |
 
 ## Interactive prompts
 
@@ -35,7 +36,7 @@ When run without `--yes`, the CLI walks you through:
 5. **Electron desktop app** — optionally adds an `electron/` subfolder to package the app as a native desktop app (see [Desktop](/platforms/desktop))
 6. **Install dependencies** — whether to run the package manager automatically
 
-The CLI auto-detects your package manager from the `npm_config_user_agent` environment variable (npm, pnpm, yarn, or bun).
+The CLI keeps `pnpm`, `yarn`, and `bun` when launched from those tools. If you launch through `npx`/npm, it defaults the generated app to Bun unless you pass `--package-manager`.
 
 ## What gets generated
 
@@ -82,6 +83,12 @@ npx @chat-js/cli@latest create my-chat-app --yes
 npx @chat-js/cli@latest create my-chat-app --no-install
 ```
 
+**Use npm for install + printed next steps**
+
+```bash
+npx @chat-js/cli@latest create my-chat-app --package-manager npm
+```
+
 **Clone from a custom git repository**
 
 ```bash
@@ -95,6 +102,6 @@ npx @chat-js/cli@latest create my-chat-app
 cd my-chat-app
 cp .env.example .env.local
 # Fill in the env vars printed by the CLI
-npm run db:push
-npm run dev
+bun run db:push
+bun run dev
 ```
