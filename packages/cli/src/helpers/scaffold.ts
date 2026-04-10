@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { cp, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PackageManager } from "../types";
 import { normalizeScaffoldedPackageJson } from "./package-manifest";
@@ -64,8 +64,8 @@ function findTemplateDir(name: string): string | null {
 }
 
 function shouldCopyChatAppFilePath(sourceDir: string, filePath: string): boolean {
-  const relativePath = filePath.replace(`${sourceDir}/`, "");
-  const segments = relativePath.split("/");
+  const relativePath = relative(sourceDir, filePath);
+  const segments = relativePath.split(sep);
   if (segments.some((segment) => CHAT_APP_EXCLUDED_SEGMENTS.has(segment))) {
     return false;
   }
@@ -77,8 +77,8 @@ function shouldCopyElectronFilePath(
   sourceDir: string,
   filePath: string
 ): boolean {
-  const relativePath = filePath.replace(`${sourceDir}/`, "");
-  const segments = relativePath.split("/");
+  const relativePath = relative(sourceDir, filePath);
+  const segments = relativePath.split(sep);
   if (segments.some((segment) => ELECTRON_EXCLUDED_SEGMENTS.has(segment))) {
     return false;
   }
