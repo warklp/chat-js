@@ -90,6 +90,19 @@ function runScript(packageManager: PackageManager, script: string): string {
   return `${packageManager} run ${script}`;
 }
 
+function execCommand(packageManager: PackageManager): string {
+  switch (packageManager) {
+    case "bun":
+      return "bunx";
+    case "pnpm":
+      return "pnpm dlx";
+    case "yarn":
+      return "yarn dlx";
+    case "npm":
+      return "npx";
+  }
+}
+
 async function replaceInFile(
   filePath: string,
   replacements: Array<[string, string]>
@@ -207,8 +220,8 @@ async function normalizeChatAppFiles(
   );
 
   await replaceInFile(join(destination, "scripts", "with-db.sh"), [
-    ["bunx neonctl", "npx neonctl"],
-    ["filter out bun's package resolution output", "filter out npx resolution output"],
+    ["bunx neonctl", `${execCommand(packageManager)} neonctl`],
+    ["filter out bun's package resolution output", `filter out ${execCommand(packageManager)} resolution output`],
     [
       "Run: bun db:branch:use main  (to switch back to main)",
       "Run: bash scripts/db-branch-use.sh main  (to switch back to main)",
@@ -216,7 +229,7 @@ async function normalizeChatAppFiles(
   ]);
 
   await replaceInFile(join(destination, "scripts", "db-branch-create.sh"), [
-    ["bunx neonctl", "npx neonctl"],
+    ["bunx neonctl", `${execCommand(packageManager)} neonctl`],
     [
       'echo "To use it: bun db:branch:use $BRANCH_NAME"',
       'echo "To use it: bash scripts/db-branch-use.sh $BRANCH_NAME"',
@@ -224,18 +237,18 @@ async function normalizeChatAppFiles(
   ]);
 
   await replaceInFile(join(destination, "scripts", "db-branch-use.sh"), [
-    ["bunx neonctl", "npx neonctl"],
+    ["bunx neonctl", `${execCommand(packageManager)} neonctl`],
     ['echo "Usage: bun db:branch:use <branch-name>"', 'echo "Usage: bash scripts/db-branch-use.sh <branch-name>"'],
     [
       'echo "       bun db:branch:use main  (switch to production)"',
       'echo "       bash scripts/db-branch-use.sh main  (switch to production)"',
     ],
-    ['echo "Available branches: bun db:branch:list"', 'echo "Available branches: npx neonctl branches list"'],
+    ['echo "Available branches: bun db:branch:list"', `echo "Available branches: ${execCommand(packageManager)} neonctl branches list"`],
     ['echo "Create branch: bun db:branch:create"', 'echo "Create branch: bash scripts/db-branch-create.sh"'],
   ]);
 
   await replaceInFile(join(destination, "scripts", "db-branch-delete.sh"), [
-    ["bunx neonctl", "npx neonctl"],
+    ["bunx neonctl", `${execCommand(packageManager)} neonctl`],
   ]);
 
   await replaceInFile(join(destination, "scripts", "worktree-setup.sh"), [
@@ -259,7 +272,7 @@ async function normalizeElectronFiles(
   const scriptPlaceholder = "$" + "{script}";
 
   await replaceInFile(join(destination, "forge.config.ts"), [
-    ["Run `bun run prebuild`", `Run \`${runScript(packageManager, "prebuild")}\``],
+    ["Run \\`bun run prebuild\\`", "Run \\`" + runScript(packageManager, "prebuild") + "\\`"],
     ["function runBunScript", "function runPackageManagerScript"],
     ['spawnSync("bun", ["run", script], {', `spawnSync("${packageManager}", ["run", script], {`],
     [`bun run ${scriptPlaceholder} failed`, `${packageManager} run ${scriptPlaceholder} failed`],
@@ -278,9 +291,6 @@ async function normalizeElectronFiles(
     ["bun install", `${packageManager} install`],
     ["bun run dev", runScript(packageManager, "dev")],
     ["bun run generate-icons", runScript(packageManager, "generate-icons")],
-    ["bun run dist:mac", runScript(packageManager, "dist:mac")],
-    ["bun run dist:win", runScript(packageManager, "dist:win")],
-    ["bun run dist:linux", runScript(packageManager, "dist:linux")],
     ["bun run make:mac", runScript(packageManager, "make:mac")],
     ["bun run make:win", runScript(packageManager, "make:win")],
     ["bun run make:linux", runScript(packageManager, "make:linux")],
