@@ -1,7 +1,9 @@
+import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it } from "bun:test";
-import { readFile, rm } from "node:fs/promises";
+import { readFile, rename, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildConfigTs } from "./config-builder";
 import { scaffoldElectron, scaffoldFromTemplate } from "./scaffold";
 
@@ -11,6 +13,10 @@ async function makeTempDir(name: string): Promise<string> {
   const dir = join(tmpdir(), `chat-js-cli-${name}-${crypto.randomUUID()}`);
   tempDirs.push(dir);
   return dir;
+}
+
+function getCliPackageRoot(): string {
+  return resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 }
 
 afterEach(async () => {
@@ -133,6 +139,47 @@ describe("scaffoldFromTemplate", () => {
     expect(
       await readFile(join(destination, "scripts", "db-branch-use.sh"), "utf8")
     ).not.toContain("bun");
+  });
+
+  it("falls back to repo source apps when synced templates are missing", async () => {
+    const projectDir = await makeTempDir("chat-app-fallback");
+    const templatesDir = join(getCliPackageRoot(), "templates");
+    const backupDir = join(
+      tmpdir(),
+      `chat-js-cli-templates-${crypto.randomUUID()}`
+    );
+
+    if (existsSync(templatesDir)) {
+      await rename(templatesDir, backupDir);
+    }
+
+    try {
+      await scaffoldFromTemplate(projectDir, { packageManager: "npm" });
+      await scaffoldElectron(projectDir, {
+        projectName: "my-chat-app",
+        packageManager: "npm",
+      });
+
+      const packageJson = JSON.parse(
+        await readFile(join(projectDir, "package.json"), "utf8")
+      ) as {
+        dependencies: Record<string, string>;
+      };
+      const electronPackageJson = JSON.parse(
+        await readFile(join(projectDir, "electron", "package.json"), "utf8")
+      ) as {
+        devDependencies: Record<string, string>;
+      };
+
+      expect(packageJson.dependencies["@better-auth/core"]).toBe("1.5.6");
+      expect(electronPackageJson.devDependencies["@better-auth/electron"]).toBe(
+        "1.5.6"
+      );
+    } finally {
+      if (existsSync(backupDir)) {
+        await rename(backupDir, templatesDir);
+      }
+    }
   });
 });
 
