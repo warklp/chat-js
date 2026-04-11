@@ -8,6 +8,7 @@ import "dotenv/config";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
 import * as ts from "typescript";
 import type { GatewayType } from "../lib/ai/gateways/registry";
 import { generatedForGateway } from "../lib/ai/models.generated";
@@ -79,6 +80,7 @@ function readStringArray(node: ts.Expression): string[] | null {
   return values;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AST traversal logic is inherently complex
 function readToolEnvVar(node: ts.Expression): StaticToolEnvVar | null {
   const expr = unwrapExpression(node);
   if (!ts.isObjectLiteralExpression(expr)) {

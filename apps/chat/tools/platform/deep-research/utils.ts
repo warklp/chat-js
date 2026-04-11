@@ -9,7 +9,6 @@ import type { DeepResearchRuntimeConfig, SearchAPI } from "./configuration";
 // MCP Utils
 
 type McpClient = Awaited<ReturnType<typeof experimental_createMCPClient>>;
-type McpToolSet = Awaited<ReturnType<McpClient["tools"]>>;
 
 async function loadMcpTools(
   config: DeepResearchRuntimeConfig,
