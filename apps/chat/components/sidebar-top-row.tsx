@@ -39,18 +39,18 @@ export function SidebarTopRow() {
       ) : (
         <button
           aria-label="Expand sidebar"
-          className="group/logo relative flex size-8 items-center justify-center rounded-md hover:bg-muted"
+          className="relative flex size-8 items-center justify-center rounded-md transition-colors group-hover/sidebar:bg-muted"
           onClick={toggleSidebar}
           type="button"
         >
           <Image
             alt={config.appName}
-            className="h-5 w-5 transition-opacity duration-150 group-hover/logo:opacity-0"
+            className="h-5 w-5 transition-opacity duration-150 group-hover/sidebar:opacity-0"
             height={20}
             src="/icon.svg"
             width={20}
           />
-          <PanelLeft className="absolute size-4 opacity-0 transition-opacity duration-150 group-hover/logo:opacity-100" />
+          <PanelLeft className="absolute size-4 opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100" />
         </button>
       )}
 
