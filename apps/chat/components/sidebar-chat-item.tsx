@@ -1,10 +1,9 @@
 "use client";
 import { MoreHorizontal } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
 import { toast } from "sonner";
 import { ChatMenuItems } from "@/components/chat-menu-items";
+import { InternalLink } from "@/components/internal-link";
 import { ShareDialog } from "@/components/share-button";
 import {
   DropdownMenu,
@@ -40,7 +39,6 @@ const PureSidebarChatItem = ({
     chat.projectId
       ? `/project/${chat.projectId}/chat/${chat.id}`
       : `/chat/${chat.id}`;
-  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(chat.title);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -87,21 +85,15 @@ const PureSidebarChatItem = ({
         </div>
       ) : (
         <SidebarMenuButton asChild isActive={isActive}>
-          <Link
+          <InternalLink
             href={chatHref}
-            onClick={(e) => {
-              // Allow middle-click and ctrl+click to open in new tab
-              if (e.button === 1 || e.ctrlKey || e.metaKey) {
-                return;
-              }
-              e.preventDefault();
-              router.push(chatHref);
+            onNavigate={() => {
               setOpenMobile(false);
             }}
             prefetch={prefetch}
           >
             <span>{chat.title}</span>
-          </Link>
+          </InternalLink>
         </SidebarMenuButton>
       )}
 

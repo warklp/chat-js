@@ -1,7 +1,7 @@
 "use client";
 
 import { LogIn } from "lucide-react";
-import Link from "next/link";
+import { InternalLink } from "@/components/internal-link";
 import { SidebarHistory } from "@/components/sidebar-history";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,10 +39,10 @@ export function AppSidebarHistoryConditional() {
             </EmptyHeader>
             <EmptyContent>
               <Button asChild size="sm" variant="outline">
-                <Link href="/login">
+                <InternalLink href="/login">
                   <LogIn />
                   Sign In
-                </Link>
+                </InternalLink>
               </Button>
             </EmptyContent>
           </Empty>

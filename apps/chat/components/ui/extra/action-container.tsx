@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import type * as React from "react";
+import { InternalLink } from "@/components/internal-link";
 
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ function ActionContainer({ className, ...props }: ActionContainerProps) {
   );
 }
 
-type ActionContainerLinkProps = React.ComponentProps<typeof Link>;
+type ActionContainerLinkProps = React.ComponentProps<typeof InternalLink>;
 
 function ActionContainerLink({
   className,
@@ -27,7 +27,7 @@ function ActionContainerLink({
   ...props
 }: ActionContainerLinkProps) {
   return (
-    <Link
+    <InternalLink
       className={cn("absolute inset-0 z-10", className)}
       tabIndex={tabIndex ?? -1}
       {...props}

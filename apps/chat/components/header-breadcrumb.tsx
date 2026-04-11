@@ -4,6 +4,7 @@ import { type KeyboardEvent, memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ChatMenuItems } from "@/components/chat-menu-items";
 import { DeleteChatDialog } from "@/components/delete-chat-dialog";
+import { InternalLink } from "@/components/internal-link";
 import { ProjectIcon } from "@/components/project-icon";
 import {
   Breadcrumb,
@@ -349,17 +350,19 @@ function ProjectBreadcrumb({
   return (
     <>
       <BreadcrumbItem>
-        <BreadcrumbLink
-          aria-label={projectLabel}
-          className="flex items-center"
-          href={`/project/${projectId}`}
-          title={projectLabel}
-        >
-          {projectIcon && projectColor ? (
-            <ProjectIcon color={projectColor} icon={projectIcon} size={16} />
-          ) : (
-            projectLabel
-          )}
+        <BreadcrumbLink asChild>
+          <InternalLink
+            aria-label={projectLabel}
+            className="flex items-center"
+            href={`/project/${projectId}`}
+            title={projectLabel}
+          >
+            {projectIcon && projectColor ? (
+              <ProjectIcon color={projectColor} icon={projectIcon} size={16} />
+            ) : (
+              projectLabel
+            )}
+          </InternalLink>
         </BreadcrumbLink>
       </BreadcrumbItem>
       <BreadcrumbSeparator />

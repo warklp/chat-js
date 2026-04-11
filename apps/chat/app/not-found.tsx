@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { InternalLink } from "@/components/internal-link";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
@@ -13,7 +13,7 @@ export default function NotFound() {
               The page you are looking for does not exist or has been moved.
             </p>
             <Button asChild>
-              <Link href="/">Return Home</Link>
+              <InternalLink href="/">Return Home</InternalLink>
             </Button>
           </div>
         </div>

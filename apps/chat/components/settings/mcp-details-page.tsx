@@ -10,10 +10,10 @@ import {
   Trash2,
   Wrench,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { InternalLink } from "@/components/internal-link";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -237,10 +237,10 @@ export function McpDetailsPage({ connectorId }: { connectorId: string }) {
     return (
       <SettingsPageContent className="gap-4">
         <Button asChild className="w-fit" size="sm" variant="ghost">
-          <Link href="/settings/connectors">
+          <InternalLink href="/settings/connectors">
             <ChevronLeft className="size-4" />
             Back
-          </Link>
+          </InternalLink>
         </Button>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <AlertCircle className="size-6 text-destructive" />
@@ -259,10 +259,10 @@ export function McpDetailsPage({ connectorId }: { connectorId: string }) {
   return (
     <SettingsPageContent className="gap-4">
       <Button asChild className="w-fit" size="sm" variant="ghost">
-        <Link href="/settings/connectors">
+        <InternalLink href="/settings/connectors">
           <ChevronLeft className="size-4" />
           Back
-        </Link>
+        </InternalLink>
       </Button>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

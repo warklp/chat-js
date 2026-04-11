@@ -2,8 +2,8 @@
 
 import { LogIn, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
 import { useState } from "react";
+import { InternalLink } from "@/components/internal-link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +73,7 @@ export function LoginCtaBanner({
             )}
             <span className={cn("text-sm", textStyles[variant])}>
               {message}{" "}
-              <Link
+              <InternalLink
                 className={cn(
                   "font-medium underline hover:no-underline",
                   linkStyles[variant]
@@ -81,7 +81,7 @@ export function LoginCtaBanner({
                 href="/login"
               >
                 Sign in
-              </Link>
+              </InternalLink>
             </span>
           </div>
           {dismissible && (

@@ -1,5 +1,5 @@
 import { Cpu } from "lucide-react";
-import Link from "next/link";
+import { InternalLink } from "@/components/internal-link";
 import { NewChatButton } from "@/components/new-chat-button";
 import { SearchChatsButton } from "@/components/search-chats";
 import { SidebarTopRow } from "@/components/sidebar-top-row";
@@ -36,12 +36,12 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Models">
-              <Link href="/settings/models">
+              <InternalLink href="/settings/models">
                 <Cpu className="size-4" />
                 <span className="group-data-[collapsible=icon]:hidden">
                   Models
                 </span>
-              </Link>
+              </InternalLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

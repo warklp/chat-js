@@ -9,9 +9,9 @@ import {
   Settings,
   Sun,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { InternalLink } from "@/components/internal-link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -129,10 +129,10 @@ export function SidebarUserNav() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/settings">
+                <InternalLink href="/settings">
                   <Settings className="mr-2 size-4" />
                   Settings
-                </Link>
+                </InternalLink>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>

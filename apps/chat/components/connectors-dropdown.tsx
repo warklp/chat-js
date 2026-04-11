@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Globe, Plug, Settings } from "lucide-react";
-import Link from "next/link";
 import { memo } from "react";
 import { toast } from "sonner";
+import { InternalLink } from "@/components/internal-link";
 import { config } from "@/lib/config";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
@@ -122,10 +122,13 @@ function PureConnectorsDropdown() {
         })}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link className="flex items-center gap-2" href="/settings/connectors">
+          <InternalLink
+            className="flex items-center gap-2"
+            href="/settings/connectors"
+          >
             <Settings className="size-4" />
             <span>Manage Connectors</span>
-          </Link>
+          </InternalLink>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
