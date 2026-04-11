@@ -1,7 +1,14 @@
 "use client";
 
 import type { ToolUIPart } from "ai";
-import { toolRendererRegistry } from "@/lib/ai/tool-renderer-registry";
+import type { ComponentType } from "react";
+import {
+  isInstalledToolType,
+  toolRendererRegistry,
+  type InstalledToolPart,
+  type ToolRendererProps,
+  type InstalledToolType,
+} from "@/lib/ai/tool-renderer-registry";
 import type { ChatTools } from "@/lib/ai/types";
 import { CodeExecution } from "./code-execution";
 import { DeepResearch } from "./deep-research";
@@ -15,6 +22,22 @@ interface ToolPartProps {
   isReadonly: boolean;
   messageId: string;
   part: ToolUIPart<ChatTools>;
+}
+
+function renderInstalledTool<T extends InstalledToolType>({
+  part,
+  messageId,
+  isReadonly,
+}: {
+  part: InstalledToolPart<T>;
+  messageId: string;
+  isReadonly: boolean;
+}) {
+  const Renderer = toolRendererRegistry[part.type] as unknown as ComponentType<
+    ToolRendererProps<T>
+  >;
+
+  return <Renderer isReadonly={isReadonly} messageId={messageId} tool={part} />;
 }
 
 export function ToolPart({ part, messageId, isReadonly }: ToolPartProps) {
@@ -57,14 +80,12 @@ export function ToolPart({ part, messageId, isReadonly }: ToolPartProps) {
     return <WebSearch messageId={messageId} part={part} />;
   }
 
-  // Plugin tools registered via `chatjs add` are dispatched here.
-  // Each renderer receives the full typed ToolUIPart<ChatTools> union and
-  // can narrow to its specific tool type for typed input/output access.
-  const Renderer = toolRendererRegistry[type];
-  if (Renderer) {
-    return (
-      <Renderer isReadonly={isReadonly} messageId={messageId} tool={part} />
-    );
+  if (isInstalledToolType(type)) {
+    return renderInstalledTool({
+      part: part as InstalledToolPart<typeof type>,
+      messageId,
+      isReadonly,
+    });
   }
 
   return null;

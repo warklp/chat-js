@@ -1,17 +1,31 @@
 import type { ToolUIPart } from "ai";
 import type { ComponentType } from "react";
-import type { ChatTools } from "@/lib/ai/types";
 import { ui } from "@/tools/chatjs/ui";
+import type { InstalledTools, installedTools } from "./installed-tools";
 
-// The props every tool renderer receives.
-// `tool` is the full ChatTools union — narrow it inside the renderer using
-// `Extract<typeof tool, { type: "tool-yourToolName" }>` to get typed input/output.
-export type ToolRendererProps = {
-  tool: ToolUIPart<ChatTools>;
-  messageId: string;
-  isReadonly: boolean;
+export type InstalledToolName = keyof typeof installedTools;
+export type InstalledToolType = `tool-${InstalledToolName & string}`;
+export type InstalledToolUIPart = ToolUIPart<InstalledTools>;
+
+export type InstalledToolPart<T extends InstalledToolType> = Extract<
+	InstalledToolUIPart,
+	{ type: T }
+>;
+
+export type ToolRendererProps<T extends InstalledToolType> = {
+	tool: InstalledToolPart<T>;
+	messageId: string;
+	isReadonly: boolean;
 };
 
-export const toolRendererRegistry: Partial<
-  Record<ToolUIPart<ChatTools>["type"], ComponentType<ToolRendererProps>>
-> = ui;
+export type ToolRendererRegistry = {
+	[K in InstalledToolType]: ComponentType<ToolRendererProps<K>>;
+};
+
+export const toolRendererRegistry = ui satisfies ToolRendererRegistry;
+
+export function isInstalledToolType(
+	type: string,
+): type is keyof typeof toolRendererRegistry {
+	return type in toolRendererRegistry;
+}

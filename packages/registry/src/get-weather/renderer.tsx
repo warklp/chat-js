@@ -2,8 +2,14 @@
 
 import { format, isWithinInterval } from "date-fns";
 import { cx } from "@toolkit/lib/cx";
+import type { TypelessToolPartFromTool } from "@toolkit/lib/tool-part";
 import { useToolIsCompact } from "@toolkit/hooks/use-tool-is-compact";
-import type { WeatherAtLocation } from "./tool";
+import { getWeather, type WeatherAtLocation } from "./tool";
+
+type GetWeatherRendererTool = TypelessToolPartFromTool<
+  "getWeather",
+  typeof getWeather
+>;
 
 const SAMPLE = {
   latitude: 37.763_283,
@@ -160,14 +166,6 @@ const SAMPLE = {
   },
 };
 
-type GetWeatherPart =
-  | { state: "input-available" | "input-streaming"; toolCallId?: string }
-  | {
-      state: "output-available";
-      output: WeatherAtLocation;
-      toolCallId?: string;
-    };
-
 function n(num: number): number {
   return Math.ceil(num);
 }
@@ -253,19 +251,24 @@ function WeatherCard({
   );
 }
 
-export function GetWeatherRenderer({ tool }: { tool: unknown }) {
-  const part = tool as GetWeatherPart;
-  const isLoading = part.state === "input-available";
-  const weatherAtLocation =
-    part.state === "output-available" ? part.output : SAMPLE;
-
-  if (isLoading) {
+export function GetWeatherRenderer({
+  tool,
+}: {
+  tool: GetWeatherRendererTool;
+  messageId: string;
+  isReadonly: boolean;
+}) {
+  if (tool.state !== "output-available") {
     return (
-      <div className="skeleton" key={part.toolCallId}>
-        <WeatherCard weatherAtLocation={weatherAtLocation} />
+      <div className="skeleton" key={tool.toolCallId}>
+        <WeatherCard weatherAtLocation={SAMPLE} />
       </div>
     );
   }
 
-  return <WeatherCard weatherAtLocation={weatherAtLocation} />;
+  if (!tool.output) {
+    return <WeatherCard weatherAtLocation={SAMPLE} />;
+  }
+
+  return <WeatherCard weatherAtLocation={tool.output} />;
 }

@@ -8,6 +8,11 @@
       "type": "lib"
     },
     {
+      "source": "tool-part.ts",
+      "target": "_shared/lib/tool-part.ts",
+      "type": "lib"
+    },
+    {
       "source": "use-tool-is-compact.ts",
       "target": "_shared/hooks/use-tool-is-compact.ts",
       "type": "hook"

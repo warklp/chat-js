@@ -3,22 +3,13 @@
 import { ChevronDown, ExternalLink, Globe, TextIcon } from "lucide-react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
+import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import { retrieveUrl } from "./tool";
 
-type RetrieveUrlResult = {
-  error?: string;
-  results?: Array<{
-    content?: string;
-    description?: string;
-    error?: string;
-    language?: string;
-    title?: string;
-    url?: string;
-  }>;
-};
-
-type RetrieveUrlPart =
-  | { state: "input-available" | "input-streaming"; output?: never }
-  | { state: "output-available"; output: RetrieveUrlResult };
+type RetrieveUrlRendererTool = TypelessToolPartFromTool<
+  "retrieveUrl",
+  typeof retrieveUrl
+>;
 
 function LoadingState() {
   return (
@@ -169,18 +160,26 @@ function getErrorMessage(result: unknown, firstItem: unknown): string | null {
   return topLevelError ?? firstItemError ?? null;
 }
 
-export function RetrieveUrlRenderer({ tool }: { tool: unknown }) {
-  const part = tool as RetrieveUrlPart;
-
-  if (part.state === "input-available") {
+export function RetrieveUrlRenderer({
+  tool,
+}: {
+  tool: RetrieveUrlRendererTool;
+  messageId: string;
+  isReadonly: boolean;
+}) {
+  if (tool.state === "input-available") {
     return <LoadingState />;
   }
 
-  if (part.state !== "output-available") {
+  if (tool.state !== "output-available") {
     return null;
   }
 
-  const { output: result } = part;
+  if (!tool.output) {
+    return null;
+  }
+
+  const { output: result } = tool;
   const firstItem = getFirstItem(result);
   const errorMessage = getErrorMessage(result, firstItem);
 

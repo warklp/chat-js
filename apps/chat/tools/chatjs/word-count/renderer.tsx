@@ -1,16 +1,21 @@
 "use client";
 
-import type { WordCountOutput } from "./tool";
+import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import { wordCount } from "./tool";
 
-// Typed locally to avoid circular imports (tools/ ← lib/ai/types ← installed-tools ← tools/)
-type WordCountPart =
-  | { state: "input-available" | "input-streaming"; output?: never }
-  | { state: "output-available"; output: WordCountOutput };
+type WordCountRendererTool = TypelessToolPartFromTool<
+  "wordCount",
+  typeof wordCount
+>;
 
-export function WordCountRenderer({ tool }: { tool: unknown }) {
-  const part = tool as WordCountPart;
-
-  if (part.state === "input-available") {
+export function WordCountRenderer({
+  tool,
+}: {
+  tool: WordCountRendererTool;
+  messageId: string;
+  isReadonly: boolean;
+}) {
+  if (tool.state === "input-available") {
     return (
       <div className="rounded-lg border p-3 text-muted-foreground text-sm">
         Counting words...
@@ -18,11 +23,15 @@ export function WordCountRenderer({ tool }: { tool: unknown }) {
     );
   }
 
-  if (part.state !== "output-available") {
+  if (tool.state !== "output-available") {
     return null;
   }
 
-  const { words, characters, charactersNoSpaces, sentences } = part.output;
+  if (!tool.output) {
+    return null;
+  }
+
+  const { words, characters, charactersNoSpaces, sentences } = tool.output;
 
   return (
     <div className="grid grid-cols-2 gap-2 rounded-lg border p-3 text-sm sm:grid-cols-4">
