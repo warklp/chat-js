@@ -50,6 +50,9 @@ type GeneratedConfig = {
     terms: { title: string };
   };
   authentication: Record<AuthProvider, boolean>;
+  desktopApp: {
+    enabled: boolean;
+  };
   ai: {
     gateway: Gateway;
   };
