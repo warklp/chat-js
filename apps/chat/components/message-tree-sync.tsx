@@ -7,8 +7,8 @@ import { useEffect } from "react";
 import { useDataStream } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
 import {
-  useResetThreadEpoch,
-  useSetAllMessages,
+	useResetThreadEpoch,
+	useSetAllMessages,
 } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
 import { useChatId } from "../providers/chat-id-provider";
@@ -19,37 +19,37 @@ import { useChatId } from "../providers/chat-id-provider";
  * switching) lives in the store (with-threads middleware).
  */
 export function MessageTreeSync() {
-  const { id, isPersisted, source } = useChatId();
-  const isShared = source === "share";
-  const pathname = usePathname();
-  const trpc = useTRPC();
-  const reset = useChatReset();
-  const { setDataStream } = useDataStream();
-  const resetThreadEpoch = useResetThreadEpoch();
-  const setAllMessages = useSetAllMessages();
+	const { id, isPersisted, source } = useChatId();
+	const isShared = source === "share";
+	const pathname = usePathname();
+	const trpc = useTRPC();
+	const reset = useChatReset();
+	const { setDataStream } = useDataStream();
+	const resetThreadEpoch = useResetThreadEpoch();
+	const setAllMessages = useSetAllMessages();
 
-  // React Query fetches the full tree from the server and feeds it into the store
-  const messagesQuery = useQuery({
-    ...(isShared
-      ? trpc.chat.getPublicChatMessages.queryOptions({ chatId: id })
-      : trpc.chat.getChatMessages.queryOptions({ chatId: id })),
-    enabled: !!id && isPersisted && pathname !== "/",
-  });
+	// React Query fetches the full tree from the server and feeds it into the store
+	const messagesQuery = useQuery({
+		...(isShared
+			? trpc.chat.getPublicChatMessages.queryOptions({ chatId: id })
+			: trpc.chat.getChatMessages.queryOptions({ chatId: id })),
+		enabled: !!id && isPersisted && pathname !== "/",
+	});
 
-  // Sync server data → store whenever React Query resolves
-  useEffect(() => {
-    if (messagesQuery.data) {
-      setAllMessages(messagesQuery.data as ChatMessage[]);
-    }
-  }, [messagesQuery.data, setAllMessages]);
+	// Sync server data → store whenever React Query resolves
+	useEffect(() => {
+		if (messagesQuery.data) {
+			setAllMessages(messagesQuery.data as ChatMessage[]);
+		}
+	}, [messagesQuery.data, setAllMessages]);
 
-  useEffect(() => {
-    if (!isPersisted && pathname === "/") {
-      reset();
-      setDataStream([]);
-      resetThreadEpoch();
-    }
-  }, [isPersisted, pathname, reset, setDataStream, resetThreadEpoch]);
+	useEffect(() => {
+		if (!isPersisted && pathname === "/") {
+			reset();
+			setDataStream([]);
+			resetThreadEpoch();
+		}
+	}, [isPersisted, pathname, reset, setDataStream, resetThreadEpoch]);
 
-  return null;
+	return null;
 }

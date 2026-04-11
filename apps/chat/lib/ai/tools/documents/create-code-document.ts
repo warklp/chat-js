@@ -6,45 +6,45 @@ import { codeGuidelines } from "./code-guidelines";
 import type { DocumentToolContext, DocumentToolResult } from "./types";
 
 export const createCodeDocumentTool = ({
-  session,
-  messageId,
+	session,
+	messageId,
 }: DocumentToolContext) =>
-  tool({
-    description: `Create a code document/file.
+	tool({
+		description: `Create a code document/file.
 
 Use for:
 - Python scripts and programs
 - Code snippets that need to be saved
 - Single-file code examples
 ${codeGuidelines}`,
-    inputSchema: z.object({
-      title: z
-        .string()
-        .describe(
-          'Filename with extension (e.g., "script.py", "component.tsx", "utils.js")'
-        ),
-      content: z.string().describe("The full code content of the document"),
-    }),
+		inputSchema: z.object({
+			title: z
+				.string()
+				.describe(
+					'Filename with extension (e.g., "script.py", "component.tsx", "utils.js")',
+				),
+			content: z.string().describe("The full code content of the document"),
+		}),
 
-    async execute({ title, content }): Promise<DocumentToolResult> {
-      const id = generateUUID();
+		async execute({ title, content }): Promise<DocumentToolResult> {
+			const id = generateUUID();
 
-      if (session.user?.id) {
-        await saveDocument({
-          id,
-          title,
-          content,
-          kind: "code",
-          userId: session.user.id,
-          messageId,
-        });
-      }
+			if (session.user?.id) {
+				await saveDocument({
+					id,
+					title,
+					content,
+					kind: "code",
+					userId: session.user.id,
+					messageId,
+				});
+			}
 
-      return {
-        status: "success",
-        documentId: id,
-        result: "A document was created and is now visible to the user.",
-        date: new Date().toISOString(),
-      };
-    },
-  });
+			return {
+				status: "success",
+				documentId: id,
+				result: "A document was created and is now visible to the user.",
+				date: new Date().toISOString(),
+			};
+		},
+	});

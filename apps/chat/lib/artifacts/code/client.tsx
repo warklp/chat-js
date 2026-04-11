@@ -2,16 +2,16 @@ import { Copy, List, MessageSquare, Play, Redo2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/code-editor";
 import {
-  Console,
-  type ConsoleOutput,
-  type ConsoleOutputContent,
+	Console,
+	type ConsoleOutput,
+	type ConsoleOutputContent,
 } from "@/components/console";
 import { Artifact, type ArtifactMetadata } from "@/components/create-artifact";
 import { config } from "@/lib/config";
 import { generateUUID, getLanguageFromFileName } from "@/lib/utils";
 
 const OUTPUT_HANDLERS = {
-  matplotlib: `
+	matplotlib: `
     import io
     import base64
     from matplotlib import pyplot as plt
@@ -41,280 +41,280 @@ const OUTPUT_HANDLERS = {
 
         plt.show = custom_show
   `,
-  basic: `
+	basic: `
     # Basic output capture setup
   `,
 };
 
 function detectRequiredHandlers(code: string): string[] {
-  const handlers: string[] = ["basic"];
+	const handlers: string[] = ["basic"];
 
-  if (code.includes("matplotlib") || code.includes("plt.")) {
-    handlers.push("matplotlib");
-  }
+	if (code.includes("matplotlib") || code.includes("plt.")) {
+		handlers.push("matplotlib");
+	}
 
-  return handlers;
+	return handlers;
 }
 
 export interface CodeArtifactMetadata {
-  language: string;
-  outputs: ConsoleOutput[];
+	language: string;
+	outputs: ConsoleOutput[];
 }
 
 export function isCodeArtifactMetadata(
-  metadata: ArtifactMetadata
+	metadata: ArtifactMetadata,
 ): metadata is CodeArtifactMetadata {
-  return (
-    metadata !== null &&
-    typeof metadata === "object" &&
-    "language" in metadata &&
-    typeof metadata.language === "string" &&
-    "outputs" in metadata &&
-    Array.isArray(metadata.outputs)
-  );
+	return (
+		metadata !== null &&
+		typeof metadata === "object" &&
+		"language" in metadata &&
+		typeof metadata.language === "string" &&
+		"outputs" in metadata &&
+		Array.isArray(metadata.outputs)
+	);
 }
 
 export function getCodeArtifactMetadata(
-  metadata: ArtifactMetadata
+	metadata: ArtifactMetadata,
 ): CodeArtifactMetadata {
-  return isCodeArtifactMetadata(metadata)
-    ? metadata
-    : {
-        language: "python",
-        outputs: [],
-      };
+	return isCodeArtifactMetadata(metadata)
+		? metadata
+		: {
+				language: "python",
+				outputs: [],
+			};
 }
 
 export const codeArtifact = new Artifact<"code", CodeArtifactMetadata>({
-  kind: "code",
-  description:
-    "Useful for code generation; Code execution is only available for Python code.",
-  initialize: ({ setMetadata }) => {
-    setMetadata({
-      outputs: [],
-      language: "python",
-    });
-  },
-  content: ({ isReadonly, content, title, ...props }) => {
-    const language = getLanguageFromFileName(title) || "python";
+	kind: "code",
+	description:
+		"Useful for code generation; Code execution is only available for Python code.",
+	initialize: ({ setMetadata }) => {
+		setMetadata({
+			outputs: [],
+			language: "python",
+		});
+	},
+	content: ({ isReadonly, content, title, ...props }) => {
+		const language = getLanguageFromFileName(title) || "python";
 
-    return (
-      <CodeEditor
-        {...props}
-        content={content}
-        isReadonly={isReadonly}
-        language={language}
-      />
-    );
-  },
-  footer: ({ metadata, setMetadata }) => {
-    if (!metadata?.outputs?.length) {
-      return null;
-    }
+		return (
+			<CodeEditor
+				{...props}
+				content={content}
+				isReadonly={isReadonly}
+				language={language}
+			/>
+		);
+	},
+	footer: ({ metadata, setMetadata }) => {
+		if (!metadata?.outputs?.length) {
+			return null;
+		}
 
-    return (
-      <Console
-        className="min-h-[200px]"
-        consoleOutputs={metadata.outputs}
-        setConsoleOutputs={() => {
-          setMetadata({
-            ...metadata,
-            outputs: [],
-          });
-        }}
-      />
-    );
-  },
-  actions: [
-    {
-      icon: <Play size={18} />,
-      label: "Run",
-      description: "Execute code",
-      onClick: async ({ content, setMetadata, metadata: _metadata }) => {
-        const runId = generateUUID();
-        const outputContent: ConsoleOutputContent[] = [];
+		return (
+			<Console
+				className="min-h-[200px]"
+				consoleOutputs={metadata.outputs}
+				setConsoleOutputs={() => {
+					setMetadata({
+						...metadata,
+						outputs: [],
+					});
+				}}
+			/>
+		);
+	},
+	actions: [
+		{
+			icon: <Play size={18} />,
+			label: "Run",
+			description: "Execute code",
+			onClick: async ({ content, setMetadata, metadata: _metadata }) => {
+				const runId = generateUUID();
+				const outputContent: ConsoleOutputContent[] = [];
 
-        setMetadata((metadata) => ({
-          ...metadata,
-          outputs: [
-            ...metadata.outputs,
-            {
-              id: runId,
-              contents: [],
-              status: "in_progress",
-            },
-          ],
-        }));
+				setMetadata((metadata) => ({
+					...metadata,
+					outputs: [
+						...metadata.outputs,
+						{
+							id: runId,
+							contents: [],
+							status: "in_progress",
+						},
+					],
+				}));
 
-        try {
-          // Python execution using Pyodide
-          // @ts-expect-error - loadPyodide is not defined
-          const currentPyodideInstance = await globalThis.loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
-          });
+				try {
+					// Python execution using Pyodide
+					// @ts-expect-error - loadPyodide is not defined
+					const currentPyodideInstance = await globalThis.loadPyodide({
+						indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+					});
 
-          currentPyodideInstance.setStdout({
-            batched: (output: string) => {
-              outputContent.push({
-                type: output.startsWith("data:image/png;base64")
-                  ? "image"
-                  : "text",
-                value: output,
-              });
-            },
-          });
+					currentPyodideInstance.setStdout({
+						batched: (output: string) => {
+							outputContent.push({
+								type: output.startsWith("data:image/png;base64")
+									? "image"
+									: "text",
+								value: output,
+							});
+						},
+					});
 
-          await currentPyodideInstance.loadPackagesFromImports(content, {
-            messageCallback: (message: string) => {
-              setMetadata((metadata) => ({
-                ...metadata,
-                outputs: [
-                  ...metadata.outputs.filter((output) => output.id !== runId),
-                  {
-                    id: runId,
-                    contents: [{ type: "text", value: message }],
-                    status: "loading_packages",
-                  },
-                ],
-              }));
-            },
-          });
+					await currentPyodideInstance.loadPackagesFromImports(content, {
+						messageCallback: (message: string) => {
+							setMetadata((metadata) => ({
+								...metadata,
+								outputs: [
+									...metadata.outputs.filter((output) => output.id !== runId),
+									{
+										id: runId,
+										contents: [{ type: "text", value: message }],
+										status: "loading_packages",
+									},
+								],
+							}));
+						},
+					});
 
-          const requiredHandlers = detectRequiredHandlers(content);
-          for (const handler of requiredHandlers) {
-            if (OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
-              await currentPyodideInstance.runPythonAsync(
-                OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]
-              );
+					const requiredHandlers = detectRequiredHandlers(content);
+					for (const handler of requiredHandlers) {
+						if (OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
+							await currentPyodideInstance.runPythonAsync(
+								OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS],
+							);
 
-              if (handler === "matplotlib") {
-                await currentPyodideInstance.runPythonAsync(
-                  "setup_matplotlib_output()"
-                );
-              }
-            }
-          }
+							if (handler === "matplotlib") {
+								await currentPyodideInstance.runPythonAsync(
+									"setup_matplotlib_output()",
+								);
+							}
+						}
+					}
 
-          await currentPyodideInstance.runPythonAsync(content);
+					await currentPyodideInstance.runPythonAsync(content);
 
-          setMetadata((metadata) => ({
-            ...metadata,
-            outputs: [
-              ...metadata.outputs.filter((output) => output.id !== runId),
-              {
-                id: runId,
-                contents: outputContent,
-                status: "completed",
-              },
-            ],
-          }));
-        } catch (error: unknown) {
-          setMetadata((metadata) => ({
-            ...metadata,
-            outputs: [
-              ...metadata.outputs.filter((output) => output.id !== runId),
-              {
-                id: runId,
-                contents: [
-                  {
-                    type: "text",
-                    value:
-                      error instanceof Error ? error.message : String(error),
-                  },
-                ],
-                status: "failed",
-              },
-            ],
-          }));
-        }
-      },
-      isDisabled: ({ isReadonly, content: _content, metadata }) => {
-        if (isReadonly) {
-          return true;
-        }
-        const language = metadata?.language || "python";
-        return language !== "python";
-      },
-    },
-    {
-      icon: <Undo2 size={18} />,
-      description: "View Previous version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("prev");
-      },
-      isDisabled: ({ currentVersionIndex }) => {
-        if (currentVersionIndex === 0) {
-          return true;
-        }
+					setMetadata((metadata) => ({
+						...metadata,
+						outputs: [
+							...metadata.outputs.filter((output) => output.id !== runId),
+							{
+								id: runId,
+								contents: outputContent,
+								status: "completed",
+							},
+						],
+					}));
+				} catch (error: unknown) {
+					setMetadata((metadata) => ({
+						...metadata,
+						outputs: [
+							...metadata.outputs.filter((output) => output.id !== runId),
+							{
+								id: runId,
+								contents: [
+									{
+										type: "text",
+										value:
+											error instanceof Error ? error.message : String(error),
+									},
+								],
+								status: "failed",
+							},
+						],
+					}));
+				}
+			},
+			isDisabled: ({ isReadonly, content: _content, metadata }) => {
+				if (isReadonly) {
+					return true;
+				}
+				const language = metadata?.language || "python";
+				return language !== "python";
+			},
+		},
+		{
+			icon: <Undo2 size={18} />,
+			description: "View Previous version",
+			onClick: ({ handleVersionChange }) => {
+				handleVersionChange("prev");
+			},
+			isDisabled: ({ currentVersionIndex }) => {
+				if (currentVersionIndex === 0) {
+					return true;
+				}
 
-        return false;
-      },
-    },
-    {
-      icon: <Redo2 size={18} />,
-      description: "View Next version",
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange("next");
-      },
-      isDisabled: ({ isCurrentVersion }) => {
-        if (isCurrentVersion) {
-          return true;
-        }
+				return false;
+			},
+		},
+		{
+			icon: <Redo2 size={18} />,
+			description: "View Next version",
+			onClick: ({ handleVersionChange }) => {
+				handleVersionChange("next");
+			},
+			isDisabled: ({ isCurrentVersion }) => {
+				if (isCurrentVersion) {
+					return true;
+				}
 
-        return false;
-      },
-    },
-    {
-      icon: <Copy size={18} />,
-      description: "Copy code to clipboard",
-      onClick: ({ content }) => {
-        navigator.clipboard.writeText(content);
-        toast.success("Copied to clipboard!");
-      },
-    },
-  ],
-  toolbar: [
-    {
-      icon: <MessageSquare size={16} />,
-      description: "Add comments",
-      onClick: ({ sendMessage, storeApi }) => {
-        sendMessage({
-          role: "user",
-          parts: [
-            {
-              type: "text",
-              text: "Add comments to the code snippet for understanding",
-            },
-          ],
-          metadata: {
-            selectedModel: config.ai.tools.code.edits,
-            createdAt: new Date(),
-            parentMessageId: storeApi.getState().getLastMessageId(),
-            activeStreamId: null,
-          },
-        });
-      },
-    },
-    {
-      icon: <List size={16} />,
-      description: "Add logs",
-      onClick: ({ sendMessage, storeApi }) => {
-        sendMessage({
-          role: "user",
-          parts: [
-            {
-              type: "text",
-              text: "Add logs to the code snippet for debugging",
-            },
-          ],
-          metadata: {
-            selectedModel: config.ai.tools.code.edits,
-            createdAt: new Date(),
-            parentMessageId: storeApi.getState().getLastMessageId(),
-            activeStreamId: null,
-          },
-        });
-      },
-    },
-  ],
+				return false;
+			},
+		},
+		{
+			icon: <Copy size={18} />,
+			description: "Copy code to clipboard",
+			onClick: ({ content }) => {
+				navigator.clipboard.writeText(content);
+				toast.success("Copied to clipboard!");
+			},
+		},
+	],
+	toolbar: [
+		{
+			icon: <MessageSquare size={16} />,
+			description: "Add comments",
+			onClick: ({ sendMessage, storeApi }) => {
+				sendMessage({
+					role: "user",
+					parts: [
+						{
+							type: "text",
+							text: "Add comments to the code snippet for understanding",
+						},
+					],
+					metadata: {
+						selectedModel: config.ai.tools.code.edits,
+						createdAt: new Date(),
+						parentMessageId: storeApi.getState().getLastMessageId(),
+						activeStreamId: null,
+					},
+				});
+			},
+		},
+		{
+			icon: <List size={16} />,
+			description: "Add logs",
+			onClick: ({ sendMessage, storeApi }) => {
+				sendMessage({
+					role: "user",
+					parts: [
+						{
+							type: "text",
+							text: "Add logs to the code snippet for debugging",
+						},
+					],
+					metadata: {
+						selectedModel: config.ai.tools.code.edits,
+						createdAt: new Date(),
+						parentMessageId: storeApi.getState().getLastMessageId(),
+						activeStreamId: null,
+					},
+				});
+			},
+		},
+	],
 });

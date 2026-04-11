@@ -6,39 +6,39 @@ import { ModelSelectorLogo } from "../model-selector-logo";
 import { Switch } from "../ui/switch";
 
 export const ModelRow = memo(function PureModelRow({
-  model,
-  isEnabled,
-  onToggle,
+	model,
+	isEnabled,
+	onToggle,
 }: {
-  model: { id: string; name: string; reasoning?: boolean };
-  isEnabled: boolean;
-  onToggle: (modelId: string, isEnabled: boolean) => void;
+	model: { id: string; name: string; reasoning?: boolean };
+	isEnabled: boolean;
+	onToggle: (modelId: string, isEnabled: boolean) => void;
 }) {
-  const ReasoningIcon = AVAILABLE_FEATURES.reasoning.icon;
+	const ReasoningIcon = AVAILABLE_FEATURES.reasoning.icon;
 
-  return (
-    <TableRow>
-      <TableCell className="w-full py-2.5 pl-0">
-        <div className="flex items-center gap-2.5">
-          <ModelSelectorLogo modelId={model.id} />
-          <span className="font-medium text-sm">{model.name}</span>
-          {model.reasoning && (
-            <ReasoningIcon
-              aria-label={AVAILABLE_FEATURES.reasoning.description}
-              className={cn(
-                "size-3.5 text-muted-foreground",
-                isEnabled && "text-foreground"
-              )}
-            />
-          )}
-        </div>
-      </TableCell>
-      <TableCell className="py-2.5 pr-0">
-        <Switch
-          checked={isEnabled}
-          onCheckedChange={() => onToggle(model.id, isEnabled)}
-        />
-      </TableCell>
-    </TableRow>
-  );
+	return (
+		<TableRow>
+			<TableCell className="w-full py-2.5 pl-0">
+				<div className="flex items-center gap-2.5">
+					<ModelSelectorLogo modelId={model.id} />
+					<span className="font-medium text-sm">{model.name}</span>
+					{model.reasoning && (
+						<ReasoningIcon
+							aria-label={AVAILABLE_FEATURES.reasoning.description}
+							className={cn(
+								"size-3.5 text-muted-foreground",
+								isEnabled && "text-foreground",
+							)}
+						/>
+					)}
+				</div>
+			</TableCell>
+			<TableCell className="py-2.5 pr-0">
+				<Switch
+					checked={isEnabled}
+					onCheckedChange={() => onToggle(model.id, isEnabled)}
+				/>
+			</TableCell>
+		</TableRow>
+	);
 });

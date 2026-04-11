@@ -4,7 +4,7 @@ import { isPlaywrightTestEnvironment as getIsPlaywrightTestEnvironment } from "@
 const _isProductionEnvironment = process.env.NODE_ENV === "production";
 
 export const isPlaywrightTestEnvironment = getIsPlaywrightTestEnvironment(
-  process.env
+	process.env,
 );
 
 export const BLOB_FILE_PREFIX = `${config.appPrefix}/files/`;

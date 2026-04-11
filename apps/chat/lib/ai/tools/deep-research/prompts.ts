@@ -1,11 +1,11 @@
 export function clarifyWithUserInstructions({
-  messages,
-  date,
+	messages,
+	date,
 }: {
-  messages: string;
-  date: string;
+	messages: string;
+	date: string;
 }): string {
-  return `These are the messages that have been exchanged so far from the user asking for the report:
+	return `These are the messages that have been exchanged so far from the user asking for the report:
 <Messages>
 ${messages}
 </Messages>
@@ -45,13 +45,13 @@ For the verification message when no clarification is needed:
 }
 
 export function transformMessagesIntoResearchTopicPrompt({
-  messages,
-  date,
+	messages,
+	date,
 }: {
-  messages: string;
-  date: string;
+	messages: string;
+	date: string;
 }): string {
-  return `You will be given a set of messages that have been exchanged so far between yourself and the user. 
+	return `You will be given a set of messages that have been exchanged so far between yourself and the user. 
 Your job is to translate these messages into a more detailed and concrete research question that will be used to guide the research.
 
 The messages that have been exchanged so far between yourself and the user are:
@@ -87,13 +87,13 @@ Guidelines:
 }
 
 export function leadResearcherPrompt({
-  date,
-  max_concurrent_research_units,
+	date,
+	max_concurrent_research_units,
 }: {
-  date: string;
-  max_concurrent_research_units: number;
+	date: string;
+	max_concurrent_research_units: number;
 }): string {
-  return `You are a research supervisor. Your job is to conduct research by calling the "ConductResearch" tool. For context, today's date is ${date}.
+	return `You are a research supervisor. Your job is to conduct research by calling the "ConductResearch" tool. For context, today's date is ${date}.
 
 <Task>
 Your focus is to call the "ConductResearch" tool to conduct research against the overall research question passed in by the user. 
@@ -156,15 +156,15 @@ With all of the above in mind, call the ConductResearch tool to conduct research
 }
 
 export function researchSystemPrompt({
-  date,
-  mcp_prompt,
-  max_search_queries,
+	date,
+	mcp_prompt,
+	max_search_queries,
 }: {
-  date: string;
-  mcp_prompt: string;
-  max_search_queries: number;
+	date: string;
+	mcp_prompt: string;
+	max_search_queries: number;
 }): string {
-  return `You are a research assistant conducting deep research on the user's input topic. Use the tools and search methods provided to research the user's input topic. For context, today's date is ${date}.
+	return `You are a research assistant conducting deep research on the user's input topic. Use the tools and search methods provided to research the user's input topic. For context, today's date is ${date}.
 
 <Task>
 Your job is to use tools and search methods to find information that can answer the question that a user asks.
@@ -201,11 +201,11 @@ You can use any of the tools provided to you to find resources that can help ans
 }
 
 export function compressResearchSystemPrompt({
-  date,
+	date,
 }: {
-  date: string;
+	date: string;
 }): string {
-  return `You are a research assistant that has conducted research on a topic by calling several tools and web searches. Your job is now to clean up the findings, but preserve all of the relevant statements and information that the researcher has gathered. For context, today's date is ${date}.
+	return `You are a research assistant that has conducted research on a topic by calling several tools and web searches. Your job is now to clean up the findings, but preserve all of the relevant statements and information that the researcher has gathered. For context, today's date is ${date}.
 
 <Task>
 You need to clean up information gathered from tool calls and web searches in the existing messages.
@@ -248,15 +248,15 @@ export const compressResearchSimpleHumanMessage = `All above messages are about 
 DO NOT summarize the information. I want the raw information returned, just in a cleaner format. Make sure all relevant information is preserved - you can rewrite findings verbatim.`;
 
 export function finalReportGenerationPrompt({
-  research_brief,
-  date,
-  findings,
+	research_brief,
+	date,
+	findings,
 }: {
-  research_brief: string;
-  date: string;
-  findings: string;
+	research_brief: string;
+	date: string;
+	findings: string;
 }): string {
-  return `Based on all the research conducted, create a comprehensive, well-structured answer to the overall research brief:
+	return `Based on all the research conducted, create a comprehensive, well-structured answer to the overall research brief:
 <Research Brief>
 ${research_brief}
 </Research Brief>

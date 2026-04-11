@@ -6,10 +6,10 @@ import { WrenchIcon } from "lucide-react";
 import { useMemo } from "react";
 import { McpToolHeader } from "@/components/ai-elements/extra/mcp-tool-header";
 import {
-  Tool,
-  ToolContent,
-  ToolInput,
-  ToolOutput,
+	Tool,
+	ToolContent,
+	ToolInput,
+	ToolOutput,
 } from "@/components/ai-elements/tool";
 import { Favicon } from "@/components/favicon";
 import { parseToolId } from "@/lib/ai/mcp-name-id";
@@ -17,51 +17,51 @@ import { useTRPC } from "@/trpc/react";
 import { getGoogleFaviconUrl } from "../get-google-favicon-url";
 
 interface DynamicToolPartProps {
-  isReadonly: boolean;
-  messageId: string;
-  part: DynamicToolUIPart;
+	isReadonly: boolean;
+	messageId: string;
+	part: DynamicToolUIPart;
 }
 
 export function DynamicToolPart({ part }: DynamicToolPartProps) {
-  const trpc = useTRPC();
-  const { data: connectors } = useQuery(trpc.mcp.list.queryOptions());
+	const trpc = useTRPC();
+	const { data: connectors } = useQuery(trpc.mcp.list.queryOptions());
 
-  const parsed = useMemo(() => parseToolId(part.toolName), [part.toolName]);
+	const parsed = useMemo(() => parseToolId(part.toolName), [part.toolName]);
 
-  const iconUrl = useMemo(() => {
-    if (!(parsed && connectors)) {
-      return;
-    }
+	const iconUrl = useMemo(() => {
+		if (!(parsed && connectors)) {
+			return;
+		}
 
-    const connector = connectors.find((c) => c.nameId === parsed.namespace);
-    if (!connector) {
-      return;
-    }
+		const connector = connectors.find((c) => c.nameId === parsed.namespace);
+		if (!connector) {
+			return;
+		}
 
-    return getGoogleFaviconUrl(connector.url);
-  }, [parsed, connectors]);
+		return getGoogleFaviconUrl(connector.url);
+	}, [parsed, connectors]);
 
-  const icon = iconUrl ? (
-    <Favicon className="size-4 rounded-sm" url={iconUrl} />
-  ) : (
-    <WrenchIcon className="size-4 text-muted-foreground" />
-  );
+	const icon = iconUrl ? (
+		<Favicon className="size-4 rounded-sm" url={iconUrl} />
+	) : (
+		<WrenchIcon className="size-4 text-muted-foreground" />
+	);
 
-  return (
-    <Tool defaultOpen={false}>
-      <McpToolHeader
-        icon={icon}
-        state={part.state}
-        title={part.title ?? parsed?.toolName ?? part.toolName}
-        type={`tool-${part.toolName}`}
-      />
-      <ToolContent>
-        <ToolInput input={part.input} />
-        <ToolOutput
-          errorText={part.state === "output-error" ? part.errorText : undefined}
-          output={part.state === "output-available" ? part.output : undefined}
-        />
-      </ToolContent>
-    </Tool>
-  );
+	return (
+		<Tool defaultOpen={false}>
+			<McpToolHeader
+				icon={icon}
+				state={part.state}
+				title={part.title ?? parsed?.toolName ?? part.toolName}
+				type={`tool-${part.toolName}`}
+			/>
+			<ToolContent>
+				<ToolInput input={part.input} />
+				<ToolOutput
+					errorText={part.state === "output-error" ? part.errorText : undefined}
+					output={part.state === "output-available" ? part.output : undefined}
+				/>
+			</ToolContent>
+		</Tool>
+	);
 }

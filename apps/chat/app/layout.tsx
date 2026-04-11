@@ -12,32 +12,32 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { config } from "@/lib/config";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(config.appUrl),
-  title: config.appTitle ?? config.appName,
-  description: config.appDescription,
-  openGraph: {
-    siteName: config.appName,
-    url: config.appUrl,
-    title: config.appTitle ?? config.appName,
-    description: config.appDescription,
-  },
+	metadataBase: new URL(config.appUrl),
+	title: config.appTitle ?? config.appName,
+	description: config.appDescription,
+	openGraph: {
+		siteName: config.appName,
+		url: config.appUrl,
+		title: config.appTitle ?? config.appName,
+		description: config.appDescription,
+	},
 };
 
 export const viewport = {
-  maximumScale: 1, // Disable auto-zoom on mobile Safari
-  interactiveWidget: "resizes-content" as const,
+	maximumScale: 1, // Disable auto-zoom on mobile Safari
+	interactiveWidget: "resizes-content" as const,
 };
 
 const geist = Geist({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist",
+	subsets: ["latin"],
+	display: "swap",
+	variable: "--font-geist",
 });
 
 const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist-mono",
+	subsets: ["latin"],
+	display: "swap",
+	variable: "--font-geist-mono",
 });
 
 const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
@@ -61,51 +61,51 @@ const THEME_COLOR_SCRIPT = `\
 })();`;
 
 export default async function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html
-      className={`${geist.variable} ${geistMono.variable}`}
-      // `next-themes` injects an extra classname to the body element to avoid
-      // visual flicker before hydration. Hence the `suppressHydrationWarning`
-      // prop is necessary to avoid the React hydration mismatch warning.
-      // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
-      lang="en"
-      suppressHydrationWarning
-    >
-      <head>
-        <Script id="theme-color-script" strategy="beforeInteractive">
-          {THEME_COLOR_SCRIPT}
-        </Script>
-        {process.env.NODE_ENV === "production" ? null : (
-          <Script
-            src="https://unpkg.com/react-scan/dist/auto.global.js"
-            strategy="beforeInteractive"
-          />
-        )}
-      </head>
-      <body className="antialiased">
-        <ElectronAuthHandler />
-        <Script
-          src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
-          strategy="afterInteractive"
-        />
-        <NuqsAdapter>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            disableTransitionOnChange
-            enableSystem
-          >
-            <Toaster position="top-center" />
-            {children}
-          </ThemeProvider>
-        </NuqsAdapter>
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
-  );
+	return (
+		<html
+			className={`${geist.variable} ${geistMono.variable}`}
+			// `next-themes` injects an extra classname to the body element to avoid
+			// visual flicker before hydration. Hence the `suppressHydrationWarning`
+			// prop is necessary to avoid the React hydration mismatch warning.
+			// https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
+			lang="en"
+			suppressHydrationWarning
+		>
+			<head>
+				<Script id="theme-color-script" strategy="beforeInteractive">
+					{THEME_COLOR_SCRIPT}
+				</Script>
+				{process.env.NODE_ENV === "production" ? null : (
+					<Script
+						src="https://unpkg.com/react-scan/dist/auto.global.js"
+						strategy="beforeInteractive"
+					/>
+				)}
+			</head>
+			<body className="antialiased">
+				<ElectronAuthHandler />
+				<Script
+					src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
+					strategy="afterInteractive"
+				/>
+				<NuqsAdapter>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						disableTransitionOnChange
+						enableSystem
+					>
+						<Toaster position="top-center" />
+						{children}
+					</ThemeProvider>
+				</NuqsAdapter>
+				<Analytics />
+				<SpeedInsights />
+			</body>
+		</html>
+	);
 }

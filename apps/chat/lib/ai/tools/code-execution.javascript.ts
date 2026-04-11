@@ -1,15 +1,15 @@
 import type {
-  CodeExecutionContext,
-  CodeExecutionResult,
+	CodeExecutionContext,
+	CodeExecutionResult,
 } from "./code-execution.types";
 
 const EXECUTION_STATUS_PREFIX = "__EXECUTION_STATUS__:";
 
 function createWrappedCode(code: string): string {
-  // Inject user code as a string literal so backticks / ${} in user code
-  // cannot break out of the wrapper template.
-  const userCodeLiteral = JSON.stringify(code);
-  return `
+	// Inject user code as a string literal so backticks / ${} in user code
+	// cannot break out of the wrapper template.
+	const userCodeLiteral = JSON.stringify(code);
+	return `
 import { inspect } from "node:util";
 
 const __formatOutput = (value) => {
@@ -75,97 +75,97 @@ await __run();
 }
 
 type JsExecInfo = {
-  success: boolean;
-  error?: { name: string; value: string; traceback: string };
+	success: boolean;
+	error?: { name: string; value: string; traceback: string };
 };
 
 function execInfoFromExitCode(exitCode: number): JsExecInfo {
-  if (exitCode === 0) {
-    return { success: true };
-  }
-  return {
-    success: false,
-    error: {
-      name: "SandboxExecutionError",
-      value: "Execution completed without a valid status trailer",
-      traceback: "",
-    },
-  };
+	if (exitCode === 0) {
+		return { success: true };
+	}
+	return {
+		success: false,
+		error: {
+			name: "SandboxExecutionError",
+			value: "Execution completed without a valid status trailer",
+			traceback: "",
+		},
+	};
 }
 
 async function parseExecutionOutput(execResult: {
-  stdout: () => Promise<string>;
-  exitCode: number;
+	stdout: () => Promise<string>;
+	exitCode: number;
 }): Promise<{
-  outputText: string;
-  execInfo: JsExecInfo;
+	outputText: string;
+	execInfo: JsExecInfo;
 }> {
-  const stdout = await execResult.stdout();
-  const lines = (stdout ?? "").split("\n");
-  // Search from the end so a user console.log of the prefix cannot be
-  // mistaken for the real status trailer emitted last by the wrapper.
-  const statusLineIndex = lines.findLastIndex((line) =>
-    line.startsWith(EXECUTION_STATUS_PREFIX)
-  );
+	const stdout = await execResult.stdout();
+	const lines = (stdout ?? "").split("\n");
+	// Search from the end so a user console.log of the prefix cannot be
+	// mistaken for the real status trailer emitted last by the wrapper.
+	const statusLineIndex = lines.findLastIndex((line) =>
+		line.startsWith(EXECUTION_STATUS_PREFIX),
+	);
 
-  if (statusLineIndex === -1) {
-    return {
-      outputText: stdout ?? "",
-      execInfo: execInfoFromExitCode(execResult.exitCode),
-    };
-  }
+	if (statusLineIndex === -1) {
+		return {
+			outputText: stdout ?? "",
+			execInfo: execInfoFromExitCode(execResult.exitCode),
+		};
+	}
 
-  const execInfoRaw = lines[statusLineIndex].slice(
-    EXECUTION_STATUS_PREFIX.length
-  );
-  let execInfo: JsExecInfo;
-  try {
-    execInfo = JSON.parse(execInfoRaw) as JsExecInfo;
-  } catch {
-    return {
-      outputText: stdout ?? "",
-      execInfo: execInfoFromExitCode(execResult.exitCode),
-    };
-  }
-  lines.splice(statusLineIndex, 1);
+	const execInfoRaw = lines[statusLineIndex].slice(
+		EXECUTION_STATUS_PREFIX.length,
+	);
+	let execInfo: JsExecInfo;
+	try {
+		execInfo = JSON.parse(execInfoRaw) as JsExecInfo;
+	} catch {
+		return {
+			outputText: stdout ?? "",
+			execInfo: execInfoFromExitCode(execResult.exitCode),
+		};
+	}
+	lines.splice(statusLineIndex, 1);
 
-  return {
-    outputText: lines.join("\n").trim(),
-    execInfo,
-  };
+	return {
+		outputText: lines.join("\n").trim(),
+		execInfo,
+	};
 }
 
 export async function executeJavaScriptInSandbox({
-  sandbox,
-  code,
-  log,
-  requestId,
+	sandbox,
+	code,
+	log,
+	requestId,
 }: CodeExecutionContext): Promise<CodeExecutionResult> {
-  const execResult = await sandbox.runCommand({
-    cmd: "node",
-    args: ["--input-type=module", "-e", createWrappedCode(code)],
-  });
+	const execResult = await sandbox.runCommand({
+		cmd: "node",
+		args: ["--input-type=module", "-e", createWrappedCode(code)],
+	});
 
-  const { outputText, execInfo } = await parseExecutionOutput(execResult);
-  const stderrTrimmed = (await execResult.stderr())?.trim();
-  let message = "";
+	const { outputText, execInfo } = await parseExecutionOutput(execResult);
+	const stderrTrimmed = (await execResult.stderr())?.trim();
+	let message = "";
 
-  if (outputText) {
-    message += `${outputText}\n`;
-  }
-  if (stderrTrimmed) {
-    message += `${stderrTrimmed}\n`;
-  }
-  if (execInfo.error) {
-    message += `Error: ${execInfo.error.name}: ${execInfo.error.value}\n`;
-    log.error(
-      { requestId, error: execInfo.error },
-      "javascript execution error"
-    );
-  }
+	if (outputText) {
+		message += `${outputText}\n`;
+	}
+	if (stderrTrimmed) {
+		message += `${stderrTrimmed}\n`;
+	}
+	if (execInfo.error) {
+		message += `Error: ${execInfo.error.name}: ${execInfo.error.value}\n`;
+		log.error(
+			{ requestId, error: execInfo.error },
+			"javascript execution error",
+		);
+	}
 
-  return {
-    message: message.trim(),
-    chart: "",
-  };
+	return {
+		message: message.trim(),
+		chart: "",
+	};
 }

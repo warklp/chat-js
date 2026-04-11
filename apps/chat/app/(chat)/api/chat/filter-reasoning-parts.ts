@@ -6,10 +6,10 @@
  * Note: data-* parts are handled by convertToModelMessages({ convertDataPart: () => undefined })
  */
 export function filterPartsForLLM<T extends { parts: Array<{ type: string }> }>(
-  messages: T[]
+	messages: T[],
 ): T[] {
-  return messages.map((message) => ({
-    ...message,
-    parts: message.parts.filter((part) => part.type !== "reasoning"),
-  }));
+	return messages.map((message) => ({
+		...message,
+		parts: message.parts.filter((part) => part.type !== "reasoning"),
+	}));
 }

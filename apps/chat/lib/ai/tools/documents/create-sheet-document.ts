@@ -6,11 +6,11 @@ import { sheetGuidelines } from "./sheet-guidelines";
 import type { DocumentToolContext, DocumentToolResult } from "./types";
 
 export const createSheetDocumentTool = ({
-  session,
-  messageId,
+	session,
+	messageId,
 }: DocumentToolContext) =>
-  tool({
-    description: `Create a spreadsheet document in CSV format.
+	tool({
+		description: `Create a spreadsheet document in CSV format.
 
 Use for:
 - Data tables and datasets
@@ -20,30 +20,30 @@ Use for:
 ${sheetGuidelines}
 
 The spreadsheet will be created with proper column headers and data.`,
-    inputSchema: z.object({
-      title: z.string().describe("Spreadsheet title"),
-      content: z.string().describe("The full CSV content of the spreadsheet"),
-    }),
+		inputSchema: z.object({
+			title: z.string().describe("Spreadsheet title"),
+			content: z.string().describe("The full CSV content of the spreadsheet"),
+		}),
 
-    async execute({ title, content }): Promise<DocumentToolResult> {
-      const id = generateUUID();
+		async execute({ title, content }): Promise<DocumentToolResult> {
+			const id = generateUUID();
 
-      if (session.user?.id) {
-        await saveDocument({
-          id,
-          title,
-          content,
-          kind: "sheet",
-          userId: session.user.id,
-          messageId,
-        });
-      }
+			if (session.user?.id) {
+				await saveDocument({
+					id,
+					title,
+					content,
+					kind: "sheet",
+					userId: session.user.id,
+					messageId,
+				});
+			}
 
-      return {
-        status: "success",
-        documentId: id,
-        result: "A document was created and is now visible to the user.",
-        date: new Date().toISOString(),
-      };
-    },
-  });
+			return {
+				status: "success",
+				documentId: id,
+				result: "A document was created and is now visible to the user.",
+				date: new Date().toISOString(),
+			};
+		},
+	});

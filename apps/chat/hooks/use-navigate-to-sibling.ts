@@ -10,36 +10,36 @@ import { useSwitchToSibling } from "@/lib/stores/hooks-threads";
  * Uses the store's switchToSibling for the pure state transition.
  */
 export function useNavigateToSibling() {
-  const { stop } = useChatActions<ChatMessage>();
-  const { setDataStream } = useDataStream();
-  const { artifact, closeArtifact } = useArtifact();
-  const switchToSibling = useSwitchToSibling();
+	const { stop } = useChatActions<ChatMessage>();
+	const { setDataStream } = useDataStream();
+	const { artifact, closeArtifact } = useArtifact();
+	const switchToSibling = useSwitchToSibling();
 
-  return useCallback(
-    (messageId: string, direction: "prev" | "next") => {
-      // Hard-disconnect the current stream + clear buffered deltas
-      stop?.();
-      setDataStream([]);
+	return useCallback(
+		(messageId: string, direction: "prev" | "next") => {
+			// Hard-disconnect the current stream + clear buffered deltas
+			stop?.();
+			setDataStream([]);
 
-      const newThread = switchToSibling(messageId, direction);
+			const newThread = switchToSibling(messageId, direction);
 
-      // Close artifact if its message is not in the new thread
-      if (
-        newThread &&
-        artifact.isVisible &&
-        artifact.messageId &&
-        !newThread.some((m) => m.id === artifact.messageId)
-      ) {
-        closeArtifact();
-      }
-    },
-    [
-      artifact.isVisible,
-      artifact.messageId,
-      closeArtifact,
-      setDataStream,
-      stop,
-      switchToSibling,
-    ]
-  );
+			// Close artifact if its message is not in the new thread
+			if (
+				newThread &&
+				artifact.isVisible &&
+				artifact.messageId &&
+				!newThread.some((m) => m.id === artifact.messageId)
+			) {
+				closeArtifact();
+			}
+		},
+		[
+			artifact.isVisible,
+			artifact.messageId,
+			closeArtifact,
+			setDataStream,
+			stop,
+			switchToSibling,
+		],
+	);
 }

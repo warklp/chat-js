@@ -7,31 +7,31 @@ import { config } from "@/lib/config";
 import { toSearchParamRecord } from "@/lib/electron-auth";
 
 export const metadata: Metadata = {
-  title: "Device Login",
-  description: "Sign in for the desktop app",
+	title: "Device Login",
+	description: "Sign in for the desktop app",
 };
 
 export default async function DeviceLoginRoute({
-  searchParams,
+	searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (!config.desktopApp.enabled) {
-    redirect("/login");
-  }
+	if (!config.desktopApp.enabled) {
+		redirect("/login");
+	}
 
-  const resolvedSearchParams = await searchParams;
-  const query = toSearchParamRecord(resolvedSearchParams);
-  const isCompletedView = query.done === "1";
-  const queryString = new URLSearchParams(query).toString();
-  const currentHref = queryString
-    ? `/device-login?${queryString}`
-    : "/device-login";
-  const session = await auth.api.getSession({ headers: await headers() });
+	const resolvedSearchParams = await searchParams;
+	const query = toSearchParamRecord(resolvedSearchParams);
+	const isCompletedView = query.done === "1";
+	const queryString = new URLSearchParams(query).toString();
+	const currentHref = queryString
+		? `/device-login?${queryString}`
+		: "/device-login";
+	const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!(session?.user || isCompletedView)) {
-    redirect(`/login?returnTo=${encodeURIComponent(currentHref)}`);
-  }
+	if (!(session?.user || isCompletedView)) {
+		redirect(`/login?returnTo=${encodeURIComponent(currentHref)}`);
+	}
 
-  return <DeviceLoginPage />;
+	return <DeviceLoginPage />;
 }

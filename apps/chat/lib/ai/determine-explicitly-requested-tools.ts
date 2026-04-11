@@ -6,26 +6,26 @@ import type { ChatTools, ToolName } from "./types";
  */
 
 export function determineExplicitlyRequestedTools(
-  selectedTool: keyof ChatTools | null
+	selectedTool: keyof ChatTools | null,
 ): ToolName[] | null {
-  if (selectedTool === "deepResearch") {
-    return ["deepResearch"];
-  }
-  if (selectedTool === "webSearch") {
-    return ["webSearch"];
-  }
-  if (selectedTool === "generateImage") {
-    return ["generateImage"];
-  }
-  if (selectedTool === "createTextDocument") {
-    return [
-      "createTextDocument",
-      "createCodeDocument",
-      "createSheetDocument",
-      "editTextDocument",
-      "editCodeDocument",
-      "editSheetDocument",
-    ];
-  }
-  return null;
+	if (selectedTool === "deepResearch") {
+		return ["deepResearch"];
+	}
+	if (selectedTool === "webSearch") {
+		return ["webSearch"];
+	}
+	if (selectedTool === "generateImage") {
+		return ["generateImage"];
+	}
+	if (selectedTool === "createTextDocument") {
+		return [
+			"createTextDocument",
+			"createCodeDocument",
+			"createSheetDocument",
+			"editTextDocument",
+			"editCodeDocument",
+			"editSheetDocument",
+		];
+	}
+	return null;
 }

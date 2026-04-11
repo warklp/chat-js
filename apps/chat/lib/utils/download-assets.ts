@@ -1,47 +1,47 @@
 import type {
-  DataContent,
-  FilePart,
-  ImagePart,
-  ModelMessage,
-  TextPart,
+	DataContent,
+	FilePart,
+	ImagePart,
+	ModelMessage,
+	TextPart,
 } from "ai";
 
 // Minimal utilities to download assets from URL-based parts and inline them.
 
 interface DownloadResult {
-  data: Uint8Array;
-  mediaType: string | undefined;
+	data: Uint8Array;
+	mediaType: string | undefined;
 }
 
 export type DownloadImplementation = (args: {
-  url: URL;
+	url: URL;
 }) => Promise<DownloadResult>;
 
 async function defaultDownload({ url }: { url: URL }): Promise<DownloadResult> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download asset: ${url.toString()} (${response.status})`
-    );
-  }
-  const contentType = response.headers.get("content-type") || undefined;
-  const arrayBuffer = await response.arrayBuffer();
-  return { mediaType: contentType, data: new Uint8Array(arrayBuffer) };
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error(
+			`Failed to download asset: ${url.toString()} (${response.status})`,
+		);
+	}
+	const contentType = response.headers.get("content-type") || undefined;
+	const arrayBuffer = await response.arrayBuffer();
+	return { mediaType: contentType, data: new Uint8Array(arrayBuffer) };
 }
 
 function toHttpUrl(value: unknown): URL | null {
-  if (value instanceof URL) {
-    return value.protocol.startsWith("http") ? value : null;
-  }
-  if (typeof value === "string") {
-    try {
-      const url = new URL(value);
-      return url.protocol === "http:" || url.protocol === "https:" ? url : null;
-    } catch {
-      return null;
-    }
-  }
-  return null;
+	if (value instanceof URL) {
+		return value.protocol.startsWith("http") ? value : null;
+	}
+	if (typeof value === "string") {
+		try {
+			const url = new URL(value);
+			return url.protocol === "http:" || url.protocol === "https:" ? url : null;
+		} catch {
+			return null;
+		}
+	}
+	return null;
 }
 
 /**
@@ -49,76 +49,76 @@ function toHttpUrl(value: unknown): URL | null {
  * Returns a map keyed by the normalized URL string.
  */
 async function downloadAssetsFromModelMessages(
-  messages: ModelMessage[],
-  downloadImplementation: DownloadImplementation = defaultDownload
+	messages: ModelMessage[],
+	downloadImplementation: DownloadImplementation = defaultDownload,
 ): Promise<Record<string, DownloadResult>> {
-  const urlSet = new Set<string>();
+	const urlSet = new Set<string>();
 
-  for (const message of messages) {
-    if (typeof message.content === "string") {
-      continue;
-    }
-    for (const part of message.content) {
-      if (part.type !== "file" && part.type !== "image") {
-        continue;
-      }
-      const dataOrUrl: DataContent | URL =
-        part.type === "file"
-          ? (part as FilePart).data
-          : (part as ImagePart).image;
-      const url = toHttpUrl(dataOrUrl);
-      if (url) {
-        urlSet.add(url.toString());
-      }
-    }
-  }
+	for (const message of messages) {
+		if (typeof message.content === "string") {
+			continue;
+		}
+		for (const part of message.content) {
+			if (part.type !== "file" && part.type !== "image") {
+				continue;
+			}
+			const dataOrUrl: DataContent | URL =
+				part.type === "file"
+					? (part as FilePart).data
+					: (part as ImagePart).image;
+			const url = toHttpUrl(dataOrUrl);
+			if (url) {
+				urlSet.add(url.toString());
+			}
+		}
+	}
 
-  const urls = Array.from(urlSet).map((u) => new URL(u));
-  const downloaded = await Promise.all(
-    urls.map(async (url) => ({
-      url,
-      data: await downloadImplementation({ url }),
-    }))
-  );
-  return Object.fromEntries(
-    downloaded.map(({ url, data }) => [url.toString(), data])
-  );
+	const urls = Array.from(urlSet).map((u) => new URL(u));
+	const downloaded = await Promise.all(
+		urls.map(async (url) => ({
+			url,
+			data: await downloadImplementation({ url }),
+		})),
+	);
+	return Object.fromEntries(
+		downloaded.map(({ url, data }) => [url.toString(), data]),
+	);
 }
 
 function mapFilePart(
-  part: FilePart,
-  downloaded: Record<string, DownloadResult>
+	part: FilePart,
+	downloaded: Record<string, DownloadResult>,
 ): FilePart {
-  const url = toHttpUrl(part.data);
-  if (url) {
-    const found = downloaded[url.toString()];
-    if (found) {
-      return {
-        ...part,
-        data: found.data,
-        mediaType: part.mediaType ?? found.mediaType,
-      };
-    }
-  }
-  return part;
+	const url = toHttpUrl(part.data);
+	if (url) {
+		const found = downloaded[url.toString()];
+		if (found) {
+			return {
+				...part,
+				data: found.data,
+				mediaType: part.mediaType ?? found.mediaType,
+			};
+		}
+	}
+	return part;
 }
 
 function mapImagePart(
-  part: ImagePart,
-  downloaded: Record<string, DownloadResult>
+	part: ImagePart,
+	downloaded: Record<string, DownloadResult>,
 ): ImagePart {
-  const url = toHttpUrl(part.image);
-  if (url) {
-    const found = downloaded[url.toString()];
-    if (found) {
-      return {
-        ...part,
-        image: found.data,
-        mediaType: part.mediaType ?? found.mediaType,
-      };
-    }
-  }
-  return part;
+	const url = toHttpUrl(part.image);
+	if (url) {
+		const found = downloaded[url.toString()];
+		if (found) {
+			return {
+				...part,
+				image: found.data,
+				mediaType: part.mediaType ?? found.mediaType,
+			};
+		}
+	}
+	return part;
 }
 
 /**
@@ -126,35 +126,35 @@ function mapImagePart(
  * with downloaded binary data. This ensures providers receive actual bytes.
  */
 export async function replaceFilePartUrlByBinaryDataInMessages(
-  messages: ModelMessage[],
-  downloadImplementation: DownloadImplementation = defaultDownload
+	messages: ModelMessage[],
+	downloadImplementation: DownloadImplementation = defaultDownload,
 ): Promise<ModelMessage[]> {
-  const downloaded = await downloadAssetsFromModelMessages(
-    messages,
-    downloadImplementation
-  );
+	const downloaded = await downloadAssetsFromModelMessages(
+		messages,
+		downloadImplementation,
+	);
 
-  const mapPart = (
-    part: TextPart | ImagePart | FilePart
-  ): TextPart | ImagePart | FilePart => {
-    if (part.type === "file") {
-      return mapFilePart(part as FilePart, downloaded);
-    }
-    if (part.type === "image") {
-      return mapImagePart(part as ImagePart, downloaded);
-    }
-    // pass-through for text/tool/reasoning/etc
-    return part;
-  };
+	const mapPart = (
+		part: TextPart | ImagePart | FilePart,
+	): TextPart | ImagePart | FilePart => {
+		if (part.type === "file") {
+			return mapFilePart(part as FilePart, downloaded);
+		}
+		if (part.type === "image") {
+			return mapImagePart(part as ImagePart, downloaded);
+		}
+		// pass-through for text/tool/reasoning/etc
+		return part;
+	};
 
-  return messages.map((message) => {
-    if (message.role !== "user" || typeof message.content === "string") {
-      return message;
-    }
+	return messages.map((message) => {
+		if (message.role !== "user" || typeof message.content === "string") {
+			return message;
+		}
 
-    return {
-      ...message,
-      content: message.content.map(mapPart),
-    };
-  });
+		return {
+			...message,
+			content: message.content.map(mapPart),
+		};
+	});
 }

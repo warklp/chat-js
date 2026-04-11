@@ -2,11 +2,11 @@ import { config } from "dotenv";
 import { vi } from "vitest";
 
 config({
-  path: ".env.local",
+	path: ".env.local",
 });
 
 vi.mock("server-only", () => {
-  return {
-    // mock server-only module
-  };
+	return {
+		// mock server-only module
+	};
 });

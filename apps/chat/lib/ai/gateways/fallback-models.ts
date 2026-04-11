@@ -1,8 +1,8 @@
 import { createModuleLogger } from "@/lib/logger";
 import type { AiGatewayModel } from "../ai-gateway-models-schemas";
 import {
-  models as fallbackModels,
-  generatedForGateway,
+	models as fallbackModels,
+	generatedForGateway,
 } from "../models.generated";
 import type { GatewayType } from "./registry";
 
@@ -15,14 +15,14 @@ const log = createModuleLogger("ai/gateways/fallback");
  * errors — an empty array is safer.
  */
 export function getFallbackModels(
-  gateway: GatewayType
+	gateway: GatewayType,
 ): readonly AiGatewayModel[] {
-  if (generatedForGateway !== gateway) {
-    log.warn(
-      { expected: gateway, actual: generatedForGateway },
-      "Fallback snapshot was generated for a different gateway, skipping. Run `bun fetch:models` to regenerate."
-    );
-    return [];
-  }
-  return fallbackModels as unknown as AiGatewayModel[];
+	if (generatedForGateway !== gateway) {
+		log.warn(
+			{ expected: gateway, actual: generatedForGateway },
+			"Fallback snapshot was generated for a different gateway, skipping. Run `bun fetch:models` to regenerate.",
+		);
+		return [];
+	}
+	return fallbackModels as unknown as AiGatewayModel[];
 }

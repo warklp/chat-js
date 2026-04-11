@@ -6,14 +6,14 @@ import { createModuleLogger } from "@/lib/logger";
 import { executeJavaScriptInSandbox } from "./code-execution.javascript";
 import { executePythonInSandbox } from "./code-execution.python";
 import {
-  cleanupSandbox,
-  createSandbox,
-  getErrorMessage,
-  getSandboxRuntime,
+	cleanupSandbox,
+	createSandbox,
+	getErrorMessage,
+	getSandboxRuntime,
 } from "./code-execution.shared";
 import {
-  type SupportedExecutionLanguage,
-  supportedExecutionLanguages,
+	type SupportedExecutionLanguage,
+	supportedExecutionLanguages,
 } from "./code-execution.types";
 import { toolsDefinitions } from "./tools-definitions";
 
@@ -22,12 +22,12 @@ const languageSchema = z.enum(supportedExecutionLanguages);
 const defaultExecutionLanguage: SupportedExecutionLanguage = "python";
 
 export const codeExecution = ({
-  costAccumulator,
+	costAccumulator,
 }: {
-  costAccumulator?: CostAccumulator;
+	costAccumulator?: CostAccumulator;
 }) =>
-  tool({
-    description: `Sandboxed code execution for Python and JavaScript.
+	tool({
+		description: `Sandboxed code execution for Python and JavaScript.
 
 Use for:
 - Execute Python for calculations, data analysis, and visualisations
@@ -68,67 +68,67 @@ Output rules:
 - Python values: assign 'result' or 'results', or print explicitly
 - JavaScript values: assign 'result' or 'results', return a value, or print explicitly
 - Don't rely on implicit REPL last-expression output`,
-    inputSchema: z.object({
-      title: z.string().describe("The title of the code snippet."),
-      language: languageSchema
-        .default(defaultExecutionLanguage)
-        .describe("The language to execute: 'python' or 'javascript'."),
-      code: z
-        .string()
-        .describe(
-          "The code to execute in the selected sandbox language. Print anything you want to return, or assign to 'result'/'results'."
-        ),
-    }),
-    execute: async ({
-      code,
-      title,
-      language,
-    }: {
-      code: string;
-      title: string;
-      language: SupportedExecutionLanguage;
-    }) => {
-      const log = createModuleLogger("code-execution");
-      const requestId = `ci-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const runtime = getSandboxRuntime(language);
+		inputSchema: z.object({
+			title: z.string().describe("The title of the code snippet."),
+			language: languageSchema
+				.default(defaultExecutionLanguage)
+				.describe("The language to execute: 'python' or 'javascript'."),
+			code: z
+				.string()
+				.describe(
+					"The code to execute in the selected sandbox language. Print anything you want to return, or assign to 'result'/'results'.",
+				),
+		}),
+		execute: async ({
+			code,
+			title,
+			language,
+		}: {
+			code: string;
+			title: string;
+			language: SupportedExecutionLanguage;
+		}) => {
+			const log = createModuleLogger("code-execution");
+			const requestId = `ci-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+			const runtime = getSandboxRuntime(language);
 
-      let sandbox: Sandbox | undefined;
+			let sandbox: Sandbox | undefined;
 
-      try {
-        log.info({ requestId, title, runtime, language }, "creating sandbox");
-        sandbox = await createSandbox(runtime);
-        log.debug({ requestId }, "sandbox created");
+			try {
+				log.info({ requestId, title, runtime, language }, "creating sandbox");
+				sandbox = await createSandbox(runtime);
+				log.debug({ requestId }, "sandbox created");
 
-        log.info({ requestId, title, language }, "executing code");
-        const result =
-          language === "javascript"
-            ? await executeJavaScriptInSandbox({
-                sandbox,
-                code,
-                log,
-                requestId,
-              })
-            : await executePythonInSandbox({
-                sandbox,
-                code,
-                log,
-                requestId,
-              });
+				log.info({ requestId, title, language }, "executing code");
+				const result =
+					language === "javascript"
+						? await executeJavaScriptInSandbox({
+								sandbox,
+								code,
+								log,
+								requestId,
+							})
+						: await executePythonInSandbox({
+								sandbox,
+								code,
+								log,
+								requestId,
+							});
 
-        costAccumulator?.addAPICost(
-          "codeExecution",
-          toolsDefinitions.codeExecution.cost
-        );
+				costAccumulator?.addAPICost(
+					"codeExecution",
+					toolsDefinitions.codeExecution.cost,
+				);
 
-        return result;
-      } catch (err) {
-        log.error({ err, requestId, language }, "code execution failed");
-        return {
-          message: `Sandbox execution failed: ${getErrorMessage(err)}`,
-          chart: "",
-        };
-      } finally {
-        await cleanupSandbox(sandbox, log, requestId);
-      }
-    },
-  });
+				return result;
+			} catch (err) {
+				log.error({ err, requestId, language }, "code execution failed");
+				return {
+					message: `Sandbox execution failed: ${getErrorMessage(err)}`,
+					chart: "",
+				};
+			} finally {
+				await cleanupSandbox(sandbox, log, requestId);
+			}
+		},
+	});

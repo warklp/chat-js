@@ -5,43 +5,43 @@ import { useMessageResearchUpdatePartByToolCallId } from "@/lib/stores/hooks-mes
 import { ResearchUpdates } from "./message-annotations";
 
 type DeepResearchPart = Extract<
-  ChatMessage["parts"][number],
-  { type: "tool-deepResearch" }
+	ChatMessage["parts"][number],
+	{ type: "tool-deepResearch" }
 >;
 
 function getOutputError(part: DeepResearchPart): string | null {
-  if (part.state !== "output-available") {
-    return null;
-  }
-  if (part.output.format !== "problem") {
-    return null;
-  }
-  return part.output.answer;
+	if (part.state !== "output-available") {
+		return null;
+	}
+	if (part.output.format !== "problem") {
+		return null;
+	}
+	return part.output.answer;
 }
 
 export function DeepResearch({
-  messageId,
-  part,
+	messageId,
+	part,
 }: {
-  messageId: string;
-  part: DeepResearchPart;
+	messageId: string;
+	part: DeepResearchPart;
 }) {
-  const { toolCallId } = part;
-  const researchUpdates = useMessageResearchUpdatePartByToolCallId(
-    messageId,
-    toolCallId
-  );
+	const { toolCallId } = part;
+	const researchUpdates = useMessageResearchUpdatePartByToolCallId(
+		messageId,
+		toolCallId,
+	);
 
-  const outputError = getOutputError(part);
+	const outputError = getOutputError(part);
 
-  return (
-    <div className="flex w-full flex-col gap-3">
-      <ResearchUpdates updates={researchUpdates.map((u) => u.data)} />
-      {outputError && (
-        <div className="rounded border bg-destructive/10 p-2 text-destructive-foreground">
-          Error: {outputError}
-        </div>
-      )}
-    </div>
-  );
+	return (
+		<div className="flex w-full flex-col gap-3">
+			<ResearchUpdates updates={researchUpdates.map((u) => u.data)} />
+			{outputError && (
+				<div className="rounded border bg-destructive/10 p-2 text-destructive-foreground">
+					Error: {outputError}
+				</div>
+			)}
+		</div>
+	);
 }
