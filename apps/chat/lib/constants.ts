@@ -1,11 +1,10 @@
 import { config } from "@/lib/config";
+import { isPlaywrightTestEnvironment as getIsPlaywrightTestEnvironment } from "@/lib/playwright-test-environment";
 
 const _isProductionEnvironment = process.env.NODE_ENV === "production";
 
-const _isTestEnvironment = Boolean(
-  process.env.PLAYWRIGHT_TEST_BASE_URL ||
-    process.env.PLAYWRIGHT ||
-    process.env.CI_PLAYWRIGHT
+export const isPlaywrightTestEnvironment = getIsPlaywrightTestEnvironment(
+  process.env
 );
 
 export const BLOB_FILE_PREFIX = `${config.appPrefix}/files/`;

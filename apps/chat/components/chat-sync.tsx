@@ -2,12 +2,13 @@
 
 import { useChat, useChatActions } from "@ai-sdk-tools/store";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDataStream } from "@/components/data-stream-provider";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
+import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
 import {
   useAddMessageToTree,
@@ -34,6 +35,8 @@ export function ChatSync({
   const addMessageToTree = useAddMessageToTree();
 
   const lastMessage = threadInitialMessages.at(-1);
+  const lastMessageRef = useRef(lastMessage);
+  lastMessageRef.current = lastMessage;
   const isLastMessagePartial = !!lastMessage?.metadata?.activeStreamId;
 
   // Backstop: if we remount ChatSync (e.g. threadEpoch changes), ensure the prior
@@ -77,8 +80,9 @@ export function ChatSync({
         };
       },
       prepareReconnectToStreamRequest({ id: chatId }) {
-        const partialMessageId = lastMessage?.metadata?.activeStreamId
-          ? lastMessage.id
+        const current = lastMessageRef.current;
+        const partialMessageId = current?.metadata?.activeStreamId
+          ? current.id
           : null;
         return {
           api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
@@ -100,14 +104,8 @@ export function ChatSync({
       }
 
       console.error(error);
-      const cause = error.cause;
-      if (cause && typeof cause === "string") {
-        toast.error(error.message ?? "An error occured, please try again!", {
-          description: cause,
-        });
-      } else {
-        toast.error(error.message ?? "An error occured, please try again!");
-      }
+      const { message, description } = getStreamErrorToastContent(error);
+      toast.error(message, description ? { description } : undefined);
     },
   });
 

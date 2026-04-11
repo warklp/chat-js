@@ -8,8 +8,8 @@ import {
   type HeadingTagType,
   QuoteNode,
 } from "@lexical/rich-text";
-import type { LexicalEditor } from "lexical";
-import { $getSelection, $insertNodes } from "lexical";
+import type { EditorState, LexicalEditor } from "lexical";
+import { $getSelection, $insertNodes, type TextNode } from "lexical";
 
 // Create initial editor configuration
 export function createEditorConfig() {
@@ -37,7 +37,7 @@ function _createHeadingTransform(level: number) {
     export: null,
     importDOM: null,
     regExp: new RegExp(`^(#{1,${level}})\\s$`),
-    replace: (_textNode: any) => {
+    replace: (_textNode: TextNode) => {
       const selection = $getSelection();
       if (selection) {
         const headingTag = `h${level}` as HeadingTagType;
@@ -56,7 +56,7 @@ export const handleEditorChange = ({
   editor,
   onSaveContent,
 }: {
-  editorState: any;
+  editorState: EditorState;
   editor: LexicalEditor;
   onSaveContent: (updatedContent: string, debounce: boolean) => void;
 }) => {

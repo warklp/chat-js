@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { SocialAuthProviders } from "@/components/social-auth-providers";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { SocialAuthProviders } from "@/components/auth-providers";
 import {
   Card,
   CardContent,
@@ -9,27 +11,64 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  buildSocialAuthRequest,
+  isElectronRenderer,
+} from "@/lib/electron-auth";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<typeof Card>) {
+  const searchParams = useSearchParams();
+  const query = Object.fromEntries(searchParams.entries());
+  const [isElectron, setIsElectron] = useState(false);
+  const { callbackURL, onRedirectToUrl, signInOptions } =
+    buildSocialAuthRequest(query, globalThis.location?.origin);
+  const loginHref = { pathname: "/login" as const, query };
+
+  useEffect(() => {
+    setIsElectron(isElectronRenderer());
+  }, []);
+
   return (
     <div className="flex flex-col gap-6" {...props}>
       <Card {...props}>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Create an account</CardTitle>
-          <CardDescription>Continue with a social provider</CardDescription>
+          <CardTitle className="text-xl">
+            {isElectron ? "Continue in browser" : "Create an account"}
+          </CardTitle>
+          <CardDescription>
+            {isElectron
+              ? "Use your browser to sign in or create an account."
+              : "Get started in seconds"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6">
-            <SocialAuthProviders />
-            <div className="text-center text-sm">
-              Already have an account?{" "}
-              <a className="underline underline-offset-4" href="/login">
-                Sign in
-              </a>
-            </div>
+            <Suspense>
+              <SocialAuthProviders
+                callbackURL={callbackURL}
+                electronBrowserLabel="Continue in browser"
+                isElectron={isElectron}
+                onRedirectToUrl={onRedirectToUrl}
+                query={query}
+                signInOptions={signInOptions}
+              />
+            </Suspense>
+            {isElectron ? (
+              <div className="text-center text-muted-foreground text-sm">
+                New and existing accounts both continue through the browser
+                flow.
+              </div>
+            ) : (
+              <div className="text-center text-sm">
+                Already have an account?{" "}
+                <Link className="underline underline-offset-4" href={loginHref}>
+                  Sign in
+                </Link>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

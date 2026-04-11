@@ -1,7 +1,7 @@
 import type { ModelMessage } from "ai";
 import { z } from "zod";
-import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import type { StreamWriter } from "@/lib/ai/types";
+import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import type { DocumentToolResult } from "../documents/types";
 import type { DeepResearchRuntimeConfig } from "./configuration";
 

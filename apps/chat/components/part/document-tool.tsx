@@ -2,13 +2,13 @@
 
 import { memo, useEffect } from "react";
 import { useArtifact } from "@/hooks/use-artifact";
+import type { ChatMessage } from "@/lib/ai/types";
+import { useIsLastArtifact } from "@/lib/stores/hooks-message-parts";
 import {
   type DocumentToolType,
   getToolKind,
   isEditTool,
 } from "@/tools/platform/documents/types";
-import type { ChatMessage } from "@/lib/ai/types";
-import { useIsLastArtifact } from "@/lib/stores/hooks-message-parts";
 import { DocumentPreview } from "./document-preview";
 
 type DocumentTool = Extract<

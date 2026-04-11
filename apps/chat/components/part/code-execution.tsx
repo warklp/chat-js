@@ -33,7 +33,12 @@ function isPngChart(input: unknown): input is PngChart {
 }
 
 export function CodeExecution({ tool }: { tool: CodeExecutionTool }) {
-  const args = tool.input ?? { code: "", title: "", icon: "default" };
+  const args = tool.input ?? {
+    code: "",
+    title: "",
+    language: "python",
+    icon: "default",
+  };
   const result = tool.state === "output-available" ? tool.output : null;
   const chart: BaseChart | null =
     result && isBaseChart(result.chart) ? result.chart : null;
@@ -41,11 +46,12 @@ export function CodeExecution({ tool }: { tool: CodeExecutionTool }) {
     result && isPngChart(result.chart) ? result.chart : null;
   const code = typeof args.code === "string" ? args.code : "";
   const title = typeof args.title === "string" ? args.title : "";
+  const language = args.language === "javascript" ? "javascript" : "python";
   return (
     <div className="space-y-6">
       <SandboxComposed
         code={code}
-        language="python"
+        language={language}
         output={result?.message}
         state={tool.state}
         title={title}

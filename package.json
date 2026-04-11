@@ -8,14 +8,15 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "dotenv -e .env.local -- turbo run dev --parallel",
-		"dev:chat": "dotenv -e .env.local -- turbo run dev --filter=@chatjs/chat",
+		"dev": "dotenv -e .env.local -- turbo run dev --filter=@chatjs/chat",
 		"dev:docs": "turbo run dev --filter=@chatjs/docs",
+		"dev:site": "turbo run dev --filter=@chatjs/site",
 		"build": "dotenv -e .env.local -- turbo run build",
 		"fetch:models": "dotenv -e .env.local -- turbo run fetch:models --filter=@chatjs/chat",
 		"test:e2e": "dotenv -e .env.local -- turbo run test:e2e --filter=@chatjs/chat",
 		"format": "turbo run format",
 		"lint": "turbo run lint",
+		"clean:modules": "find . -name node_modules -type d -prune -exec rm -rf {} +",
 		"test": "turbo run test",
 		"test:unit": "turbo run test:unit",
 		"test:types": "turbo run test:types",
@@ -25,16 +26,24 @@
 		"chat-js": "bun --filter @chat-js/cli start",
 		"skiller:apply": "bunx skiller@latest apply && turbo run skiller:apply",
 		"publish:cli": "echo 'Legacy CLI-only publish path. Prefer bun run release for standard releases.' && bun run template:sync && bun --filter @chat-js/cli build && npm publish --ignore-scripts -w packages/cli",
+		"db:generate": "dotenv -e .env.local -- bun --filter=@chatjs/chat run db:generate",
+		"db:migrate": "dotenv -e .env.local -- bun --filter=@chatjs/chat run db:migrate",
+		"db:branch:start": "dotenv -e .env.local -- bun --filter=@chatjs/chat run db:branch:start",
+		"db:branch:stop": "dotenv -e .env.local -- bun --filter=@chatjs/chat run db:branch:stop",
 		"start:chat": "dotenv -e .env.local -- bun --filter=@chatjs/chat run start",
-		"release": "changeset publish"
+		"release": "changeset publish",
+		"dev:electron": "turbo run electron:dev --filter=@chatjs/electron",
+		"build:electron": "turbo run electron:build --filter=@chatjs/electron",
+		"dist:electron": "turbo run electron:make --filter=@chatjs/electron"
 	},
 	"overrides": {
-		"@lobehub/ui": "~2.24.3"
+		"//@better-auth/core": "Pinned because @better-auth/electron and other @better-auth/* packages declare a strict peerDependency on @better-auth/core@1.5.6. Do not remove without auditing all @better-auth/* peer ranges.",
+		"@better-auth/core": "1.5.6"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.2",
 		"@changesets/cli": "^2.29.8",
 		"dotenv-cli": "^8.0.0",
-		"turbo": "^2.8.11"
+		"turbo": "2.9.5"
 	}
 }

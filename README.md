@@ -6,7 +6,7 @@
 
 Stop rebuilding the same AI chat infrastructure. ChatJS gives you a production-ready foundation with authentication, 120+ models, streaming, and tools so you can focus on what makes your app unique.
 
-[**Documentation**](https://chatjs.dev/docs) · [**Live Demo**](https://chatjs.dev)
+[**Website**](https://chatjs.dev) · [**Live Demo**](https://demo.chatjs.dev) · [**Documentation**](https://chatjs.dev/docs)
 
 ![DemosOnly](https://github.com/user-attachments/assets/f12e89dd-c10c-4e06-9b1a-a9fbd809d234)
 
@@ -36,6 +36,7 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 - **Image Generation**: AI-powered image creation
 - **Code Execution**: Run code snippets in sandbox
 - **MCP**: Model Context Protocol support
+- **Desktop App**: Package as a native macOS, Windows, or Linux app with Electron
 
 ## Stack
 
@@ -52,7 +53,7 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 - [Tailwind CSS](https://tailwindcss.com) - Styling
 - [tRPC](https://trpc.io) - End-to-end type-safe APIs
 - [Zod](https://zod.dev) - Schema validation
-- [Zustand](https://docs.pmnd.rs/zustand) - State management
+- [Zustand](https://zustand.docs.pmnd.rs/) - State management
 - [Motion](https://motion.dev) - Animations
 - [t3-env](https://env.t3.gg) - Environment variables
 - [Pino](https://getpino.io) - Structured Logging
@@ -61,13 +62,14 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 - [Biome](https://biomejs.dev) - Code linting and formatting
 - [Ultracite](https://ultracite.ai) - Biome preset for humans and AI
 - [Streamdown](https://streamdown.ai/) - Markdown for AI streaming
-- [AI Elements](https://ai-sdk.dev/elements/overview) - AI-native Components
+- [AI Elements](https://elements.ai-sdk.dev/overview) - AI-native Components
 - [AI SDK Tools](https://ai-sdk-tools.dev/) - Developer tools for AI SDK
 
 ## Monorepo Layout
 
-- `apps/chat`: Next.js chat app
-- `apps/docs`: Mintlify docs
+- `apps/site`: Landing page ([chatjs.dev](https://chatjs.dev))
+- `apps/chat`: Next.js chat app ([demo.chatjs.dev](https://demo.chatjs.dev))
+- `apps/docs`: Mintlify docs ([chatjs.dev/docs](https://chatjs.dev/docs))
 - `packages/cli`: interactive scaffold CLI
 
 ## Development
@@ -76,10 +78,6 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 - `bun dev:docs`: run docs
 - `bun lint`: run workspace lint
 - `bun test:types`: run chat app typecheck
-
-## Documentation
-
-Visit [chatjs.dev/docs](https://chatjs.dev/docs) to view docs.
 
 ## License
 

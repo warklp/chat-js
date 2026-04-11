@@ -1,5 +1,5 @@
-import { generateUUID } from "@/lib/utils";
 import type { StreamWriter } from "@/lib/ai/types";
+import { generateUUID } from "@/lib/utils";
 import { deduplicateByDomainAndUrl } from "./search-utils";
 import type { SearchProviderOptions } from "./web-search";
 import { webSearchStep } from "./web-search";
@@ -118,8 +118,9 @@ export async function multiQueryWebSearchStep({
     return {
       searches: searchResults,
     };
-  } catch (error: any) {
-    const errorMessage = error?.message || "Unknown error occurred";
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
 
     // Send error annotation
     dataStream.write({

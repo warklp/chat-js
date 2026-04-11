@@ -1,9 +1,9 @@
 import { memo } from "react";
+import { useMessageResearchUpdatePartsById } from "@/lib/stores/hooks-base";
 import type {
   ResearchUpdate,
   WebSearchUpdate,
 } from "@/tools/platform/research-updates-schema";
-import { useMessageResearchUpdatePartsById } from "@/lib/stores/hooks-base";
 import { ReasonSearchResearchProgress } from "../deep-research-progress";
 import { Sources } from "../sources";
 

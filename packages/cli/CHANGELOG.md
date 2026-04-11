@@ -1,5 +1,24 @@
 # @chat-js/cli
 
+## 0.6.1
+
+### Patch Changes
+
+- [#165](https://github.com/FranciscoMoretti/chat-js/pull/165) [`357def8`](https://github.com/FranciscoMoretti/chat-js/commit/357def8f78b27310182fcfd2f884d0c864179c85) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - support for all package managers
+
+## 0.6.0
+
+### Minor Changes
+
+- [#136](https://github.com/FranciscoMoretti/chat-js/pull/136) [`a825e73`](https://github.com/FranciscoMoretti/chat-js/commit/a825e73e79888634d1b8c890118fe8554f92a9fb) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Electron desktop app scaffolding is available from the `create` command via `Include an Electron desktop app?`. Accepted projects get a pre-configured `electron/` subfolder with the main process, preload script (context isolation), system tray, deep-link OAuth flow, auto-updater (GitHub Releases), and Electron Forge config for macOS, Windows, and Linux targets.
+
+## 0.4.0
+
+### Minor Changes
+
+- Add Electron desktop app scaffolding. The `create` command now prompts `Include an Electron desktop app?` and, when accepted, copies a pre-configured `electron/` subfolder into the new project. The folder includes the main process, preload script (context isolation), system tray, deep-link OAuth flow, auto-updater (GitHub Releases), and Electron Forge config for macOS, Windows, and Linux targets.
+- [#107](https://github.com/FranciscoMoretti/chat-js/pull/107) [`bd8bd35`](https://github.com/FranciscoMoretti/chat-js/commit/bd8bd351ea4775bd505cb1d45090a8c12df76d7f) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Parallel responses (Use multiple models)
+
 ## 0.3.0
 
 ### Minor Changes

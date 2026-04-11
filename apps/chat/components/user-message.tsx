@@ -8,6 +8,7 @@ import { AttachmentList } from "./attachment-list";
 import { ImageModal } from "./image-modal";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
+import { ParallelResponseCards } from "./parallel-response-cards";
 
 export interface BaseMessageProps {
   isLoading: boolean;
@@ -59,6 +60,8 @@ const PureUserMessage = ({
             message.role === "user" && mode !== "edit" && "items-end"
           )}
         >
+          {mode === "view" && <ParallelResponseCards messageId={message.id} />}
+
           {mode === "view" && isReadonly && (
             <MessageContent
               className="text-left group-[.is-user]:bg-card"
@@ -76,9 +79,18 @@ const PureUserMessage = ({
           )}
           {mode === "view" && !isReadonly && (
             <button
-              className="block cursor-pointer text-left transition-opacity hover:opacity-80"
+              className="block cursor-pointer select-text text-left transition-opacity hover:opacity-80"
               data-testid="message-content"
-              onClick={() => setMode("edit")}
+              onClick={(e) => {
+                const selection = window.getSelection();
+                if (
+                  selection?.toString() &&
+                  e.currentTarget.contains(selection.anchorNode)
+                ) {
+                  return;
+                }
+                setMode("edit");
+              }}
               type="button"
             >
               <MessageContent

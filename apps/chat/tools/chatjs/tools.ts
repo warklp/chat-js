@@ -14,4 +14,3 @@ export const tools = {
   wordCount,
   // [/chatjs-registry:tools]
 } as const;
-

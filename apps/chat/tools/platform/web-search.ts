@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
+import type { StreamWriter } from "@/lib/ai/types";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import { createModuleLogger } from "@/lib/logger";
-import type { StreamWriter } from "@/lib/ai/types";
 import {
   type MultiQuerySearchOptions,
   multiQueryWebSearchStep,

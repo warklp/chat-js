@@ -8,24 +8,24 @@ export type InstalledToolType = `tool-${InstalledToolName & string}`;
 export type InstalledToolUIPart = ToolUIPart<InstalledTools>;
 
 export type InstalledToolPart<T extends InstalledToolType> = Extract<
-	InstalledToolUIPart,
-	{ type: T }
+  InstalledToolUIPart,
+  { type: T }
 >;
 
 export type ToolRendererProps<T extends InstalledToolType> = {
-	tool: InstalledToolPart<T>;
-	messageId: string;
-	isReadonly: boolean;
+  tool: InstalledToolPart<T>;
+  messageId: string;
+  isReadonly: boolean;
 };
 
 export type ToolRendererRegistry = {
-	[K in InstalledToolType]: ComponentType<ToolRendererProps<K>>;
+  [K in InstalledToolType]: ComponentType<ToolRendererProps<K>>;
 };
 
 export const toolRendererRegistry = ui satisfies ToolRendererRegistry;
 
 export function isInstalledToolType(
-	type: string,
+  type: string
 ): type is keyof typeof toolRendererRegistry {
-	return type in toolRendererRegistry;
+  return type in toolRendererRegistry;
 }

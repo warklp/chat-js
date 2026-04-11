@@ -3,11 +3,11 @@
 import type { ToolUIPart } from "ai";
 import type { ComponentType } from "react";
 import {
-  isInstalledToolType,
-  toolRendererRegistry,
   type InstalledToolPart,
-  type ToolRendererProps,
   type InstalledToolType,
+  isInstalledToolType,
+  type ToolRendererProps,
+  toolRendererRegistry,
 } from "@/lib/ai/tool-renderer-registry";
 import type { ChatTools } from "@/lib/ai/types";
 import { CodeExecution } from "./code-execution";

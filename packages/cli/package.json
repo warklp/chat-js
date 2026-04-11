@@ -1,6 +1,6 @@
 {
 	"name": "@chat-js/cli",
-	"version": "0.3.0",
+	"version": "0.6.1",
 	"description": "CLI for creating and extending ChatJS apps",
 	"license": "Apache-2.0",
 	"repository": {
@@ -39,9 +39,10 @@
 	},
 	"scripts": {
 		"start": "bun src/index.ts",
-		"build": "bun build ./src/index.ts --target=node --format=esm --outfile ./dist/index.js",
+		"build": "bun run template:sync && bun build ./src/index.ts --target=node --format=esm --outfile ./dist/index.js",
+		"test:unit": "bun run template:sync && bun test src",
 		"template:sync": "bun ../../scripts/sync-template.ts",
-		"prepublishOnly": "bun run template:sync && bun run build && node ./dist/index.js --help >/dev/null"
+		"prepublishOnly": "bun run build && node ./dist/index.js --help >/dev/null"
 	},
 	"type": "module",
 	"devDependencies": {

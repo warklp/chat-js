@@ -62,6 +62,12 @@ apps/*/evals/db/
 # Neon
 .neon
 
+# Electron
+apps/electron/dist/
+apps/electron/release/
+apps/electron/out/
+apps/electron/branding.json
+
 /.skillz
 /AGENTS.md
 /AGENTS.md.bak
@@ -69,5 +75,5 @@ apps/*/evals/db/
 /CLAUDE.md.bak
 # END Skiller Generated Files
 .devtools
-
 .cursor/hooks/state
+.codex/environments/

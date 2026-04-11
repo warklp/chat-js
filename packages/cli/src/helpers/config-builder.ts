@@ -149,6 +149,7 @@ export function buildConfigTs(input: {
   appName: string;
   appPrefix: string;
   appUrl: string;
+  withElectron: boolean;
   gateway: Gateway;
   features: Record<FeatureKey, boolean>;
   auth: Record<AuthProvider, boolean>;
@@ -181,6 +182,9 @@ export function buildConfigTs(input: {
       terms: { title: "Terms of Service" },
     },
     authentication: input.auth,
+    desktopApp: {
+      enabled: input.withElectron,
+    },
     ai: { gateway: input.gateway },
     paths: {
       tools: "@/tools/chatjs",

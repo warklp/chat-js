@@ -7,6 +7,7 @@ import Script from "next/script";
 import "./globals.css";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
+import { ElectronAuthHandler } from "@/components/electron-auth-handler";
 import { ThemeProvider } from "@/components/theme-provider";
 import { config } from "@/lib/config";
 
@@ -78,14 +79,15 @@ export default async function RootLayout({
         <Script id="theme-color-script" strategy="beforeInteractive">
           {THEME_COLOR_SCRIPT}
         </Script>
-        {process.env.NODE_ENV !== "production" ? (
+        {process.env.NODE_ENV === "production" ? null : (
           <Script
             src="https://unpkg.com/react-scan/dist/auto.global.js"
             strategy="beforeInteractive"
           />
-        ) : null}
+        )}
       </head>
       <body className="antialiased">
+        <ElectronAuthHandler />
         <Script
           src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
           strategy="afterInteractive"

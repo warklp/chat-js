@@ -17,9 +17,7 @@ export function formatRequirementDescription(
 ): string {
   return (
     requirement.description ??
-    requirement.options
-      .map((option) => option.join(" + "))
-      .join(" or ")
+    requirement.options.map((option) => option.join(" + ")).join(" or ")
   );
 }
 

@@ -1,11 +1,9 @@
 "use client";
 
 import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
-import { wordCount } from "./tool";
+import type { wordCount } from "./tool";
 
-type WordCountRendererTool = TypelessToolPartFromTool<
-  typeof wordCount
->;
+type WordCountRendererTool = TypelessToolPartFromTool<typeof wordCount>;
 
 export function WordCountRenderer({
   tool,

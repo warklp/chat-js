@@ -1,12 +1,12 @@
 import { File, Loader2, Pencil } from "lucide-react";
 import { memo } from "react";
 import { useArtifact } from "@/hooks/use-artifact";
+import type { ChatMessage } from "@/lib/ai/types";
+import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
 import type {
   CreateDocumentToolType,
   EditDocumentToolType,
 } from "@/tools/platform/documents/types";
-import type { ChatMessage } from "@/lib/ai/types";
-import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
 
 export type CreateDocumentTool = Extract<
   ChatMessage["parts"][number],
@@ -128,7 +128,7 @@ function PureDocumentToolCall({
       type="button"
     >
       <div className="flex flex-row items-start gap-3">
-        <div className="mt-1 text-zinc-500">
+        <div className="mt-1 text-muted-foreground">
           {(() => {
             if (type === "create") {
               return <File size={16} />;

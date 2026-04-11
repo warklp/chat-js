@@ -7,6 +7,7 @@
 import "dotenv/config";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { readStaticToolMetadata } from "../../../packages/registry/src/static-tool-metadata";
 import type { GatewayType } from "../lib/ai/gateways/registry";
 import { generatedForGateway } from "../lib/ai/models.generated";
@@ -19,13 +20,17 @@ import {
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
+import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
 
 interface ValidationError {
   feature: string;
   missing: string[];
 }
 
-const projectRoot = path.resolve(import.meta.dir, "..");
+const projectRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  ".."
+);
 
 function resolveToolsDir(toolsPath: string): string {
   if (toolsPath.startsWith("@/")) {
@@ -155,7 +160,9 @@ async function validateInstalledTools(
   env: NodeJS.ProcessEnv
 ): Promise<ValidationError[]> {
   const toolsDir = resolveToolsDir(config.paths.tools);
-  const entries = await fs.readdir(toolsDir, { withFileTypes: true }).catch(() => []);
+  const entries = await fs
+    .readdir(toolsDir, { withFileTypes: true })
+    .catch(() => []);
   const errors: ValidationError[] = [];
 
   for (const entry of entries) {
@@ -218,6 +225,15 @@ function checkGatewaySnapshot(): string | null {
 
 async function checkEnv(): Promise<void> {
   const env = process.env;
+  if (isPlaywrightTestEnvironment(env)) {
+    console.log(
+      "✅ Skipping optional environment validation in Playwright test mode"
+    );
+    // Playwright CI only exercises anonymous flows, so optional feature checks
+    // and the gateway snapshot warning stay enforced in non-Playwright builds.
+    return;
+  }
+
   const baseUrlError = validateBaseUrl(env);
   const installedToolErrors = await validateInstalledTools(env);
   const errors = [

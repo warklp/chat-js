@@ -224,9 +224,14 @@ export const featuresConfigSchema = z
     attachments: z
       .boolean()
       .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
+    parallelResponses: z
+      .boolean()
+      .default(true)
+      .describe("Send one message to multiple models simultaneously"),
   })
   .default({
     attachments: false,
+    parallelResponses: true,
   });
 
 export const authenticationConfigSchema = z
@@ -248,7 +253,6 @@ export const authenticationConfigSchema = z
     github: true,
     vercel: false,
   });
-
 export const pathsConfigSchema = z
   .object({
     tools: z
@@ -259,6 +263,16 @@ export const pathsConfigSchema = z
       .default("@/tools/chatjs"),
   })
   .default({ tools: "@/tools/chatjs" });
+
+export const desktopAppConfigSchema = z
+  .object({
+    enabled: z
+      .boolean()
+      .describe("Enable Electron desktop auth/runtime integration"),
+  })
+  .default({
+    enabled: false,
+  });
 
 export const configSchema = z.object({
   appPrefix: z.string().default("chatjs"),
@@ -332,6 +346,8 @@ export const configSchema = z.object({
 
   authentication: authenticationConfigSchema,
 
+  desktopApp: desktopAppConfigSchema,
+
   ai: aiConfigSchema,
 
   anonymous: anonymousConfigSchema,
@@ -350,6 +366,7 @@ export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type FeaturesConfig = z.infer<typeof featuresConfigSchema>;
 export type PathsConfig = z.infer<typeof pathsConfigSchema>;
 export type AuthenticationConfig = z.infer<typeof authenticationConfigSchema>;
+export type DesktopAppConfig = z.infer<typeof desktopAppConfigSchema>;
 
 // Gateway-aware input types: model IDs narrowed per gateway for autocomplete
 type ZodConfigInput = z.input<typeof configSchema>;

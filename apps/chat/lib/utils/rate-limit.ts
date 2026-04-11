@@ -2,6 +2,12 @@ import "server-only";
 import { config } from "@/lib/config";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 
+interface RedisClient {
+  expire(key: string, seconds: number): Promise<unknown>;
+  get(key: string): Promise<string | null>;
+  incr(key: string): Promise<number>;
+}
+
 interface RateLimitResult {
   error?: string;
   remaining: number;
@@ -13,7 +19,7 @@ interface RateLimitOptions {
   identifier: string;
   keyPrefix: string;
   limit: number;
-  redisClient: any;
+  redisClient: RedisClient | null;
   windowSize: number;
 }
 
@@ -82,7 +88,7 @@ const WINDOW_SIZE_MONTH = 30 * 24 * 60 * 60;
 
 export async function checkAnonymousRateLimit(
   ip: string,
-  redisClient: any
+  redisClient: RedisClient | null
 ): Promise<{
   success: boolean;
   error?: string;
@@ -126,7 +132,7 @@ export async function checkAnonymousRateLimit(
     );
     return {
       success: false,
-      error: `Monthly message limit exceeded. You can make ${RATE_LIMIT.REQUESTS_PER_MONTH} requests per month. You've made ${RATE_LIMIT.REQUESTS_PER_MONTH - monthResult.remaining} requests this month. Try again in ${daysUntilReset} day${daysUntilReset !== 1 ? "s" : ""}.`,
+      error: `Monthly message limit exceeded. You can make ${RATE_LIMIT.REQUESTS_PER_MONTH} requests per month. You've made ${RATE_LIMIT.REQUESTS_PER_MONTH - monthResult.remaining} requests this month. Try again in ${daysUntilReset} day${daysUntilReset === 1 ? "" : "s"}.`,
       headers: {
         "X-RateLimit-Limit": RATE_LIMIT.REQUESTS_PER_MONTH.toString(),
         "X-RateLimit-Remaining": monthResult.remaining.toString(),

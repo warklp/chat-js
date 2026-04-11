@@ -52,43 +52,24 @@ export default defineConfig({
   /* Configure projects */
   projects: [
     {
-      name: "setup:auth",
-      testMatch: /auth.setup.e2e.ts/,
-    },
-    {
-      name: "setup:reasoning",
-      testMatch: /reasoning.setup.e2e.ts/,
-      dependencies: ["setup:auth"],
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/session.json",
-      },
-    },
-    {
       name: "chat",
       testMatch: /chat.e2e.ts/,
-      dependencies: ["setup:auth"],
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/session.json",
       },
     },
     {
       name: "reasoning",
       testMatch: /reasoning.e2e.ts/,
-      dependencies: ["setup:reasoning"],
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.reasoning/session.json",
       },
     },
     {
       name: "artifacts",
       testMatch: /artifacts.e2e.ts/,
-      dependencies: ["setup:auth"],
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/session.json",
       },
     },
 

@@ -1,6 +1,6 @@
+import type { ModelId } from "@/lib/ai/app-models";
 import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
-import type { ModelId } from "@/lib/ai/app-models";
 import type { ToolSession } from "../types";
 
 export type DocumentToolResult =

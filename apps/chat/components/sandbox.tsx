@@ -38,7 +38,7 @@ export function SandboxComposed({
       <SandboxHeader state={state} title={title} />
       <SandboxContent>
         <SandboxTabs onValueChange={setActiveTab} value={activeTab}>
-          <div className="flex items-center border-neutral-200 border-b dark:border-neutral-800">
+          <div className="flex items-center border-border border-b">
             <SandboxTabsList>
               <SandboxTabsTrigger value="code">Code</SandboxTabsTrigger>
               <SandboxTabsTrigger value="output">Output</SandboxTabsTrigger>

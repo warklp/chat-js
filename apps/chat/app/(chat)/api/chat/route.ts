@@ -25,8 +25,13 @@ import {
   streamFollowupSuggestions,
 } from "@/lib/ai/followup-suggestions";
 import { systemPrompt } from "@/lib/ai/prompts";
+import { getStreamErrorMessage } from "@/lib/ai/stream-errors";
 import { calculateMessagesTokens } from "@/lib/ai/token-utils";
-import type { ChatMessage, ToolName } from "@/lib/ai/types";
+import {
+  type ChatMessage,
+  getPrimarySelectedModelId,
+  type ToolName,
+} from "@/lib/ai/types";
 import {
   getAnonymousSession,
   setAnonymousSession,
@@ -43,8 +48,9 @@ import {
   getMessageCanceledAt,
   getProjectById,
   getUserById,
-  saveChat,
+  saveChatIfNotExists,
   saveMessage,
+  saveMessageIfNotExists,
   updateMessage,
   updateMessageActiveStreamId,
 } from "@/lib/db/queries";
@@ -190,7 +196,7 @@ async function handleChatValidation({
       message: userMessage,
     });
 
-    await saveChat({ id: chatId, userId, title, projectId });
+    await saveChatIfNotExists({ id: chatId, userId, title, projectId });
   }
 
   const [existentMessage] = await getMessageById({ id: userMessage.id });
@@ -200,16 +206,35 @@ async function handleChatValidation({
     return { error: new Response("Unauthorized", { status: 401 }), isNewChat };
   }
 
-  if (!existentMessage) {
-    // If the message does not exist, save it
-    await saveMessage({
-      id: userMessage.id,
-      chatId,
-      message: userMessage,
-    });
-  }
+  await saveMessageIfNotExists({
+    id: userMessage.id,
+    chatId,
+    message: userMessage,
+  });
 
   return { error: null, isNewChat };
+}
+
+function resolveSelectedModelId({
+  requestSelectedModelId,
+  selectedModel,
+}: {
+  requestSelectedModelId?: AppModelId;
+  selectedModel: ChatMessage["metadata"]["selectedModel"];
+}): AppModelId | null {
+  if (typeof selectedModel === "string") {
+    return requestSelectedModelId ?? selectedModel;
+  }
+
+  if (requestSelectedModelId) {
+    if (!selectedModel || typeof selectedModel !== "object") {
+      return null;
+    }
+    const requestedCount = selectedModel[requestSelectedModelId];
+    return requestedCount && requestedCount > 0 ? requestSelectedModelId : null;
+  }
+
+  return getPrimarySelectedModelId(selectedModel);
 }
 
 async function checkUserCanSpend(userId: string): Promise<Response | null> {
@@ -275,6 +300,9 @@ async function createChatStream({
   userMessage,
   previousMessages,
   selectedModelId,
+  parallelGroupId,
+  parallelIndex,
+  isPrimaryParallel,
   explicitlyRequestedTools,
   userId,
   abortController,
@@ -290,6 +318,9 @@ async function createChatStream({
   userMessage: ChatMessage;
   previousMessages: ChatMessage[];
   selectedModelId: AppModelId;
+  parallelGroupId: string | null;
+  parallelIndex: number | null;
+  isPrimaryParallel: boolean | null;
   explicitlyRequestedTools: ToolName[] | null;
   userId: string | null;
   abortController: AbortController;
@@ -341,6 +372,9 @@ async function createChatStream({
       const initialMetadata: ChatMessage["metadata"] = {
         createdAt: new Date(),
         parentMessageId: userMessage.id,
+        parallelGroupId,
+        parallelIndex,
+        isPrimaryParallel,
         selectedModel: selectedModelId,
         activeStreamId: isAnonymous ? null : streamId,
       };
@@ -399,6 +433,10 @@ async function createChatStream({
         isAnonymous,
         chatId,
         costAccumulator,
+        selectedModelId,
+        parallelGroupId,
+        parallelIndex,
+        isPrimaryParallel,
       });
     },
     onError: (error) => {
@@ -409,7 +447,10 @@ async function createChatStream({
       if (!isAnonymous) {
         after(() =>
           Promise.resolve(
-            updateMessageActiveStreamId({ id: messageId, activeStreamId: null })
+            updateMessageActiveStreamId({
+              id: messageId,
+              activeStreamId: null,
+            })
           ).catch((dbError) => {
             log.error(
               { error: dbError },
@@ -420,7 +461,7 @@ async function createChatStream({
       }
 
       log.error({ error }, "onError");
-      return "Oops, an error occured!";
+      return getStreamErrorMessage(error);
     },
   });
 
@@ -432,6 +473,10 @@ async function executeChatRequest({
   userMessage,
   previousMessages,
   selectedModelId,
+  assistantMessageId,
+  parallelGroupId,
+  parallelIndex,
+  isPrimaryParallel,
   explicitlyRequestedTools,
   userId,
   isAnonymous,
@@ -444,6 +489,10 @@ async function executeChatRequest({
   userMessage: ChatMessage;
   previousMessages: ChatMessage[];
   selectedModelId: AppModelId;
+  assistantMessageId?: string;
+  parallelGroupId: string | null;
+  parallelIndex: number | null;
+  isPrimaryParallel: boolean | null;
   explicitlyRequestedTools: ToolName[] | null;
   userId: string | null;
   isAnonymous: boolean;
@@ -453,7 +502,7 @@ async function executeChatRequest({
   mcpConnectors: McpConnector[];
 }): Promise<Response> {
   const log = createModuleLogger("api:chat:execute");
-  const messageId = generateUUID();
+  const messageId = assistantMessageId ?? generateUUID();
   const streamId = generateUUID();
 
   if (!isAnonymous) {
@@ -468,6 +517,9 @@ async function executeChatRequest({
         metadata: {
           createdAt: new Date(),
           parentMessageId: userMessage.id,
+          parallelGroupId,
+          parallelIndex,
+          isPrimaryParallel,
           selectedModel: selectedModelId,
           selectedTool: undefined,
           activeStreamId: streamId,
@@ -494,6 +546,9 @@ async function executeChatRequest({
     userMessage,
     previousMessages,
     selectedModelId,
+    parallelGroupId,
+    parallelIndex,
+    isPrimaryParallel,
     explicitlyRequestedTools,
     userId,
     abortController,
@@ -660,12 +715,20 @@ async function finalizeMessageAndCredits({
   isAnonymous,
   chatId,
   costAccumulator,
+  selectedModelId,
+  parallelGroupId,
+  parallelIndex,
+  isPrimaryParallel,
 }: {
   messages: ChatMessage[];
   userId: string | null;
   isAnonymous: boolean;
   chatId: string;
   costAccumulator: CostAccumulator;
+  selectedModelId: AppModelId;
+  parallelGroupId: string | null;
+  parallelIndex: number | null;
+  isPrimaryParallel: boolean | null;
 }): Promise<void> {
   const log = createModuleLogger("api:chat:finalize");
 
@@ -684,6 +747,17 @@ async function finalizeMessageAndCredits({
           ...assistantMessage,
           metadata: {
             ...assistantMessage.metadata,
+            parallelGroupId:
+              parallelGroupId ??
+              assistantMessage.metadata.parallelGroupId ??
+              null,
+            parallelIndex:
+              parallelIndex ?? assistantMessage.metadata.parallelIndex ?? null,
+            isPrimaryParallel:
+              isPrimaryParallel ??
+              assistantMessage.metadata.isPrimaryParallel ??
+              null,
+            selectedModel: selectedModelId,
             activeStreamId: null,
           },
         },
@@ -716,11 +790,21 @@ export async function POST(request: NextRequest) {
       message: userMessage,
       prevMessages: anonymousPreviousMessages,
       projectId,
+      assistantMessageId,
+      selectedModelId: requestSelectedModelId,
+      parallelGroupId,
+      parallelIndex,
+      isPrimaryParallel,
     }: {
       id: string;
       message: ChatMessage;
       prevMessages: ChatMessage[];
       projectId?: string;
+      assistantMessageId?: string;
+      selectedModelId?: AppModelId;
+      parallelGroupId?: string | null;
+      parallelIndex?: number | null;
+      isPrimaryParallel?: boolean | null;
     } = await request.json();
 
     if (!userMessage) {
@@ -728,8 +812,10 @@ export async function POST(request: NextRequest) {
       return new ChatSDKError("bad_request:api").toResponse();
     }
 
-    // Extract selectedModel from user message metadata
-    const selectedModelId = userMessage.metadata?.selectedModel as AppModelId;
+    const selectedModelId = resolveSelectedModelId({
+      requestSelectedModelId,
+      selectedModel: userMessage.metadata.selectedModel,
+    });
 
     if (!selectedModelId) {
       log.warn("No selectedModel in user message metadata");
@@ -802,6 +888,11 @@ export async function POST(request: NextRequest) {
       userMessage,
       previousMessages,
       selectedModelId,
+      assistantMessageId,
+      parallelGroupId:
+        parallelGroupId ?? userMessage.metadata.parallelGroupId ?? null,
+      parallelIndex: parallelIndex ?? null,
+      isPrimaryParallel: isPrimaryParallel ?? null,
       explicitlyRequestedTools,
       userId,
       isAnonymous,

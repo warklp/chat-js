@@ -49,6 +49,7 @@
               "features/reasoning",
               "features/sharing",
               "features/branching",
+              "features/parallel-responses",
               "features/projects",
               "features/follow-up-suggestions"
             ]
@@ -69,6 +70,13 @@
               "deployment/vercel",
               "deployment/docker",
               "deployment/self-hosted"
+            ]
+          },
+          {
+            "group": "Platforms",
+            "pages": [
+              "platforms/web",
+              "platforms/desktop"
             ]
           },
           {
@@ -141,7 +149,7 @@
         },
         {
           "anchor": "Demo",
-          "href": "https://chatjs.dev",
+          "href": "https://demo.chatjs.dev",
           "icon": "sparkles"
         }
       ]
@@ -155,7 +163,7 @@
     "links": [
       {
         "label": "Demo",
-        "href": "https://chatjs.dev"
+        "href": "https://demo.chatjs.dev"
       }
     ],
     "primary": {

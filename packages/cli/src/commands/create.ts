@@ -11,12 +11,17 @@ import {
 } from "../helpers/env-checklist";
 import {
 	promptAuth,
+	promptElectron,
 	promptFeatures,
 	promptGateway,
 	promptInstall,
 	promptProjectName,
 } from "../helpers/prompts";
-import { scaffoldFromGit, scaffoldFromTemplate } from "../helpers/scaffold";
+import {
+	scaffoldElectron,
+	scaffoldFromGit,
+	scaffoldFromTemplate,
+} from "../helpers/scaffold";
 import { inferPackageManager } from "../utils/get-package-manager";
 import { handleError } from "../utils/handle-error";
 import { highlighter } from "../utils/highlighter";
@@ -79,7 +84,9 @@ const createOptionsSchema = z.object({
 	target: z.string().optional(),
 	yes: z.boolean(),
 	install: z.boolean(),
+	electron: z.boolean().optional(),
 	fromGit: z.string().optional(),
+	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
 });
 
 export const create = new Command()
@@ -88,6 +95,12 @@ export const create = new Command()
 	.argument("[directory]", "target directory for the project")
 	.option("-y, --yes", "skip prompts and use defaults", false)
 	.option("--no-install", "skip dependency installation")
+	.option("--electron", "include the Electron desktop app")
+	.option("--no-electron", "do not include the Electron desktop app")
+	.option(
+		"--package-manager <manager>",
+		"package manager for install + next steps (bun, npm, pnpm, yarn)",
+	)
 	.option(
 		"--from-git <url>",
 		"clone from a git repository instead of the built-in scaffold",
@@ -99,7 +112,7 @@ export const create = new Command()
 				...opts,
 			});
 
-			const packageManager = inferPackageManager();
+			const packageManager = options.packageManager ?? inferPackageManager();
 
 			if (!options.yes) {
 				intro("Create ChatJS App");
@@ -139,14 +152,26 @@ export const create = new Command()
 			// 5. Auth providers
 			const auth = await promptAuth(options.yes);
 
-			// 6. Scaffold project
+			// 6. Electron
+			const withElectron = await promptElectron(
+				options.yes,
+				options.electron,
+			);
+
+			// 7. Scaffold project
 			logger.break();
 			const scaffoldSpinner = spinner("Scaffolding project...").start();
 			try {
 				if (options.fromGit) {
 					await scaffoldFromGit(options.fromGit, targetDir);
 				} else {
-					await scaffoldFromTemplate(targetDir);
+					await scaffoldFromTemplate(targetDir, { packageManager });
+				}
+				if (withElectron) {
+					await scaffoldElectron(targetDir, {
+						projectName,
+						packageManager,
+					});
 				}
 				scaffoldSpinner.succeed("Project scaffolded.");
 			} catch (error) {
@@ -154,7 +179,7 @@ export const create = new Command()
 				throw error;
 			}
 
-			// 7. Write configuration
+			// 8. Write configuration
 			const configSpinner = spinner("Writing configuration...").start();
 			try {
 				const packageJsonPath = join(targetDir, "package.json");
@@ -171,6 +196,7 @@ export const create = new Command()
 					appName,
 					appPrefix,
 					appUrl,
+					withElectron,
 					gateway,
 					features,
 					auth,
@@ -228,6 +254,13 @@ export const create = new Command()
 				);
 				logger.log(
 					`  ${highlighter.dim("4.")} ${highlighter.info(`${packageManager} run dev`)}`,
+				);
+			}
+			if (withElectron) {
+				logger.break();
+				logger.info("Electron desktop app:");
+				logger.log(
+					`  Run the web app first, then: ${highlighter.info(`cd electron && ${packageManager} install && ${packageManager} run dev`)}`,
 				);
 			}
 			logger.break();

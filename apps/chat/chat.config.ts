@@ -14,7 +14,7 @@ const config = defineConfig({
   appTitle: "ChatJS - The prod ready AI chat app",
   appDescription:
     "Build and deploy AI chat applications in minutes. ChatJS provides authentication, streaming, tool calling, and all the features you need for production-ready AI conversations.",
-  appUrl: "https://chatjs.dev",
+  appUrl: "https://www.demo.chatjs.dev",
   organization: {
     name: "ChatJS",
     contact: {
@@ -46,6 +46,7 @@ const config = defineConfig({
   },
   features: {
     attachments: true, // Requires BLOB_READ_WRITE_TOKEN
+    parallelResponses: true,
   },
   legal: {
     minimumAge: 13,
@@ -66,6 +67,9 @@ const config = defineConfig({
     google: true, // Requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET
     github: true, // Requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET
     vercel: true, // Requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET
+  },
+  desktopApp: {
+    enabled: true,
   },
   ai: {
     gateway: "vercel",

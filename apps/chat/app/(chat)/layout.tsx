@@ -5,6 +5,7 @@ import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import type { AppModelId } from "@/lib/ai/app-model-id";
 import { config } from "@/lib/config";
+import { isPlaywrightTestEnvironment } from "@/lib/constants";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import { ChatModelsProvider } from "@/providers/chat-models-provider";
 import { DefaultModelProvider } from "@/providers/default-model-provider";
@@ -24,7 +25,9 @@ export default async function ChatLayout({
     headers(),
     getChatModels(),
   ]);
-  const session = await auth.api.getSession({ headers: headersRes });
+  const session = isPlaywrightTestEnvironment
+    ? null
+    : await auth.api.getSession({ headers: headersRes });
   const isCollapsed = cookieStore.get("sidebar:state")?.value !== "true";
 
   const cookieModel = cookieStore.get("chat-model")?.value;
