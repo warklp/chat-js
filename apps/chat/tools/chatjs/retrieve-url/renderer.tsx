@@ -7,7 +7,6 @@ import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-p
 import { retrieveUrl } from "./tool";
 
 type RetrieveUrlRendererTool = TypelessToolPartFromTool<
-  "retrieveUrl",
   typeof retrieveUrl
 >;
 

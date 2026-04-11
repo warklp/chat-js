@@ -1,14 +1,5 @@
-import type { InferUITool, Tool, ToolUIPart } from "ai";
+import type { Tool, UIToolInvocation } from "ai";
 
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
-  ? Omit<T, K>
-  : never;
+export type ToolPartFromTool<T extends Tool> = UIToolInvocation<T>;
 
-export type ToolPartFromTool<NAME extends string, T extends Tool> = ToolUIPart<{
-  [K in NAME]: InferUITool<T>;
-}>;
-
-export type TypelessToolPartFromTool<
-  NAME extends string,
-  T extends Tool,
-> = DistributiveOmit<ToolPartFromTool<NAME, T>, "type">;
+export type TypelessToolPartFromTool<T extends Tool> = ToolPartFromTool<T>;

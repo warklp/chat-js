@@ -7,7 +7,6 @@ import { useToolIsCompact } from "@toolkit/hooks/use-tool-is-compact";
 import { getWeather, type WeatherAtLocation } from "./tool";
 
 type GetWeatherRendererTool = TypelessToolPartFromTool<
-  "getWeather",
   typeof getWeather
 >;
 

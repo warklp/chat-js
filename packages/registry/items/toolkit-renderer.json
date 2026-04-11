@@ -15,7 +15,7 @@
       "path": "tool-part.ts",
       "type": "lib",
       "target": "_shared/lib/tool-part.ts",
-      "content": "import type { InferUITool, Tool, ToolUIPart } from \"ai\";\n\ntype DistributiveOmit<T, K extends PropertyKey> = T extends unknown\n  ? Omit<T, K>\n  : never;\n\nexport type ToolPartFromTool<NAME extends string, T extends Tool> = ToolUIPart<{\n  [K in NAME]: InferUITool<T>;\n}>;\n\nexport type TypelessToolPartFromTool<\n  NAME extends string,\n  T extends Tool,\n> = DistributiveOmit<ToolPartFromTool<NAME, T>, \"type\">;\n"
+      "content": "import type { Tool, UIToolInvocation } from \"ai\";\n\nexport type ToolPartFromTool<T extends Tool> = UIToolInvocation<T>;\n\nexport type TypelessToolPartFromTool<T extends Tool> = ToolPartFromTool<T>;\n"
     },
     {
       "path": "use-tool-is-compact.ts",

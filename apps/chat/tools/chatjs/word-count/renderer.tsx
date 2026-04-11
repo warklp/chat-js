@@ -4,7 +4,6 @@ import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-p
 import { wordCount } from "./tool";
 
 type WordCountRendererTool = TypelessToolPartFromTool<
-  "wordCount",
   typeof wordCount
 >;
 

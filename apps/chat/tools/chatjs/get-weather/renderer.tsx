@@ -7,7 +7,6 @@ import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-p
 import type { getWeather, WeatherAtLocation } from "./tool";
 
 type GetWeatherRendererTool = TypelessToolPartFromTool<
-	"getWeather",
 	typeof getWeather
 >;
 
