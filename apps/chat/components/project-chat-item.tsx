@@ -2,9 +2,9 @@
 
 import { formatDistance } from "date-fns";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { ChatRenameDialog } from "@/components/chat-rename-dialog";
+import { InternalLink } from "@/components/internal-link";
 import { ShareDialog } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +42,7 @@ export function ProjectChatItem({
     <>
       <div className="group relative">
         <div className="relative flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50">
-          <Link className="absolute inset-0 z-10" href={chatHref} />
+          <InternalLink className="absolute inset-0 z-10" href={chatHref} />
           <div className="min-w-0 flex-1">
             <div className="truncate font-medium text-sm">{chat.title}</div>
             <div className="text-muted-foreground text-xs">

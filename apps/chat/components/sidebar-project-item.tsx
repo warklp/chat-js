@@ -1,10 +1,9 @@
 "use client";
 
 import { MoreHorizontal } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteProjectDialog } from "@/components/delete-project-dialog";
+import { InternalLink } from "@/components/internal-link";
 import {
   type ProjectDetailsData,
   ProjectDetailsDialog,
@@ -36,7 +35,6 @@ export function SidebarProjectItem({
 }) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const router = useRouter();
 
   const { mutateAsync: renameProject, isPending } = useRenameProject();
 
@@ -56,14 +54,9 @@ export function SidebarProjectItem({
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild className="cursor-pointer" isActive={isActive}>
-        <Link
+        <InternalLink
           href={projectHref}
-          onClick={(e) => {
-            if (e.button === 1 || e.ctrlKey || e.metaKey) {
-              return;
-            }
-            e.preventDefault();
-            router.push(projectHref);
+          onNavigate={() => {
             setOpenMobile(false);
           }}
           prefetch={false}
@@ -74,7 +67,7 @@ export function SidebarProjectItem({
             size={16}
           />
           <span>{project.name}</span>
-        </Link>
+        </InternalLink>
       </SidebarMenuButton>
 
       <DropdownMenu modal={true}>

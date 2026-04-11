@@ -2,8 +2,8 @@
 
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
 import { useState } from "react";
+import { InternalLink } from "@/components/internal-link";
 import { useGetCredits } from "@/hooks/chat-sync-hooks";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
@@ -29,12 +29,12 @@ const VARIANT_CONFIG: Record<
       isAtLimit ? (
         <span>
           You&apos;ve reached your credit limit.{" "}
-          <Link
+          <InternalLink
             className="font-medium text-red-700 underline hover:no-underline dark:text-red-300"
             href="/login"
           >
             Sign in to reset your limits
-          </Link>
+          </InternalLink>
         </span>
       ) : (
         <span>
@@ -43,12 +43,12 @@ const VARIANT_CONFIG: Record<
             {remaining} credit{remaining === 1 ? "" : "s"}
           </strong>{" "}
           left.{" "}
-          <Link
+          <InternalLink
             className="font-medium text-amber-700 underline hover:no-underline dark:text-amber-300"
             href="/login"
           >
             Sign in to reset your limits
-          </Link>
+          </InternalLink>
         </span>
       ),
     getClasses: ({ isAtLimit }) =>
@@ -61,12 +61,12 @@ const VARIANT_CONFIG: Record<
     getMessage: () => (
       <span>
         This model isn&apos;t available for anonymous users.{" "}
-        <Link
+        <InternalLink
           className="font-medium text-amber-700 underline hover:no-underline dark:text-amber-300"
           href="/login"
         >
           Log in to use this model
-        </Link>
+        </InternalLink>
       </span>
     ),
     getClasses: () =>

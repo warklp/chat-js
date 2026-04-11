@@ -7,7 +7,6 @@ import {
   ChevronUpIcon,
   FilterIcon,
 } from "lucide-react";
-import Link from "next/link";
 import {
   memo,
   type ReactNode,
@@ -19,6 +18,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { InternalLink } from "@/components/internal-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -697,10 +697,10 @@ function PureModelSelector({
                   size="sm"
                   variant="ghost"
                 >
-                  <Link aria-label="Add Models" href="/settings/models">
+                  <InternalLink aria-label="Add Models" href="/settings/models">
                     Add Models
                     <ChevronRightIcon className="h-4 w-4" />
-                  </Link>
+                  </InternalLink>
                 </Button>
               </div>
             )}

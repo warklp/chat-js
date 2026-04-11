@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { InternalLink } from "@/components/internal-link";
 import { cn } from "@/lib/utils";
 
 interface LoginPromptProps {
@@ -22,12 +22,12 @@ export function LoginPrompt({
         <h4 className="font-medium text-sm">{title}</h4>
       </div>
       <p className="ml-6 text-muted-foreground text-sm">{description}</p>
-      <Link
+      <InternalLink
         className="ml-6 block font-medium text-blue-500 text-sm hover:underline"
         href="/login"
       >
         Sign in
-      </Link>
+      </InternalLink>
     </div>
   );
 }

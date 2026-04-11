@@ -2,7 +2,7 @@
 
 import { PanelLeft } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { InternalLink } from "@/components/internal-link";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { useSidebar } from "@/components/ui/sidebar";
 import { config } from "@/lib/config";
@@ -17,10 +17,10 @@ export function SidebarTopRow() {
   return (
     <div className="flex w-full items-center justify-between gap-2">
       {isExpanded ? (
-        <Link
+        <InternalLink
           className="flex flex-row items-center gap-2"
           href="/"
-          onClick={() => {
+          onNavigate={() => {
             setOpenMobile(false);
             refreshChatID();
           }}
@@ -35,7 +35,7 @@ export function SidebarTopRow() {
             />
             {config.appName}
           </span>
-        </Link>
+        </InternalLink>
       ) : (
         <button
           aria-label="Expand sidebar"

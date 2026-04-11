@@ -8,35 +8,35 @@ import { cn } from "@/lib/utils";
 import { getStatusBadge } from "../tool";
 
 type McpToolHeaderProps = {
-  title?: string;
-  type: ToolUIPart["type"];
-  state: ToolUIPart["state"];
-  className?: string;
-  icon?: ReactNode;
+	title?: string;
+	type: ToolUIPart["type"];
+	state: ToolUIPart["state"];
+	className?: string;
+	icon?: ReactNode;
 };
 
 export const McpToolHeader = ({
-  className,
-  title,
-  type,
-  state,
-  icon,
-  ...props
+	className,
+	title,
+	type,
+	state,
+	icon,
+	...props
 }: McpToolHeaderProps) => (
-  <CollapsibleTrigger
-    className={cn(
-      "flex w-full items-center justify-between gap-4 p-3",
-      className
-    )}
-    {...props}
-  >
-    <div className="flex items-center gap-2">
-      {icon ?? <WrenchIcon className="size-4 text-muted-foreground" />}
-      <span className="font-medium text-sm">
-        {title ?? type.split("-").slice(1).join("-")}
-      </span>
-      {getStatusBadge(state)}
-    </div>
-    <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-  </CollapsibleTrigger>
+	<CollapsibleTrigger
+		className={cn(
+			"flex w-full items-center justify-between gap-4 p-3",
+			className,
+		)}
+		{...props}
+	>
+		<div className="flex items-center gap-2">
+			{icon ?? <WrenchIcon className="size-4 text-muted-foreground" />}
+			<span className="font-medium text-sm">
+				{title ?? type.split("-").slice(1).join("-")}
+			</span>
+			{getStatusBadge(state)}
+		</div>
+		<ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+	</CollapsibleTrigger>
 );

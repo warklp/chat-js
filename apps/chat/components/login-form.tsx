@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { SocialAuthProviders } from "@/components/auth-providers";
+import { InternalLink } from "@/components/internal-link";
 import {
   Card,
   CardContent,
@@ -65,12 +65,12 @@ export function LoginForm({
             ) : (
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <Link
+                <InternalLink
                   className="underline underline-offset-4"
                   href={registerHref}
                 >
                   Sign up
-                </Link>
+                </InternalLink>
               </div>
             )}
           </div>
@@ -78,8 +78,8 @@ export function LoginForm({
       </Card>
       <div className="text-balance text-center text-muted-foreground text-xs [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
         By clicking continue, you agree to our{" "}
-        <Link href="/terms">Terms of Service</Link> and{" "}
-        <Link href="/privacy">Privacy Policy</Link>.
+        <InternalLink href="/terms">Terms of Service</InternalLink> and{" "}
+        <InternalLink href="/privacy">Privacy Policy</InternalLink>.
       </div>
     </div>
   );

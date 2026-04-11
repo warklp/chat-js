@@ -10,10 +10,10 @@ import {
   Radio,
   Trash2,
 } from "lucide-react";
-import Link from "next/link";
 import { useQueryStates } from "nuqs";
 import { Fragment, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { InternalLink } from "@/components/internal-link";
 import { ConnectorHeader } from "@/components/settings/connector-header";
 import { McpConnectDialog } from "@/components/settings/mcp-connect-dialog";
 import { McpCreateDialog } from "@/components/settings/mcp-create-dialog";
@@ -335,7 +335,7 @@ function CustomConnectorRow({
             size="sm"
             variant="outline"
           >
-            <Link href={href}>
+            <InternalLink href={href}>
               {isTestingConnection ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="size-4 animate-spin" />
@@ -346,7 +346,7 @@ function CustomConnectorRow({
                   {actionLabel}
                 </span>
               )}
-            </Link>
+            </InternalLink>
           </Button>
         ) : null}
         <DropdownMenu>
@@ -405,7 +405,7 @@ function BuiltInConnectorRow({ connector }: { connector: McpConnector }) {
         url={connector.url}
       />
       <Button asChild size="sm" variant="outline">
-        <Link href={href}>View</Link>
+        <InternalLink href={href}>View</InternalLink>
       </Button>
     </div>
   );
