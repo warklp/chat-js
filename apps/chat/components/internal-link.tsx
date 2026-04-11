@@ -42,6 +42,10 @@ export function InternalLink({
       return;
     }
 
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
     onNavigate?.();
   };
 
