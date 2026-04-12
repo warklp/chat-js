@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   applyDefaults,
-  configSchema,
+  configDescriptionSchema,
 } from "../../../../apps/chat/lib/config-schema";
 import type { ScaffoldConfigInput } from "../types";
 
@@ -10,21 +10,12 @@ function extractDescriptions(
   prefix = "",
   result: Map<string, string> = new Map(),
 ): Map<string, string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let unwrapped: any = schema;
-  while (
-    unwrapped instanceof z.ZodDefault ||
-    unwrapped instanceof z.ZodOptional
-  ) {
-    unwrapped = unwrapped._zod.def.innerType;
+  if (schema.description && prefix) {
+    result.set(prefix, schema.description);
   }
 
-  if (unwrapped.description && prefix) {
-    result.set(prefix, unwrapped.description);
-  }
-
-  if (unwrapped instanceof z.ZodObject) {
-    const shape = unwrapped._zod.def.shape;
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
     for (const [key, propSchema] of Object.entries(shape)) {
       const path = prefix ? `${prefix}.${key}` : key;
       extractDescriptions(propSchema as z.ZodType, path, result);
@@ -34,7 +25,7 @@ function extractDescriptions(
   return result;
 }
 
-const descriptions = extractDescriptions(configSchema);
+const descriptions = extractDescriptions(configDescriptionSchema);
 
 const VALID_KEY_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 const formatKey = (key: string) =>

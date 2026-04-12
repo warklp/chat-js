@@ -175,104 +175,153 @@ export const pricingConfigSchema = z.object({
     .optional(),
 });
 
-export const anonymousConfigSchema = z
-  .object({
-    credits: z.number().describe("Message credits for anonymous users"),
-    availableTools: z
-      .array(toolName())
-      .describe("Tools available to anonymous users"),
-    rateLimit: z
-      .object({
-        requestsPerMinute: z.number(),
-        requestsPerMonth: z.number(),
-      })
-      .describe("Rate limits"),
-  })
-  .default({
-    credits: 10,
-    availableTools: [],
-    rateLimit: {
-      requestsPerMinute: 5,
-      requestsPerMonth: 10,
-    },
-  });
+export const anonymousConfigObjectSchema = z.object({
+  credits: z.number().describe("Message credits for anonymous users"),
+  availableTools: z
+    .array(toolName())
+    .describe("Tools available to anonymous users"),
+  rateLimit: z
+    .object({
+      requestsPerMinute: z.number(),
+      requestsPerMonth: z.number(),
+    })
+    .describe("Rate limits"),
+});
 
-export const attachmentsConfigSchema = z
-  .object({
-    maxBytes: z.number().describe("Max file size in bytes after compression"),
-    maxDimension: z.number().describe("Max image dimension"),
-    acceptedTypes: z
-      .object({
-        "image/png": z.array(z.string()),
-        "image/jpeg": z.array(z.string()),
-        "application/pdf": z.array(z.string()),
-      })
-      .describe("Accepted MIME types with their file extensions"),
-  })
-  .default({
-    maxBytes: 1024 * 1024,
-    maxDimension: 2048,
-    acceptedTypes: {
-      "image/png": [".png"],
-      "image/jpeg": [".jpg", ".jpeg"],
-      "application/pdf": [".pdf"],
-    },
-  });
+export const anonymousConfigSchema = anonymousConfigObjectSchema.default({
+  credits: 10,
+  availableTools: [],
+  rateLimit: {
+    requestsPerMinute: 5,
+    requestsPerMonth: 10,
+  },
+});
 
-export const featuresConfigSchema = z
-  .object({
-    attachments: z
-      .boolean()
-      .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
-    parallelResponses: z
-      .boolean()
-      .default(true)
-      .describe("Send one message to multiple models simultaneously"),
-  })
-  .default({
-    attachments: false,
-    parallelResponses: true,
-  });
+export const attachmentsConfigObjectSchema = z.object({
+  maxBytes: z.number().describe("Max file size in bytes after compression"),
+  maxDimension: z.number().describe("Max image dimension"),
+  acceptedTypes: z
+    .object({
+      "image/png": z.array(z.string()),
+      "image/jpeg": z.array(z.string()),
+      "application/pdf": z.array(z.string()),
+    })
+    .describe("Accepted MIME types with their file extensions"),
+});
 
-export const authenticationConfigSchema = z
-  .object({
-    google: z
-      .boolean()
-      .describe("Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET)"),
-    github: z
-      .boolean()
-      .describe("GitHub OAuth (requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET)"),
-    vercel: z
-      .boolean()
-      .describe(
-        "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)"
-      ),
-  })
-  .default({
+export const attachmentsConfigSchema = attachmentsConfigObjectSchema.default({
+  maxBytes: 1024 * 1024,
+  maxDimension: 2048,
+  acceptedTypes: {
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "application/pdf": [".pdf"],
+  },
+});
+
+export const featuresConfigObjectSchema = z.object({
+  attachments: z
+    .boolean()
+    .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
+  parallelResponses: z
+    .boolean()
+    .default(true)
+    .describe("Send one message to multiple models simultaneously"),
+});
+
+export const featuresConfigSchema = featuresConfigObjectSchema.default({
+  attachments: false,
+  parallelResponses: true,
+});
+
+export const authenticationConfigObjectSchema = z.object({
+  google: z
+    .boolean()
+    .describe("Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET)"),
+  github: z
+    .boolean()
+    .describe("GitHub OAuth (requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET)"),
+  vercel: z
+    .boolean()
+    .describe(
+      "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)"
+    ),
+});
+
+export const authenticationConfigSchema =
+  authenticationConfigObjectSchema.default({
     google: false,
     github: true,
     vercel: false,
   });
-export const pathsConfigSchema = z
-  .object({
-    tools: z
-      .string()
-      .describe(
-        "Import alias for the installable tools registry index and tool files"
-      )
-      .default("@/tools/chatjs"),
-  })
-  .default({ tools: "@/tools/chatjs" });
+export const pathsConfigObjectSchema = z.object({
+  tools: z
+    .string()
+    .default("@/tools/chatjs")
+    .describe(
+      "Import alias for the installable tools registry index and tool files"
+    ),
+});
 
-export const desktopAppConfigSchema = z
-  .object({
-    enabled: z
-      .boolean()
-      .describe("Enable Electron desktop auth/runtime integration"),
-  })
-  .default({
-    enabled: false,
-  });
+export const pathsConfigSchema = pathsConfigObjectSchema.default({
+  tools: "@/tools/chatjs",
+});
+
+export const desktopAppConfigObjectSchema = z.object({
+  enabled: z
+    .boolean()
+    .describe("Enable Electron desktop auth/runtime integration"),
+});
+
+export const desktopAppConfigSchema = desktopAppConfigObjectSchema.default({
+  enabled: false,
+});
+
+export const configDescriptionSchema = z.object({
+  appPrefix: z.string().default("chatjs"),
+  appName: z.string().default("My AI Chat"),
+  appTitle: z
+    .string()
+    .optional()
+    .describe("Browser tab title (defaults to appName)"),
+  appDescription: z.string().default("AI chat powered by ChatJS"),
+  appUrl: z.url().default("https://your-domain.com"),
+  organization: z.object({
+    name: z.string(),
+    contact: z.object({
+      privacyEmail: z.string().email(),
+      legalEmail: z.string().email(),
+    }),
+  }),
+  services: z.object({
+    hosting: z.string(),
+    aiProviders: z.array(z.string()),
+    paymentProcessors: z.array(z.string()),
+  }),
+  features: featuresConfigObjectSchema,
+  pricing: pricingConfigSchema.optional(),
+  legal: z.object({
+    minimumAge: z.number(),
+    governingLaw: z.string(),
+    refundPolicy: z.string(),
+  }),
+  policies: z.object({
+    privacy: z.object({
+      title: z.string(),
+      lastUpdated: z.string().optional(),
+    }),
+    terms: z.object({
+      title: z.string(),
+      lastUpdated: z.string().optional(),
+    }),
+  }),
+  authentication: authenticationConfigObjectSchema,
+  desktopApp: desktopAppConfigObjectSchema,
+  ai: aiConfigSchema,
+  anonymous: anonymousConfigObjectSchema,
+  attachments: attachmentsConfigObjectSchema,
+  paths: pathsConfigObjectSchema,
+});
 
 export const configSchema = z.object({
   appPrefix: z.string().default("chatjs"),
