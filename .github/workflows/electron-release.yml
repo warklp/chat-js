@@ -1,4 +1,4 @@
-name: Electron Release
+name: Publish Desktop Artifacts
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   prepare:
-    name: Prepare Electron release
+    name: Prepare desktop artifact publish
     runs-on: ubuntu-22.04
     outputs:
       should_release: ${{ steps.versions.outputs.should_release }}
@@ -65,7 +65,7 @@ jobs:
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=@chatjs/electron@$VERSION" >> "$GITHUB_OUTPUT"
           echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
 
   build:
@@ -123,7 +123,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish Electron release
+    name: Publish desktop artifacts
     permissions:
       contents: write
     needs: [prepare, build]
@@ -139,7 +139,7 @@ jobs:
         with:
           path: /tmp/electron-release-assets
 
-      - name: Create tag and GitHub release
+      - name: Create package release tag and GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
@@ -158,8 +158,8 @@ jobs:
 
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" \
-              --title "Electron $RELEASE_VERSION" \
-              --notes "Desktop release for ChatJS $RELEASE_VERSION." \
+              --title "@chatjs/electron $RELEASE_VERSION" \
+              --notes "Desktop artifact release for @chatjs/electron $RELEASE_VERSION." \
               --target "$GITHUB_SHA"
           fi
 
