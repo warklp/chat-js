@@ -27,5 +27,5 @@ export const toolRendererRegistry = ui satisfies ToolRendererRegistry;
 export function isInstalledToolType(
   type: string
 ): type is keyof typeof toolRendererRegistry {
-  return type in toolRendererRegistry;
+  return Object.hasOwn(toolRendererRegistry, type);
 }

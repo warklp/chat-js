@@ -11,6 +11,27 @@ function rewriteToolkitImports(content: string, toolsAlias: string): string {
   );
 }
 
+async function assertNoSymlinkTraversal(
+  dest: string,
+  toolsDir: string
+): Promise<void> {
+  const relativeParent = path.relative(toolsDir, path.dirname(dest));
+  const segments = relativeParent
+    .split(path.sep)
+    .filter((segment) => segment.length > 0);
+  let currentPath = toolsDir;
+
+  for (const segment of segments) {
+    currentPath = path.join(currentPath, segment);
+    const stat = await fs.lstat(currentPath).catch(() => null);
+    if (stat?.isSymbolicLink()) {
+      throw new Error(
+        `Refusing to write through symlinked path "${path.relative(toolsDir, currentPath)}"`
+      );
+    }
+  }
+}
+
 /**
  * Write tool files to disk.
  * Each file's `target` is resolved relative to `toolsDir`.
@@ -39,6 +60,7 @@ export async function writeToolFiles(
     }
 
     const dest = path.resolve(toolsDir, file.target);
+    await assertNoSymlinkTraversal(dest, toolsDir);
 
     const exists = await fs
       .access(dest)
@@ -51,6 +73,24 @@ export async function writeToolFiles(
     }
 
     await fs.mkdir(path.dirname(dest), { recursive: true });
+    const realToolsDir = await fs
+      .realpath(toolsDir)
+      .catch(() => path.resolve(toolsDir));
+    const realParentDir = await fs.realpath(path.dirname(dest));
+    if (
+      realParentDir !== realToolsDir &&
+      !realParentDir.startsWith(`${realToolsDir}${path.sep}`)
+    ) {
+      throw new Error(
+        `Refusing to write "${file.target}" outside the tools directory`
+      );
+    }
+    if (exists) {
+      const stat = await fs.lstat(dest);
+      if (stat.isSymbolicLink()) {
+        throw new Error(`Refusing to overwrite symlinked file "${file.target}"`);
+      }
+    }
     const content =
       dest.endsWith(".ts") || dest.endsWith(".tsx") || dest.endsWith(".js")
         ? rewriteToolkitImports(file.content, toolsAlias)

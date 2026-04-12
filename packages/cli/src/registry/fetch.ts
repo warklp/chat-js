@@ -18,6 +18,8 @@ export async function fetchRegistryItem(
 ): Promise<RegistryToolItem> {
   const template = getRegistryUrl(registryUrl);
   const resolved = template.replace("{name}", encodeURIComponent(name));
+  const isLocalPath =
+    resolved.startsWith(".") || path.isAbsolute(resolved);
 
   // Resolve relative paths against process.cwd() so they work regardless of
   // where the CLI was invoked from.
@@ -27,7 +29,7 @@ export async function fetchRegistryItem(
 
   let raw: unknown;
 
-  if (filePath.startsWith("/") || filePath.startsWith(".")) {
+  if (isLocalPath) {
     // Local file path — useful during development with --registry flag
     const content = await fs.readFile(filePath, "utf8").catch(() => {
       throw new Error(`Tool "${name}" not found at ${filePath}`);

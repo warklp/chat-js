@@ -8,7 +8,8 @@ import {
   multiQueryWebSearchStep,
 } from "./steps/multi-query-web-search";
 
-const COST_CENTS = 5; // Tavily API
+const TAVILY_COST_CENTS = 5;
+const FIRECRAWL_COST_CENTS = 5;
 
 const DEFAULT_MAX_RESULTS = 5;
 
@@ -185,7 +186,7 @@ Avoid:
       });
 
       // Report API cost
-      costAccumulator?.addAPICost("webSearch", COST_CENTS);
+      costAccumulator?.addAPICost("webSearch", TAVILY_COST_CENTS);
 
       return result;
     },
@@ -246,7 +247,7 @@ Avoid:
       });
 
       // Report API cost
-      costAccumulator?.addAPICost("webSearch", COST_CENTS);
+      costAccumulator?.addAPICost("webSearch", FIRECRAWL_COST_CENTS);
 
       return result;
     },

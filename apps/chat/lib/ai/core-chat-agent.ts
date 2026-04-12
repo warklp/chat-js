@@ -92,20 +92,26 @@ export async function createCoreChatAgent({
 
   // Compute final activeTools for streamText
   let activeBaseTools = Object.keys(baseTools) as ToolName[];
+  let activeMcpTools = Object.keys(mcpTools) as ToolName[];
   if (!modelDefinition?.input) {
     activeBaseTools = [];
+    activeMcpTools = [];
   } else if (isAnonymous) {
     activeBaseTools = activeBaseTools.filter((k) =>
       (ANONYMOUS_LIMITS.AVAILABLE_TOOLS as ToolName[]).includes(k)
     );
+    activeMcpTools = [];
   }
-  if (explicitlyRequestedTools && explicitlyRequestedTools.length > 0) {
+  if (explicitlyRequestedTools !== null) {
     activeBaseTools = explicitlyRequestedTools.filter((k) =>
       activeBaseTools.includes(k)
     );
+    activeMcpTools = explicitlyRequestedTools.filter((k) =>
+      activeMcpTools.includes(k)
+    );
   }
   const activeTools = [
-    ...new Set([...activeBaseTools, ...Object.keys(mcpTools)]),
+    ...new Set([...activeBaseTools, ...activeMcpTools]),
   ] as (keyof typeof allTools)[];
 
   // Resolve async model config before streamText to ensure cleanup on failure

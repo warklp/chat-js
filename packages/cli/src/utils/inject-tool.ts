@@ -96,7 +96,7 @@ export function injectTool(
     MARKERS.toolImports.open,
     MARKERS.toolImports.close,
     toolImportLines,
-    camel
+    toolImportLines.trim()
   );
 
   // 2. Server tools object block
@@ -106,7 +106,7 @@ export function injectTool(
     MARKERS.tools.open,
     MARKERS.tools.close,
     toolLine,
-    camel
+    toolLine.trim()
   );
 
   // 3. Client UI imports block
@@ -117,7 +117,7 @@ export function injectTool(
     MARKERS.uiImports.open,
     MARKERS.uiImports.close,
     uiImportLines,
-    camel
+    uiImportLines.trim()
   );
 
   // 4. Client UI registry block
@@ -127,7 +127,7 @@ export function injectTool(
     MARKERS.ui.open,
     MARKERS.ui.close,
     uiLine,
-    camel
+    uiLine.trim()
   );
 
   return { toolsSource, uiSource };

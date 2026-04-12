@@ -15,6 +15,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Node, Project, SyntaxKind } from "ts-morph";
 import {
   readStaticToolMetadata,
@@ -22,13 +23,12 @@ import {
   type StaticToolEnvVars,
 } from "./src/static-tool-metadata";
 
-const srcDir = new URL("./src", import.meta.url).pathname;
-const appToolsDir = new URL(
-  "../../apps/chat/tools/chatjs",
-  import.meta.url
-).pathname;
-const itemsDir = new URL("./items", import.meta.url).pathname;
-const indexPath = new URL("./index.json", import.meta.url).pathname;
+const srcDir = fileURLToPath(new URL("./src", import.meta.url));
+const appToolsDir = fileURLToPath(
+  new URL("../../apps/chat/tools/chatjs", import.meta.url)
+);
+const itemsDir = fileURLToPath(new URL("./items", import.meta.url));
+const indexPath = fileURLToPath(new URL("./index.json", import.meta.url));
 
 // Node.js built-in module names (node: prefix is handled separately)
 const NODE_BUILTINS = new Set([

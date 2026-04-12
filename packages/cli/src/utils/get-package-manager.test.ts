@@ -6,7 +6,22 @@ import { inferPackageManager } from "./get-package-manager";
 
 describe("inferPackageManager", () => {
   it("falls back to the launcher package manager when no lockfile is present", () => {
-    expect(inferPackageManager()).toBe("bun");
+    const cwd = join(tmpdir(), `chat-js-pm-${crypto.randomUUID()}`);
+    const originalUserAgent = process.env.npm_config_user_agent;
+
+    mkdirSync(cwd, { recursive: true });
+    process.env.npm_config_user_agent = "bun/1.3.1 node/v22.14.0 darwin arm64";
+
+    try {
+      expect(inferPackageManager(cwd)).toBe("bun");
+    } finally {
+      if (originalUserAgent === undefined) {
+        delete process.env.npm_config_user_agent;
+      } else {
+        process.env.npm_config_user_agent = originalUserAgent;
+      }
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 
   it("prefers project lockfiles over the launcher user agent", () => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown, ExternalLink, Globe, TextIcon } from "lucide-react";
-import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
 import type { retrieveUrl } from "./tool";
@@ -75,13 +74,7 @@ function RetrievedContentHeader({ firstItem }: { firstItem: unknown }) {
       <div className="flex items-start gap-4">
         <div className="relative h-10 w-10 shrink-0">
           <div className="absolute inset-0 rounded-lg bg-linear-to-br from-primary/10 to-transparent" />
-          <Image
-            alt=""
-            className="absolute inset-0 m-auto"
-            height={20}
-            src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`}
-            width={20}
-          />
+          <Globe className="absolute inset-0 m-auto h-5 w-5 text-primary/70" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <h2 className="truncate font-semibold text-foreground text-lg tracking-tight">
@@ -164,7 +157,7 @@ export function RetrieveUrlRenderer({
   messageId: string;
   isReadonly: boolean;
 }) {
-  if (tool.state === "input-available") {
+  if (tool.state === "input-available" || tool.state === "input-streaming") {
     return <LoadingState />;
   }
 

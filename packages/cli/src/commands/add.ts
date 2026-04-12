@@ -15,15 +15,6 @@ import { installDependencies } from "../utils/install-deps";
 import { spinner } from "../utils/spinner";
 import { writeToolFiles } from "../utils/write-files";
 
-function isRequirementSatisfied(
-  requirement: EnvRequirement,
-  env: NodeJS.ProcessEnv
-): boolean {
-  return requirement.options.some((option) =>
-    option.every((name) => Boolean(env[name]))
-  );
-}
-
 function formatRequirementDescription(requirement: EnvRequirement): string {
   return (
     requirement.description ??
@@ -128,16 +119,11 @@ export const add = new Command()
         const devDependencies = Array.from(
           new Set(itemsToInstall.flatMap((item) => item.devDependencies ?? []))
         );
-        const missingEnvRequirements = itemsToInstall.flatMap((item) =>
-          (item.envRequirements ?? [])
-            .filter(
-              (requirement) =>
-                !isRequirementSatisfied(requirement, process.env)
-            )
-            .map((requirement) => ({
-              tool: item.name,
-              requirement: formatRequirementDescription(requirement),
-            }))
+        const requiredEnvRequirements = itemsToInstall.flatMap((item) =>
+          (item.envRequirements ?? []).map((requirement) => ({
+            tool: item.name,
+            requirement: formatRequirementDescription(requirement),
+          }))
         );
         const mainItem = resolution.items.find((item) => item.name === name);
 
@@ -200,11 +186,11 @@ export const add = new Command()
           }
         }
 
-        if (missingEnvRequirements.length > 0) {
-          const details = missingEnvRequirements
+        if (requiredEnvRequirements.length > 0) {
+          const details = requiredEnvRequirements
             .map(({ tool, requirement }) => `${tool}: ${requirement}`)
             .join(", ");
-          log.warn(`Missing env vars for installed tools: ${details}`);
+          log.warn(`Required env vars for installed tools: ${details}`);
         }
 
         // 4. Inject into the CLI-managed registry files

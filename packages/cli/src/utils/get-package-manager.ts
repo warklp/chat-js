@@ -1,12 +1,25 @@
 import fs from "node:fs";
+import path from "node:path";
 import type { PackageManager } from "../types";
 
 export function inferPackageManager(cwd = process.cwd()): PackageManager {
-  if (fs.existsSync(`${cwd}/pnpm-lock.yaml`)) return "pnpm";
-  if (fs.existsSync(`${cwd}/yarn.lock`)) return "yarn";
-  if (fs.existsSync(`${cwd}/package-lock.json`)) return "npm";
-  if (fs.existsSync(`${cwd}/bun.lock`) || fs.existsSync(`${cwd}/bun.lockb`)) {
-    return "bun";
+  let currentDir = path.resolve(cwd);
+  while (true) {
+    if (fs.existsSync(path.join(currentDir, "pnpm-lock.yaml"))) return "pnpm";
+    if (fs.existsSync(path.join(currentDir, "yarn.lock"))) return "yarn";
+    if (fs.existsSync(path.join(currentDir, "package-lock.json"))) return "npm";
+    if (
+      fs.existsSync(path.join(currentDir, "bun.lock")) ||
+      fs.existsSync(path.join(currentDir, "bun.lockb"))
+    ) {
+      return "bun";
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+    currentDir = parentDir;
   }
 
   const ua = process.env.npm_config_user_agent ?? "";

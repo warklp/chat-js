@@ -1,5 +1,6 @@
 {
   "description": "Shared renderer helpers for installable ChatJS tools",
+  "extraDependencies": ["ai"],
   "registryDependencies": [],
   "files": [
     {

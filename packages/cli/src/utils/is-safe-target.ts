@@ -18,8 +18,18 @@ export function isSafeTarget(targetPath: string, root: string): boolean {
 
   const normalizedTarget = path.normalize(decodedPath.replace(/\\/g, "/"));
   const normalizedRoot = path.normalize(root);
+  const targetSegments = decodedPath
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean);
+  const normalizedSegments = normalizedTarget
+    .split(/[\\/]+/)
+    .filter(Boolean);
 
-  if (normalizedTarget.includes("..") || decodedPath.includes("..")) {
+  if (
+    targetSegments.includes("..") ||
+    normalizedSegments.includes("..")
+  ) {
     return false;
   }
 

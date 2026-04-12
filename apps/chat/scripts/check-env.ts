@@ -316,7 +316,12 @@ async function validateInstalledTools(
   const toolsDir = resolveToolsDir(config.paths.tools);
   const entries = await fs
     .readdir(toolsDir, { withFileTypes: true })
-    .catch(() => []);
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") {
+        return [];
+      }
+      throw error;
+    });
   const errors: ValidationError[] = [];
 
   for (const entry of entries) {

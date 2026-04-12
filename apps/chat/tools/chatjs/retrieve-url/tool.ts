@@ -22,6 +22,22 @@ const app = env.FIRECRAWL_API_KEY
   ? new FirecrawlApp({ apiKey: env.FIRECRAWL_API_KEY })
   : null;
 
+function parseUrl(url: string): URL | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function redactUrl(url: URL): string {
+  return `${url.origin}${url.pathname}`;
+}
+
 export const retrieveUrl = tool({
   description: `Fetch structured information from a single URL via Firecrawl.
 
@@ -41,7 +57,16 @@ Avoid:
             "Firecrawl is not configured. Set FIRECRAWL_API_KEY to enable retrieval.",
         };
       }
-      const content = await app.scrapeUrl(url);
+      const parsedUrl = parseUrl(url);
+      if (!parsedUrl) {
+        return {
+          error: "Please provide a valid http:// or https:// URL.",
+        };
+      }
+
+      const redactedUrl = redactUrl(parsedUrl);
+      const normalizedUrl = parsedUrl.toString();
+      const content = await app.scrapeUrl(normalizedUrl);
       if (!(content.success && content.metadata)) {
         return {
           results: [
@@ -63,7 +88,7 @@ Avoid:
       let extractedContent = content.markdown;
 
       if (!(title && description && extractedContent)) {
-        const extractResult = await app.extract([url], {
+        const extractResult = await app.extract([normalizedUrl], {
           prompt:
             "Extract the page title, main content, and a brief description.",
           schema,
@@ -81,14 +106,18 @@ Avoid:
           {
             title: title || "Untitled",
             content: extractedContent || "",
-            url: content.metadata.sourceURL,
+            url: redactedUrl,
             description: description || "",
             language: content.metadata.language,
           },
         ],
       };
     } catch (error) {
-      log.error({ err: error, url }, "Firecrawl API error in retrieveUrl tool");
+      const parsedUrl = parseUrl(url);
+      log.error(
+        { err: error, url: parsedUrl ? redactUrl(parsedUrl) : "<invalid-url>" },
+        "Firecrawl API error in retrieveUrl tool"
+      );
       return { error: "Failed to retrieve content" };
     }
   },

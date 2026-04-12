@@ -250,8 +250,11 @@ export async function runCoreChatAgentEval({
   abortSignal?: AbortSignal;
 }): Promise<EvalAgentResult> {
   const messageId = generateUUID();
+  const requestedTools = determineExplicitlyRequestedTools(selectedTool);
   const explicitlyRequestedTools =
-    determineExplicitlyRequestedTools(selectedTool) ?? activeTools;
+    requestedTools === null
+      ? activeTools
+      : requestedTools.filter((tool) => activeTools.includes(tool));
 
   const { result, contextForLLM, output, response } =
     await executeAgentAndGetOutput({

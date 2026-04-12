@@ -50,7 +50,7 @@ function resolveCreateTarget(targetArg: string | undefined): {
 	return {
 		projectName,
 		targetDir,
-		displayPath: relativePath || projectName,
+		displayPath: relativePath || ".",
 	};
 }
 
