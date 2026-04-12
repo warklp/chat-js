@@ -1,14 +1,17 @@
 import {
   authEnvRequirements,
+  builtInToolEnvRequirements,
+  coreFeatureEnvRequirements,
   type EnvRequirement,
   envVarDescriptions,
-  featureEnvRequirements,
   gatewayEnvRequirements,
 } from "./config-requirements";
 import {
-  FEATURE_KEYS,
   type AuthProvider,
-  type FeatureKey,
+  BUILT_IN_TOOL_KEYS,
+  CORE_FEATURE_KEYS,
+  type BuiltInToolKey,
+  type CoreFeatureKey,
   type Gateway,
 } from "../types";
 
@@ -51,7 +54,8 @@ function requirementToEntries(requirement: EnvRequirement): EnvVarEntry[] {
 
 export function collectEnvChecklist(input: {
   gateway: Gateway;
-  features: Record<FeatureKey, boolean>;
+  coreFeatures: Record<CoreFeatureKey, boolean>;
+  builtInTools: Record<BuiltInToolKey, boolean>;
   auth: Record<AuthProvider, boolean>;
 }): EnvVarEntry[] {
   const entries: EnvVarEntry[] = [];
@@ -75,13 +79,28 @@ export function collectEnvChecklist(input: {
   const featureItems: EnvVarEntry[] = [];
   const seen = new Set<string>();
 
-  for (const feature of FEATURE_KEYS) {
-    if (!input.features[feature]) continue;
+  for (const feature of CORE_FEATURE_KEYS) {
+    if (!input.coreFeatures[feature]) continue;
     const requirement =
-      featureEnvRequirements[feature as keyof typeof featureEnvRequirements];
+      coreFeatureEnvRequirements[
+        feature as keyof typeof coreFeatureEnvRequirements
+      ];
     if (!requirement) continue;
 
-    // Deduplicate — e.g. webSearch and deepResearch both need TAVILY_API_KEY
+    // Deduplicate repeated env requirements across feature/tool selections.
+    if (seen.has(requirement.description)) continue;
+    seen.add(requirement.description);
+
+    featureItems.push(...requirementToEntries(requirement));
+  }
+
+  for (const tool of BUILT_IN_TOOL_KEYS) {
+    if (!input.builtInTools[tool]) continue;
+    const requirement =
+      builtInToolEnvRequirements[
+        tool as keyof typeof builtInToolEnvRequirements
+      ];
+    if (!requirement) continue;
     if (seen.has(requirement.description)) continue;
     seen.add(requirement.description);
 

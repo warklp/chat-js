@@ -1,4 +1,10 @@
-import type { AuthProvider, FeatureKey, Gateway } from "../types";
+import type {
+  AuthProvider,
+  BuiltInToolKey,
+  CoreFeatureKey,
+  DocumentTypeKey,
+  Gateway,
+} from "../types";
 
 const VALID_KEY_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
@@ -16,6 +22,16 @@ const DESCRIPTIONS = new Map<string, string>([
     "authentication.vercel",
     "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)",
   ],
+  ["ai.tools.mcp.enabled", "Requires MCP_ENCRYPTION_KEY"],
+  ["ai.tools.documents.enabled", "Document create/edit/review support"],
+  ["ai.tools.webSearch.enabled", "Requires TAVILY_API_KEY or FIRECRAWL_API_KEY"],
+  ["ai.tools.urlRetrieval.enabled", "Requires FIRECRAWL_API_KEY"],
+  [
+    "ai.tools.codeExecution.enabled",
+    "Requires Vercel sandbox credentials outside Vercel",
+  ],
+  ["ai.tools.image.enabled", "Requires BLOB_READ_WRITE_TOKEN"],
+  ["ai.tools.deepResearch.enabled", "Requires web search access"],
   [
     "paths.tools",
     "Import alias for the installable tools registry index and tool files",
@@ -39,7 +55,10 @@ type GeneratedConfig = {
     aiProviders: string[];
     paymentProcessors: string[];
   };
-  features: Record<FeatureKey, boolean>;
+  features: {
+    attachments: boolean;
+    parallelResponses: boolean;
+  };
   legal: {
     minimumAge: number;
     governingLaw: string;
@@ -55,6 +74,36 @@ type GeneratedConfig = {
   };
   ai: {
     gateway: Gateway;
+    tools: {
+      mcp: {
+        enabled: boolean;
+      };
+      followupSuggestions: {
+        enabled: boolean;
+      };
+      documents: {
+        enabled: boolean;
+        types: Record<DocumentTypeKey, boolean>;
+      };
+      webSearch: {
+        enabled: boolean;
+      };
+      urlRetrieval: {
+        enabled: boolean;
+      };
+      deepResearch: {
+        enabled: boolean;
+      };
+      codeExecution: {
+        enabled: boolean;
+      };
+      image: {
+        enabled: boolean;
+      };
+      video: {
+        enabled: boolean;
+      };
+    };
   };
   paths: {
     tools: string;
@@ -137,7 +186,7 @@ function generateConfig(
           indent + 1,
           path
         );
-        return `${spaces}${formatKey(key)}: {\n${nested}\n${spaces}},`;
+        return `${spaces}${formatKey(key)}: {\n${nested}\n${spaces}},${comment}`;
       }
 
       return `${spaces}${formatKey(key)}: ${formatValue(
@@ -154,7 +203,9 @@ export function buildConfigTs(input: {
   appUrl: string;
   withElectron: boolean;
   gateway: Gateway;
-  features: Record<FeatureKey, boolean>;
+  coreFeatures: Record<CoreFeatureKey, boolean>;
+  documentTypes: Record<DocumentTypeKey, boolean>;
+  builtInTools: Record<BuiltInToolKey, boolean>;
   auth: Record<AuthProvider, boolean>;
 }): string {
   const fullConfig: GeneratedConfig = {
@@ -174,7 +225,10 @@ export function buildConfigTs(input: {
       aiProviders: ["OpenAI", "Anthropic", "Google"],
       paymentProcessors: [],
     },
-    features: input.features,
+    features: {
+      attachments: input.coreFeatures.attachments,
+      parallelResponses: input.coreFeatures.parallelResponses,
+    },
     legal: {
       minimumAge: 13,
       governingLaw: "United States",
@@ -188,7 +242,39 @@ export function buildConfigTs(input: {
     desktopApp: {
       enabled: input.withElectron,
     },
-    ai: { gateway: input.gateway },
+    ai: {
+      gateway: input.gateway,
+      tools: {
+        mcp: {
+          enabled: input.coreFeatures.mcp,
+        },
+        followupSuggestions: {
+          enabled: input.coreFeatures.followupSuggestions,
+        },
+        documents: {
+          enabled: input.coreFeatures.documents,
+          types: input.documentTypes,
+        },
+        webSearch: {
+          enabled: input.builtInTools.webSearch,
+        },
+        urlRetrieval: {
+          enabled: input.builtInTools.urlRetrieval,
+        },
+        deepResearch: {
+          enabled: input.builtInTools.deepResearch,
+        },
+        codeExecution: {
+          enabled: input.builtInTools.codeExecution,
+        },
+        image: {
+          enabled: input.builtInTools.imageGeneration,
+        },
+        video: {
+          enabled: input.builtInTools.videoGeneration,
+        },
+      },
+    },
     paths: {
       tools: "@/tools/chatjs",
     },
