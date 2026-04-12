@@ -29,6 +29,23 @@ export const gatewayEnvRequirements: Record<Gateway, EnvRequirement> = {
 export const featureEnvRequirements: Partial<
   Record<FeatureKey, EnvRequirement>
 > = {
+  attachments: {
+    options: [["BLOB_READ_WRITE_TOKEN"]],
+    description: "BLOB_READ_WRITE_TOKEN",
+  },
+};
+
+export const aiToolEnvRequirements: Partial<
+  Record<
+    | "webSearch"
+    | "urlRetrieval"
+    | "deepResearch"
+    | "mcp"
+    | "image"
+    | "codeExecution",
+    EnvRequirement
+  >
+> = {
   webSearch: {
     options: [["TAVILY_API_KEY"], ["FIRECRAWL_API_KEY"]],
     description: "TAVILY_API_KEY or FIRECRAWL_API_KEY",
@@ -45,15 +62,11 @@ export const featureEnvRequirements: Partial<
     options: [["MCP_ENCRYPTION_KEY"]],
     description: "MCP_ENCRYPTION_KEY",
   },
-  imageGeneration: {
+  image: {
     options: [["BLOB_READ_WRITE_TOKEN"]],
     description: "BLOB_READ_WRITE_TOKEN",
   },
-  attachments: {
-    options: [["BLOB_READ_WRITE_TOKEN"]],
-    description: "BLOB_READ_WRITE_TOKEN",
-  },
-  sandbox: {
+  codeExecution: {
     options: [
       ["VERCEL_OIDC_TOKEN"],
       ["VERCEL_TEAM_ID", "VERCEL_PROJECT_ID", "VERCEL_TOKEN"],

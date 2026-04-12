@@ -1,4 +1,5 @@
 import {
+  aiToolEnvRequirements,
   authEnvRequirements,
   type EnvRequirement,
   envVarDescriptions,
@@ -6,10 +7,9 @@ import {
   gatewayEnvRequirements,
 } from "./config-requirements";
 import {
-  FEATURE_KEYS,
   type AuthProvider,
-  type FeatureKey,
   type Gateway,
+  type ScaffoldConfigInput,
 } from "../types";
 
 export type EnvVarEntry = {
@@ -30,7 +30,9 @@ const envDescriptions = new Map(Object.entries(envVarDescriptions));
 function requirementToEntries(requirement: EnvRequirement): EnvVarEntry[] {
   const oneOfGroup =
     requirement.options.length > 1
-      ? requirement.options.map((group) => group.map(String).join("+")).join("|")
+      ? requirement.options
+          .map((group) => group.map(String).join("+"))
+          .join("|")
       : undefined;
 
   return requirement.options.map((group) => {
@@ -51,7 +53,8 @@ function requirementToEntries(requirement: EnvRequirement): EnvVarEntry[] {
 
 export function collectEnvChecklist(input: {
   gateway: Gateway;
-  features: Record<FeatureKey, boolean>;
+  features: ScaffoldConfigInput["features"];
+  aiTools: ScaffoldConfigInput["ai"]["tools"];
   auth: Record<AuthProvider, boolean>;
 }): EnvVarEntry[] {
   const entries: EnvVarEntry[] = [];
@@ -71,17 +74,17 @@ export function collectEnvChecklist(input: {
 
   entries.push(...gwEntries);
 
-  // --- Features ---
+  // --- Top-level features ---
   const featureItems: EnvVarEntry[] = [];
   const seen = new Set<string>();
 
-  for (const feature of FEATURE_KEYS) {
+  for (const feature of Object.keys(featureEnvRequirements) as Array<
+    keyof typeof featureEnvRequirements
+  >) {
     if (!input.features[feature]) continue;
-    const requirement =
-      featureEnvRequirements[feature as keyof typeof featureEnvRequirements];
+    const requirement = featureEnvRequirements[feature];
     if (!requirement) continue;
 
-    // Deduplicate — e.g. webSearch and deepResearch both need TAVILY_API_KEY
     if (seen.has(requirement.description)) continue;
     seen.add(requirement.description);
 
@@ -89,6 +92,27 @@ export function collectEnvChecklist(input: {
   }
 
   entries.push(...featureItems);
+
+  // --- AI tools ---
+  const toolItems: EnvVarEntry[] = [];
+
+  for (const tool of Object.keys(aiToolEnvRequirements) as Array<
+    keyof typeof aiToolEnvRequirements
+  >) {
+    const requirement = aiToolEnvRequirements[tool];
+    if (!requirement) continue;
+
+    const toolConfig = input.aiTools[tool];
+    if (!toolConfig?.enabled) continue;
+
+    // Deduplicate — e.g. webSearch and deepResearch both need TAVILY_API_KEY
+    if (seen.has(requirement.description)) continue;
+    seen.add(requirement.description);
+
+    toolItems.push(...requirementToEntries(requirement));
+  }
+
+  entries.push(...toolItems);
 
   // --- Authentication ---
   const authItems: EnvVarEntry[] = [];
