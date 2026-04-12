@@ -167,7 +167,7 @@ async function applyElectronTemplateTransforms(
   const packageJsonPath = join(destination, "package.json");
   let packageJson = await readFile(packageJsonPath, "utf8");
   packageJson = packageJson.replace(
-    /"name": "@chatjs\/electron"/,
+    /"name": "@chat-js\/electron"/,
     '"name": "__PROJECT_NAME__-electron"'
   );
   packageJson = packageJson

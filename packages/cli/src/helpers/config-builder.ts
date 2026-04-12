@@ -4,7 +4,13 @@ import {
   configDescriptionSchema,
   type ConfigInput,
 } from "../../../../apps/chat/lib/config-schema";
-import type { ScaffoldConfigInput } from "../types";
+import type {
+  AuthProvider,
+  BuiltInToolKey,
+  CoreFeatureKey,
+  DocumentTypeKey,
+  Gateway,
+} from "../types";
 
 function extractDescriptions(
   schema: z.ZodType,
@@ -29,6 +35,7 @@ function extractDescriptions(
 const descriptions = extractDescriptions(configDescriptionSchema);
 
 const VALID_KEY_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+
 const formatKey = (key: string) =>
   VALID_KEY_REGEX.test(key) ? key : JSON.stringify(key);
 
@@ -88,7 +95,7 @@ function generateConfig(
           indent + 1,
           path
         );
-        return `${spaces}${formatKey(key)}: {\n${nested}\n${spaces}},`;
+        return `${spaces}${formatKey(key)}: {\n${nested}\n${spaces}},${comment}`;
       }
 
       return `${spaces}${formatKey(key)}: ${formatValue(
@@ -99,22 +106,60 @@ function generateConfig(
     .join("\n");
 }
 
-function toConfigInput(input: ScaffoldConfigInput): ConfigInput {
+function toConfigInput(input: {
+  appName: string;
+  appPrefix: string;
+  appUrl: string;
+  withElectron: boolean;
+  gateway: Gateway;
+  coreFeatures: Record<CoreFeatureKey, boolean>;
+  documentTypes: Record<DocumentTypeKey, boolean>;
+  builtInTools: Record<BuiltInToolKey, boolean>;
+  auth: Record<AuthProvider, boolean>;
+}): ConfigInput {
   return {
     appName: input.appName,
     appPrefix: input.appPrefix,
     appUrl: input.appUrl,
-    features: input.features,
-    authentication: input.authentication,
-    desktopApp: input.desktopApp,
+    features: {
+      attachments: input.coreFeatures.attachments,
+      parallelResponses: input.coreFeatures.parallelResponses,
+    },
+    authentication: input.auth,
+    desktopApp: {
+      enabled: input.withElectron,
+    },
     ai: {
-      gateway: input.ai.gateway,
-      tools: input.ai.tools,
+      gateway: input.gateway,
+      tools: {
+        mcp: { enabled: input.coreFeatures.mcp },
+        followupSuggestions: { enabled: input.coreFeatures.followupSuggestions },
+        documents: {
+          enabled: input.coreFeatures.documents,
+          types: input.documentTypes,
+        },
+        webSearch: { enabled: input.builtInTools.webSearch },
+        urlRetrieval: { enabled: input.builtInTools.urlRetrieval },
+        deepResearch: { enabled: input.builtInTools.deepResearch },
+        codeExecution: { enabled: input.builtInTools.codeExecution },
+        image: { enabled: input.builtInTools.imageGeneration },
+        video: { enabled: input.builtInTools.videoGeneration },
+      },
     },
   } as ConfigInput;
 }
 
-export function buildConfigTs(input: ScaffoldConfigInput): string {
+export function buildConfigTs(input: {
+  appName: string;
+  appPrefix: string;
+  appUrl: string;
+  withElectron: boolean;
+  gateway: Gateway;
+  coreFeatures: Record<CoreFeatureKey, boolean>;
+  documentTypes: Record<DocumentTypeKey, boolean>;
+  builtInTools: Record<BuiltInToolKey, boolean>;
+  auth: Record<AuthProvider, boolean>;
+}): string {
   const fullConfig = applyDefaults(toConfigInput(input));
 
   return `import { defineConfig } from "@/lib/config-schema";

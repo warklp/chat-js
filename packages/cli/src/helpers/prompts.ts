@@ -6,66 +6,96 @@ import {
 	select,
 	text,
 } from "@clack/prompts";
+import type { RegistryIndexItem } from "../registry/fetch";
 import {
 	AUTHENTICATION_DEFAULTS,
 	FEATURES_DEFAULTS,
 } from "../../../../apps/chat/lib/config-schema";
 import { GATEWAY_MODEL_DEFAULTS } from "../../../../apps/chat/lib/ai/gateway-model-defaults";
 import {
-	aiToolEnvRequirements,
 	authEnvRequirements,
-	featureEnvRequirements,
+	builtInToolEnvRequirements,
+	coreFeatureEnvRequirements,
 	gatewayEnvRequirements,
 } from "./config-requirements";
 import {
 	AUTH_PROVIDERS,
-	GATEWAYS,
 	type AuthProvider,
-	type FeatureKey,
+	BUILT_IN_TOOL_KEYS,
+	type BuiltInToolKey,
+	CORE_FEATURE_KEYS,
+	type CoreFeatureKey,
+	DOCUMENT_TYPE_KEYS,
+	type DocumentTypeKey,
+	GATEWAYS,
 	type Gateway,
-	type ScaffoldFeatureSelection,
 } from "../types";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
 
-const FEATURE_KEYS = [
-	"sandbox",
-	"webSearch",
-	"urlRetrieval",
-	"deepResearch",
-	"mcp",
-	"imageGeneration",
-	"attachments",
-	"followupSuggestions",
-	"parallelResponses",
-] as const satisfies readonly FeatureKey[];
-
 const defaultTools = GATEWAY_MODEL_DEFAULTS["vercel"].tools;
 
-const FEATURE_DEFAULTS: Record<FeatureKey, boolean> = {
-	sandbox: defaultTools.codeExecution.enabled,
+const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
+	attachments: FEATURES_DEFAULTS.attachments,
+	parallelResponses: FEATURES_DEFAULTS.parallelResponses,
+	documents: defaultTools.documents.enabled,
+	mcp: defaultTools.mcp.enabled,
+	followupSuggestions: defaultTools.followupSuggestions.enabled,
+};
+
+const DOCUMENT_TYPE_DEFAULTS: Record<DocumentTypeKey, boolean> = {
+	text: defaultTools.documents.types.text,
+	code: defaultTools.documents.types.code,
+	sheet: defaultTools.documents.types.sheet,
+};
+
+const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
 	webSearch: defaultTools.webSearch.enabled,
 	urlRetrieval: defaultTools.urlRetrieval.enabled,
 	deepResearch: defaultTools.deepResearch.enabled,
-	mcp: defaultTools.mcp.enabled,
+	codeExecution: defaultTools.codeExecution.enabled,
 	imageGeneration: defaultTools.image.enabled,
-	attachments: FEATURES_DEFAULTS.attachments,
-	followupSuggestions: defaultTools.followupSuggestions.enabled,
-	parallelResponses: FEATURES_DEFAULTS.parallelResponses,
+	videoGeneration: defaultTools.video.enabled,
 };
 
 const AUTH_DEFAULTS: Record<AuthProvider, boolean> = AUTHENTICATION_DEFAULTS;
 
-const FEATURE_LABELS: Record<FeatureKey, string> = {
-	sandbox: "Code Sandbox",
+const CORE_FEATURE_LABELS: Record<CoreFeatureKey, string> = {
+	attachments: "Attachments",
+	parallelResponses: "Parallel Responses",
+	documents: "Documents",
+	mcp: "MCP Tool Servers",
+	followupSuggestions: "Follow-up Suggestions",
+};
+
+const DOCUMENT_TYPE_LABELS: Record<DocumentTypeKey, string> = {
+	text: "Text Documents",
+	code: "Code Documents",
+	sheet: "Spreadsheet Documents",
+};
+
+const DOCUMENT_TYPE_HINTS: Record<DocumentTypeKey, string> = {
+	text: "Notes, guides, markdown, and long-form writing",
+	code: "Code files and snippets",
+	sheet: "CSV-based tables and structured data",
+};
+
+const BUILT_IN_TOOL_LABELS: Record<BuiltInToolKey, string> = {
 	webSearch: "Web Search",
 	urlRetrieval: "URL Retrieval",
 	deepResearch: "Deep Research",
-	mcp: "MCP Tool Servers",
+	codeExecution: "Code Sandbox",
 	imageGeneration: "Image Generation",
-	attachments: "File Attachments",
-	followupSuggestions: "Follow-up Suggestions",
-	parallelResponses: "Parallel Responses",
+	videoGeneration: "Video Generation",
+};
+
+const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
+	webSearch: "Search the web from chat",
+	urlRetrieval: "Fetch structured content from a specific URL",
+	deepResearch: "Run multi-step web research and generate reports",
+	codeExecution: "Execute code in a sandboxed environment",
+	imageGeneration: "Generate images inside chat",
+	videoGeneration: "Generate videos inside chat",
 };
 
 const AUTH_LABELS: Record<AuthProvider, string> = {
@@ -73,27 +103,6 @@ const AUTH_LABELS: Record<AuthProvider, string> = {
 	github: "GitHub OAuth",
 	vercel: "Vercel OAuth",
 };
-
-function getFeatureHint(key: FeatureKey): string | undefined {
-	switch (key) {
-		case "attachments":
-			return featureEnvRequirements.attachments?.description;
-		case "sandbox":
-			return aiToolEnvRequirements.codeExecution?.description;
-		case "webSearch":
-			return aiToolEnvRequirements.webSearch?.description;
-		case "urlRetrieval":
-			return aiToolEnvRequirements.urlRetrieval?.description;
-		case "deepResearch":
-			return aiToolEnvRequirements.deepResearch?.description;
-		case "mcp":
-			return aiToolEnvRequirements.mcp?.description;
-		case "imageGeneration":
-			return aiToolEnvRequirements.image?.description;
-		default:
-			return undefined;
-	}
-}
 
 function handleCancel(value: unknown): asserts value is never {
 	if (isCancel(value)) {
@@ -111,12 +120,22 @@ function toKebabCase(value: string | undefined): string {
 		.replace(/^-|-$/g, "");
 }
 
+function toSelectionRecord<T extends string>(
+	keys: readonly T[],
+	selected: readonly string[],
+): Record<T, boolean> {
+	return Object.fromEntries(
+		keys.map((key) => [key, selected.includes(key)]),
+	) as Record<T, boolean>;
+}
+
 export async function promptProjectName(
 	targetArg: string | undefined,
 	skipPrompt: boolean,
 ): Promise<string> {
-	if (skipPrompt)
+	if (skipPrompt) {
 		return toKebabCase(targetArg ?? "my-chat-app") || "my-chat-app";
+	}
 
 	const name = await text({
 		message: "What is your project named?",
@@ -148,75 +167,116 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 	return gateway;
 }
 
-export async function promptFeatures(
+export async function promptCoreFeatures(
 	skipPrompt: boolean,
-): Promise<ScaffoldFeatureSelection> {
+): Promise<Record<CoreFeatureKey, boolean>> {
+	if (skipPrompt) return { ...CORE_FEATURE_DEFAULTS };
+
+	const selected = await multiselect({
+		message: `Which ${highlighter.info("core features")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+		options: CORE_FEATURE_KEYS.map((key) => ({
+			value: key,
+			label: CORE_FEATURE_LABELS[key],
+			hint:
+				key === "documents"
+					? "Create, edit, and review documents in chat"
+					: coreFeatureEnvRequirements[
+							key as keyof typeof coreFeatureEnvRequirements
+						]?.description,
+		})),
+		initialValues: CORE_FEATURE_KEYS.filter(
+			(key) => CORE_FEATURE_DEFAULTS[key],
+		),
+		required: false,
+	});
+	handleCancel(selected);
+
+	return toSelectionRecord(CORE_FEATURE_KEYS, selected as CoreFeatureKey[]);
+}
+
+export async function promptDocumentTypes(
+	skipPrompt: boolean,
+	documentsEnabled: boolean,
+): Promise<Record<DocumentTypeKey, boolean>> {
+	if (!documentsEnabled) {
+		return toSelectionRecord(DOCUMENT_TYPE_KEYS, []);
+	}
+
+	if (skipPrompt) return { ...DOCUMENT_TYPE_DEFAULTS };
+
+	const selected = await multiselect({
+		message: `Which ${highlighter.info("document types")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+		options: DOCUMENT_TYPE_KEYS.map((key) => ({
+			value: key,
+			label: DOCUMENT_TYPE_LABELS[key],
+			hint: DOCUMENT_TYPE_HINTS[key],
+		})),
+		initialValues: DOCUMENT_TYPE_KEYS.filter(
+			(key) => DOCUMENT_TYPE_DEFAULTS[key],
+		),
+		required: false,
+	});
+	handleCancel(selected);
+
+	return toSelectionRecord(DOCUMENT_TYPE_KEYS, selected as DocumentTypeKey[]);
+}
+
+export async function promptAssistantTools(
+	registryItems: RegistryIndexItem[],
+	skipPrompt: boolean,
+): Promise<{
+	builtInTools: Record<BuiltInToolKey, boolean>;
+	installableTools: string[];
+}> {
+	const installableItems = registryItems.filter((item) => !item.hidden);
+
 	if (skipPrompt) {
 		return {
-			features: {
-				attachments: FEATURE_DEFAULTS.attachments,
-				parallelResponses: FEATURE_DEFAULTS.parallelResponses,
-			},
-			ai: {
-				tools: {
-					webSearch: { enabled: FEATURE_DEFAULTS.webSearch },
-					urlRetrieval: { enabled: FEATURE_DEFAULTS.urlRetrieval },
-					codeExecution: { enabled: FEATURE_DEFAULTS.sandbox },
-					mcp: { enabled: FEATURE_DEFAULTS.mcp },
-					followupSuggestions: {
-						enabled: FEATURE_DEFAULTS.followupSuggestions,
-					},
-					image: { enabled: FEATURE_DEFAULTS.imageGeneration },
-					deepResearch: { enabled: FEATURE_DEFAULTS.deepResearch },
-				},
-			},
+			builtInTools: { ...BUILT_IN_TOOL_DEFAULTS },
+			installableTools: [],
 		};
 	}
 
-	const defaultFeatures = FEATURE_KEYS.filter((key) => FEATURE_DEFAULTS[key]);
-
-	const selectedFeatures = await multiselect({
-		message: `Which ${highlighter.info("features")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
-		options: FEATURE_KEYS.map((key) => ({
-			value: key,
-			label: FEATURE_LABELS[key],
-			hint: getFeatureHint(key),
-		})),
-		initialValues: defaultFeatures,
+	const selected = await multiselect({
+		message: `Which ${highlighter.info("assistant tools")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+		options: [
+			...BUILT_IN_TOOL_KEYS.map((key) => ({
+				value: key,
+				label: BUILT_IN_TOOL_LABELS[key],
+				hint:
+					builtInToolEnvRequirements[
+						key as keyof typeof builtInToolEnvRequirements
+					]?.description ?? BUILT_IN_TOOL_HINTS[key],
+			})),
+			...installableItems.map((item) => ({
+				value: item.name,
+				label: item.name,
+				hint: item.description,
+			})),
+		],
+		initialValues: BUILT_IN_TOOL_KEYS.filter(
+			(key) => BUILT_IN_TOOL_DEFAULTS[key],
+		),
 		required: false,
 	});
-	handleCancel(selectedFeatures);
+	handleCancel(selected);
 
-	const features: Record<FeatureKey, boolean> = { ...FEATURE_DEFAULTS };
-	for (const key of FEATURE_KEYS) {
-		features[key] = false;
-	}
-	for (const key of selectedFeatures as FeatureKey[]) {
-		features[key] = true;
-	}
-
-	if (features.deepResearch) {
-		features.webSearch = true;
+	const selectedValues = selected as string[];
+	const builtInTools = toSelectionRecord(
+		BUILT_IN_TOOL_KEYS,
+		selectedValues.filter((value): value is BuiltInToolKey =>
+			(BUILT_IN_TOOL_KEYS as readonly string[]).includes(value),
+		),
+	);
+	if (builtInTools.deepResearch) {
+		builtInTools.webSearch = true;
 	}
 
 	return {
-		features: {
-			attachments: features.attachments,
-			parallelResponses: features.parallelResponses,
-		},
-		ai: {
-			tools: {
-				webSearch: { enabled: features.webSearch },
-				urlRetrieval: { enabled: features.urlRetrieval },
-				codeExecution: { enabled: features.sandbox },
-				mcp: { enabled: features.mcp },
-				followupSuggestions: {
-					enabled: features.followupSuggestions,
-				},
-				image: { enabled: features.imageGeneration },
-				deepResearch: { enabled: features.deepResearch },
-			},
-		},
+		builtInTools,
+		installableTools: selectedValues.filter(
+			(value) => !(BUILT_IN_TOOL_KEYS as readonly string[]).includes(value),
+		),
 	};
 }
 
@@ -248,16 +308,7 @@ export async function promptAuth(
 		}
 	}
 
-	const auth: Record<AuthProvider, boolean> = {
-		google: false,
-		github: false,
-		vercel: false,
-	};
-	for (const p of selectedProviders) {
-		auth[p] = true;
-	}
-
-	return auth;
+	return toSelectionRecord(AUTH_PROVIDERS, selectedProviders);
 }
 
 export async function promptElectron(
