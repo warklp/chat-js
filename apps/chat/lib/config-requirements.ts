@@ -8,8 +8,17 @@ import type {
 type EnvVarName = keyof NodeJS.ProcessEnv;
 
 export interface EnvRequirement {
-  description: string;
+  description?: string;
   options: EnvVarName[][];
+}
+
+export function formatRequirementDescription(
+  requirement: EnvRequirement
+): string {
+  return (
+    requirement.description ??
+    requirement.options.map((option) => option.join(" + ")).join(" or ")
+  );
 }
 
 export const gatewayEnvRequirements: Record<GatewayType, EnvRequirement> = {
@@ -50,10 +59,6 @@ export const aiToolEnvRequirements: Partial<
   deepResearch: {
     options: [["TAVILY_API_KEY"], ["FIRECRAWL_API_KEY"]],
     description: "TAVILY_API_KEY or FIRECRAWL_API_KEY",
-  },
-  urlRetrieval: {
-    options: [["FIRECRAWL_API_KEY"]],
-    description: "FIRECRAWL_API_KEY",
   },
   mcp: {
     options: [["MCP_ENCRYPTION_KEY"]],
@@ -106,5 +111,5 @@ export function getMissingRequirement(
 ): string | null {
   return isRequirementSatisfied(requirement, env)
     ? null
-    : requirement.description;
+    : formatRequirementDescription(requirement);
 }

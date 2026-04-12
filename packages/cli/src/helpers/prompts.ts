@@ -7,12 +7,18 @@ import {
 	text,
 } from "@clack/prompts";
 import {
-	authEnvRequirements,
-	featureEnvRequirements,
-	gatewayEnvRequirements,
-} from "../../../../apps/chat/lib/config-requirements";
-import type { AuthProvider, FeatureKey, Gateway } from "../types";
-import { FEATURE_KEYS } from "../types";
+  authEnvRequirements,
+  featureEnvRequirements,
+  gatewayEnvRequirements,
+} from "./config-requirements";
+import {
+  AUTH_PROVIDERS,
+  FEATURE_KEYS,
+  GATEWAYS,
+  type AuthProvider,
+  type FeatureKey,
+  type Gateway,
+} from "../types";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
 
@@ -59,13 +65,13 @@ function handleCancel(value: unknown): asserts value is never {
 	}
 }
 
-function toKebabCase(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9-]/g, "-")
-		.replace(/-+/g, "-")
-		.replace(/^-|-$/g, "");
+function toKebabCase(value: string | undefined): string {
+  return (value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export async function promptProjectName(
@@ -75,15 +81,15 @@ export async function promptProjectName(
 	if (skipPrompt)
 		return toKebabCase(targetArg ?? "my-chat-app") || "my-chat-app";
 
-	const name = await text({
-		message: "What is your project named?",
-		initialValue: targetArg ?? "my-chat-app",
-		validate: (value: string) => {
-			const kebab = toKebabCase(value);
-			if (!kebab) return "Please enter a valid project name";
-		},
-	});
-	handleCancel(name);
+  const name = await text({
+    message: "What is your project named?",
+    initialValue: targetArg ?? "my-chat-app",
+    validate: (value?: string) => {
+      const kebab = toKebabCase(value);
+      if (!kebab) return "Please enter a valid project name";
+    },
+  });
+  handleCancel(name);
 
 	return toKebabCase(name) || "my-chat-app";
 }
@@ -91,18 +97,16 @@ export async function promptProjectName(
 export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 	if (skipPrompt) return "vercel";
 
-	const gateways = Object.keys(gatewayEnvRequirements) as Gateway[];
-
-	const gateway = await select({
-		message: `Which ${highlighter.info("AI gateway")} would you like to use?`,
-		options: gateways.map((gw) => ({
-			value: gw,
-			label: gw,
-			hint: gatewayEnvRequirements[gw].description,
-		})),
-		initialValue: "vercel" as Gateway,
-	});
-	handleCancel(gateway);
+  const gateway = await select({
+    message: `Which ${highlighter.info("AI gateway")} would you like to use?`,
+    options: GATEWAYS.map((gw) => ({
+      value: gw,
+      label: gw,
+      hint: gatewayEnvRequirements[gw].description,
+    })),
+    initialValue: "vercel" as Gateway,
+  });
+  handleCancel(gateway);
 
 	return gateway;
 }
@@ -147,23 +151,22 @@ export async function promptAuth(
 ): Promise<Record<AuthProvider, boolean>> {
 	if (skipPrompt) return { ...AUTH_DEFAULTS };
 
-	const providers = Object.keys(authEnvRequirements) as AuthProvider[];
-	const defaultProviders = providers.filter((p) => AUTH_DEFAULTS[p]);
+  const defaultProviders = AUTH_PROVIDERS.filter((p) => AUTH_DEFAULTS[p]);
 
 	let selectedProviders: AuthProvider[] = [];
 
-	while (selectedProviders.length === 0) {
-		const selected = await multiselect({
-			message: `Which ${highlighter.info("auth providers")} would you like to enable? ${highlighter.warn("(at least one required)")} ${highlighter.dim("(space to toggle, enter to submit)")}`,
-			options: providers.map((p) => ({
-				value: p,
-				label: AUTH_LABELS[p],
-				hint: authEnvRequirements[p].description,
-			})),
-			initialValues: defaultProviders,
-			required: false,
-		});
-		handleCancel(selected);
+  while (selectedProviders.length === 0) {
+    const selected = await multiselect({
+      message: `Which ${highlighter.info("auth providers")} would you like to enable? ${highlighter.warn("(at least one required)")} ${highlighter.dim("(space to toggle, enter to submit)")}`,
+      options: AUTH_PROVIDERS.map((p) => ({
+        value: p,
+        label: AUTH_LABELS[p],
+        hint: authEnvRequirements[p].description,
+      })),
+      initialValues: defaultProviders,
+      required: false,
+    });
+    handleCancel(selected);
 
 		selectedProviders = selected as AuthProvider[];
 		if (selectedProviders.length === 0) {

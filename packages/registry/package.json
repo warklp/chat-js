@@ -1,0 +1,48 @@
+{
+  "name": "@chat-js/registry",
+  "version": "0.1.0",
+  "description": "ChatJS tool registry items",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/franciscomoretti/chat-js.git",
+    "directory": "packages/registry"
+  },
+  "homepage": "https://github.com/franciscomoretti/chat-js/tree/main/packages/registry",
+  "bugs": {
+    "url": "https://github.com/franciscomoretti/chat-js/issues"
+  },
+  "keywords": [
+    "chatjs",
+    "ai",
+    "registry",
+    "tools"
+  ],
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./index.json": "./index.json",
+    "./items/*": "./items/*.json"
+  },
+  "types": "./index.d.ts",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "index.json",
+    "items"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build.ts",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "ts-morph": "^27.0.2"
+  }
+}

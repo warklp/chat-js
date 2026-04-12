@@ -1,9 +1,9 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import React from "react";
 import { UpdateTitle } from "@/components/update-title";
-// Type-only imports
-import type { ResearchUpdate } from "@/lib/ai/tools/research-updates-schema";
 import { cn } from "@/lib/utils";
+// Type-only imports
+import type { ResearchUpdate } from "@/tools/platform/research-updates-schema";
 import { ResearchTask } from "./research-task";
 import { ResearchTasks } from "./research-tasks";
 

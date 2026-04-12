@@ -27,7 +27,6 @@ import {
 import { systemPrompt } from "@/lib/ai/prompts";
 import { getStreamErrorMessage } from "@/lib/ai/stream-errors";
 import { calculateMessagesTokens } from "@/lib/ai/token-utils";
-import { allTools } from "@/lib/ai/tools/tools-definitions";
 import {
   type ChatMessage,
   getPrimarySelectedModelId,
@@ -275,39 +274,6 @@ async function handleUserValidationAndCredits({
   return { isNewChat: validationResult.isNewChat };
 }
 
-/**
- * Determines which built-in tools are allowed based on model capabilities.
- * MCP tools are handled separately in core-chat-agent.
- */
-function determineAllowedTools({
-  isAnonymous,
-  modelDefinition,
-  explicitlyRequestedTools,
-}: {
-  isAnonymous: boolean;
-  modelDefinition: AppModelDefinition;
-  explicitlyRequestedTools: ToolName[] | null;
-}): ToolName[] {
-  // Start with all tools or anonymous-limited tools
-  const allowedTools: ToolName[] = isAnonymous
-    ? [...ANONYMOUS_LIMITS.AVAILABLE_TOOLS]
-    : [...allTools];
-
-  // Disable all tools for models with unspecified features
-  if (!modelDefinition?.input) {
-    return [];
-  }
-
-  // If specific tools were requested, filter them against allowed tools
-  if (explicitlyRequestedTools && explicitlyRequestedTools.length > 0) {
-    return explicitlyRequestedTools.filter((tool) =>
-      allowedTools.includes(tool)
-    );
-  }
-
-  return allowedTools;
-}
-
 async function getSystemPrompt({
   isAnonymous,
   chatId,
@@ -339,7 +305,6 @@ async function createChatStream({
   isPrimaryParallel,
   explicitlyRequestedTools,
   userId,
-  allowedTools,
   abortController,
   isAnonymous,
   isNewChat,
@@ -358,7 +323,6 @@ async function createChatStream({
   isPrimaryParallel: boolean | null;
   explicitlyRequestedTools: ToolName[] | null;
   userId: string | null;
-  allowedTools: ToolName[];
   abortController: AbortController;
   isAnonymous: boolean;
   isNewChat: boolean;
@@ -393,7 +357,7 @@ async function createChatStream({
         selectedModelId,
         explicitlyRequestedTools,
         userId,
-        budgetAllowedTools: allowedTools,
+        isAnonymous,
         abortSignal: abortController.signal,
         messageId,
         dataStream,
@@ -517,7 +481,6 @@ async function executeChatRequest({
   userId,
   isAnonymous,
   isNewChat,
-  allowedTools,
   abortController,
   timeoutId,
   mcpConnectors,
@@ -534,7 +497,6 @@ async function executeChatRequest({
   userId: string | null;
   isAnonymous: boolean;
   isNewChat: boolean;
-  allowedTools: ToolName[];
   abortController: AbortController;
   timeoutId: NodeJS.Timeout;
   mcpConnectors: McpConnector[];
@@ -589,7 +551,6 @@ async function executeChatRequest({
     isPrimaryParallel,
     explicitlyRequestedTools,
     userId,
-    allowedTools,
     abortController,
     isAnonymous,
     isNewChat,
@@ -708,27 +669,16 @@ async function prepareRequestContext({
   chatId,
   isAnonymous,
   anonymousPreviousMessages,
-  modelDefinition,
-  explicitlyRequestedTools,
 }: {
   userMessage: ChatMessage;
   chatId: string;
   isAnonymous: boolean;
   anonymousPreviousMessages: ChatMessage[];
-  modelDefinition: AppModelDefinition;
-  explicitlyRequestedTools: ToolName[] | null;
 }): Promise<{
   previousMessages: ChatMessage[];
-  allowedTools: ToolName[];
   error: Response | null;
 }> {
   const log = createModuleLogger("api:chat:prepare");
-
-  const allowedTools = determineAllowedTools({
-    isAnonymous,
-    modelDefinition,
-    explicitlyRequestedTools,
-  });
 
   // Validate input token limit (50k tokens for user message)
   const totalTokens = calculateMessagesTokens(
@@ -743,7 +693,6 @@ async function prepareRequestContext({
     );
     return {
       previousMessages: [],
-      allowedTools: [],
       error: error.toResponse(),
     };
   }
@@ -756,9 +705,8 @@ async function prepareRequestContext({
       );
 
   const previousMessages = messageThreadToParent.slice(-5);
-  log.debug({ allowedTools }, "allowed tools");
 
-  return { previousMessages, allowedTools, error: null };
+  return { previousMessages, error: null };
 }
 
 async function finalizeMessageAndCredits({
@@ -883,8 +831,7 @@ export async function POST(request: NextRequest) {
       return sessionSetup.error;
     }
 
-    const { userId, isAnonymous, anonymousSession, modelDefinition } =
-      sessionSetup;
+    const { userId, isAnonymous, anonymousSession } = sessionSetup;
 
     const selectedTool = userMessage.metadata.selectedTool ?? null;
     let isNewChat = false;
@@ -918,8 +865,6 @@ export async function POST(request: NextRequest) {
         chatId,
         isAnonymous,
         anonymousPreviousMessages,
-        modelDefinition,
-        explicitlyRequestedTools,
       }),
       config.ai.tools.mcp.enabled && userId && !isAnonymous
         ? getMcpConnectorsByUserId({ userId })
@@ -930,7 +875,7 @@ export async function POST(request: NextRequest) {
       return contextResult.error;
     }
 
-    const { previousMessages, allowedTools } = contextResult;
+    const { previousMessages } = contextResult;
 
     // Create AbortController with timeout
     const abortController = new AbortController();
@@ -952,7 +897,6 @@ export async function POST(request: NextRequest) {
       userId,
       isAnonymous,
       isNewChat,
-      allowedTools,
       abortController,
       timeoutId,
       mcpConnectors,

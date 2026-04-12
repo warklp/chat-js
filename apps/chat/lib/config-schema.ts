@@ -253,6 +253,16 @@ export const authenticationConfigSchema = z
     github: true,
     vercel: false,
   });
+export const pathsConfigSchema = z
+  .object({
+    tools: z
+      .string()
+      .describe(
+        "Import alias for the installable tools registry index and tool files"
+      )
+      .default("@/tools/chatjs"),
+  })
+  .default({ tools: "@/tools/chatjs" });
 
 export const desktopAppConfigSchema = z
   .object({
@@ -343,6 +353,8 @@ export const configSchema = z.object({
   anonymous: anonymousConfigSchema,
 
   attachments: attachmentsConfigSchema,
+
+  paths: pathsConfigSchema,
 });
 
 // Output types (after defaults applied)
@@ -352,6 +364,7 @@ export type AiConfig = z.infer<typeof aiConfigSchema>;
 export type AnonymousConfig = z.infer<typeof anonymousConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type FeaturesConfig = z.infer<typeof featuresConfigSchema>;
+export type PathsConfig = z.infer<typeof pathsConfigSchema>;
 export type AuthenticationConfig = z.infer<typeof authenticationConfigSchema>;
 export type DesktopAppConfig = z.infer<typeof desktopAppConfigSchema>;
 

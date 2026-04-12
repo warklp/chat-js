@@ -75,6 +75,5 @@ apps/electron/branding.json
 /CLAUDE.md.bak
 # END Skiller Generated Files
 .devtools
-
 .cursor/hooks/state
 .codex/environments/

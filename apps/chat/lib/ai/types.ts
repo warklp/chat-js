@@ -5,22 +5,21 @@ import type {
   UIMessageStreamWriter,
 } from "ai";
 import { z } from "zod";
-import type { codeExecution } from "@/lib/ai/tools/code-execution";
-import type { deepResearch } from "@/lib/ai/tools/deep-research/deep-research";
-import type { generateImageTool as generateImageToolFactory } from "@/lib/ai/tools/generate-image";
-import type { generateVideoTool as generateVideoToolFactory } from "@/lib/ai/tools/generate-video";
-import type { getWeather } from "@/lib/ai/tools/get-weather";
-import type { readDocument } from "@/lib/ai/tools/read-document";
-import type { retrieveUrl } from "@/lib/ai/tools/retrieve-url";
-import type { tavilyWebSearch } from "@/lib/ai/tools/web-search";
+import type { codeExecution } from "@/tools/platform/code-execution";
+import type { deepResearch } from "@/tools/platform/deep-research/deep-research";
+import type { createCodeDocumentTool } from "@/tools/platform/documents/create-code-document";
+import type { createSheetDocumentTool } from "@/tools/platform/documents/create-sheet-document";
+import type { createTextDocumentTool } from "@/tools/platform/documents/create-text-document";
+import type { editCodeDocumentTool } from "@/tools/platform/documents/edit-code-document";
+import type { editSheetDocumentTool } from "@/tools/platform/documents/edit-sheet-document";
+import type { editTextDocumentTool } from "@/tools/platform/documents/edit-text-document";
+import type { generateImageTool as generateImageToolFactory } from "@/tools/platform/generate-image";
+import type { generateVideoTool as generateVideoToolFactory } from "@/tools/platform/generate-video";
+import type { readDocument } from "@/tools/platform/read-document";
+import type { ResearchUpdate } from "@/tools/platform/research-updates-schema";
+import type { tavilyWebSearch } from "@/tools/platform/web-search";
 import type { AppModelId } from "./app-models";
-import type { createCodeDocumentTool } from "./tools/documents/create-code-document";
-import type { createSheetDocumentTool } from "./tools/documents/create-sheet-document";
-import type { createTextDocumentTool } from "./tools/documents/create-text-document";
-import type { editCodeDocumentTool } from "./tools/documents/edit-code-document";
-import type { editSheetDocumentTool } from "./tools/documents/edit-sheet-document";
-import type { editTextDocumentTool } from "./tools/documents/edit-text-document";
-import type { ResearchUpdate } from "./tools/research-updates-schema";
+import type { InstalledTools } from "./installed-tools";
 
 export const toolNameSchema = z.enum([
   "getWeather",
@@ -143,7 +142,6 @@ const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type weatherTool = InferUITool<typeof getWeather>;
 type createTextDocumentToolType = InferUITool<
   ReturnType<typeof createTextDocumentTool>
 >;
@@ -172,7 +170,6 @@ type generateVideoTool = InferUITool<
 >;
 type webSearchTool = InferUITool<ReturnType<typeof tavilyWebSearch>>;
 type codeExecutionTool = InferUITool<ReturnType<typeof codeExecution>>;
-type retrieveUrlTool = InferUITool<typeof retrieveUrl>;
 
 export type ChatTools = {
   codeExecution: codeExecutionTool;
@@ -185,11 +182,9 @@ export type ChatTools = {
   editTextDocument: editTextDocumentToolType;
   generateImage: generateImageTool;
   generateVideo: generateVideoTool;
-  getWeather: weatherTool;
   readDocument: readDocumentTool;
-  retrieveUrl: retrieveUrlTool;
   webSearch: webSearchTool;
-};
+} & InstalledTools;
 
 interface FollowupSuggestions {
   suggestions: string[];

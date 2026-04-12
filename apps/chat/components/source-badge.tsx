@@ -4,8 +4,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { SearchResultItem } from "@/lib/ai/tools/research-updates-schema";
 import { getDomainFromUrl, getFaviconUrl } from "@/lib/url-utils";
+import type { SearchResultItem } from "@/tools/platform/research-updates-schema";
 import { Favicon } from "./favicon";
 
 export function WebSourceBadge({ result }: { result: SearchResultItem }) {
