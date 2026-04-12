@@ -412,8 +412,8 @@ interface AiToolsInputFor<G extends GatewayType> {
   code?: Partial<{ [P in keyof AiToolsShape["code"]]: GatewayModelIdMap[G] }>;
   codeExecution?: Partial<AiToolsShape["codeExecution"]>;
   deepResearch?: DeepResearchToolInputFor<G>;
-  documents?: Partial<AiToolsShape["documents"]> & {
-    types?: Partial<AiToolsShape["documents"]["types"]>;
+  documents?: Partial<Omit<AiToolsShape["documents"], "types">> & {
+    types?: AiToolsShape["documents"]["types"];
   };
   followupSuggestions?: FollowupSuggestionsToolInputFor<G>;
   image?: ImageToolInputFor<G>;

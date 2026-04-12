@@ -56,6 +56,8 @@ export function getTools({
   );
   const documentTypes = config.ai.tools.documents.types;
   const documentsEnabled = config.ai.tools.documents.enabled;
+  const hasEnabledDocumentType =
+    documentTypes.text || documentTypes.code || documentTypes.sheet;
 
   return {
     ...(documentsEnabled
@@ -78,10 +80,14 @@ export function getTools({
                 editSheetDocument: editSheetDocumentTool(documentToolProps),
               }
             : {}),
-          readDocument: readDocument({
-            session,
-            dataStream,
-          }),
+          ...(hasEnabledDocumentType
+            ? {
+                readDocument: readDocument({
+                  session,
+                  dataStream,
+                }),
+              }
+            : {}),
         }
       : {}),
     ...(config.ai.tools.webSearch.enabled
