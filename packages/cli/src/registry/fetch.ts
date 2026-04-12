@@ -6,7 +6,7 @@ export type { RegistryToolItem } from "./schema";
 export type { RegistryToolItemFile } from "./schema";
 
 export const DEFAULT_REGISTRY_URL =
-  "https://registry.chatjs.dev/items/{name}.json";
+  "https://unpkg.com/@chat-js/registry@latest/items/{name}.json";
 
 export function getRegistryUrl(override?: string): string {
   return override ?? process.env.CHATJS_REGISTRY_URL ?? DEFAULT_REGISTRY_URL;
