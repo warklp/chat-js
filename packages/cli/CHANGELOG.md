@@ -1,5 +1,11 @@
 # @chat-js/cli
 
+## 0.6.2
+
+### Patch Changes
+
+- Test patch release generation across all releasable packages.
+
 ## 0.6.1
 
 ### Patch Changes
