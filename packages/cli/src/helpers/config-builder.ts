@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   applyDefaults,
   configDescriptionSchema,
+  type ConfigInput,
 } from "../../../../apps/chat/lib/config-schema";
 import type { ScaffoldConfigInput } from "../types";
 
@@ -93,8 +94,23 @@ function generateConfig(
     .join("\n");
 }
 
+function toConfigInput(input: ScaffoldConfigInput): ConfigInput {
+  return {
+    appName: input.appName,
+    appPrefix: input.appPrefix,
+    appUrl: input.appUrl,
+    features: input.features,
+    authentication: input.authentication,
+    desktopApp: input.desktopApp,
+    ai: {
+      gateway: input.ai.gateway,
+      tools: input.ai.tools,
+    },
+  } as ConfigInput;
+}
+
 export function buildConfigTs(input: ScaffoldConfigInput): string {
-  const fullConfig = applyDefaults(input);
+  const fullConfig = applyDefaults(toConfigInput(input));
 
   return `import { defineConfig } from "@/lib/config-schema";
 

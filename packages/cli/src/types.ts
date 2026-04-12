@@ -1,10 +1,3 @@
-import type { GatewayType } from "../../../apps/chat/lib/ai/gateways/registry";
-import type {
-  AuthenticationConfig,
-  ConfigInput,
-  FeaturesConfig,
-} from "../../../apps/chat/lib/config-schema";
-
 export type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
 
 export const GATEWAYS = [
@@ -31,34 +24,32 @@ export type FeatureKey =
   | "followupSuggestions"
   | "parallelResponses";
 
-export interface ScaffoldConfigInput extends Omit<
-  ConfigInput,
-  | "appName"
-  | "appPrefix"
-  | "appUrl"
-  | "features"
-  | "authentication"
-  | "desktopApp"
-  | "ai"
-> {
+export interface ScaffoldToolToggle {
+  enabled: boolean;
+}
+
+export interface ScaffoldConfigInput {
   appName: string;
   appPrefix: string;
   appUrl: string;
-  features: Pick<FeaturesConfig, "attachments" | "parallelResponses">;
-  authentication: AuthenticationConfig;
+  features: {
+    attachments: boolean;
+    parallelResponses: boolean;
+  };
+  authentication: Record<AuthProvider, boolean>;
   desktopApp: {
     enabled: boolean;
   };
   ai: {
-    gateway: GatewayType;
+    gateway: Gateway;
     tools: {
-      webSearch: { enabled: boolean };
-      urlRetrieval: { enabled: boolean };
-      codeExecution: { enabled: boolean };
-      mcp: { enabled: boolean };
-      followupSuggestions: { enabled: boolean };
-      image: { enabled: boolean };
-      deepResearch: { enabled: boolean };
+      webSearch: ScaffoldToolToggle;
+      urlRetrieval: ScaffoldToolToggle;
+      codeExecution: ScaffoldToolToggle;
+      mcp: ScaffoldToolToggle;
+      followupSuggestions: ScaffoldToolToggle;
+      image: ScaffoldToolToggle;
+      deepResearch: ScaffoldToolToggle;
     };
   };
 }
