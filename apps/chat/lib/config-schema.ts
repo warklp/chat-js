@@ -188,14 +188,17 @@ export const anonymousConfigObjectSchema = z.object({
     .describe("Rate limits"),
 });
 
-export const anonymousConfigSchema = anonymousConfigObjectSchema.default({
+export const ANONYMOUS_DEFAULTS: z.input<typeof anonymousConfigObjectSchema> = {
   credits: 10,
   availableTools: [],
   rateLimit: {
     requestsPerMinute: 5,
     requestsPerMonth: 10,
   },
-});
+};
+
+export const anonymousConfigSchema =
+  anonymousConfigObjectSchema.default(ANONYMOUS_DEFAULTS);
 
 export const attachmentsConfigObjectSchema = z.object({
   maxBytes: z.number().describe("Max file size in bytes after compression"),
@@ -209,7 +212,7 @@ export const attachmentsConfigObjectSchema = z.object({
     .describe("Accepted MIME types with their file extensions"),
 });
 
-export const attachmentsConfigSchema = attachmentsConfigObjectSchema.default({
+export const ATTACHMENTS_DEFAULTS = {
   maxBytes: 1024 * 1024,
   maxDimension: 2048,
   acceptedTypes: {
@@ -217,7 +220,10 @@ export const attachmentsConfigSchema = attachmentsConfigObjectSchema.default({
     "image/jpeg": [".jpg", ".jpeg"],
     "application/pdf": [".pdf"],
   },
-});
+};
+
+export const attachmentsConfigSchema =
+  attachmentsConfigObjectSchema.default(ATTACHMENTS_DEFAULTS);
 
 export const featuresConfigObjectSchema = z.object({
   attachments: z
@@ -229,10 +235,13 @@ export const featuresConfigObjectSchema = z.object({
     .describe("Send one message to multiple models simultaneously"),
 });
 
-export const featuresConfigSchema = featuresConfigObjectSchema.default({
+export const FEATURES_DEFAULTS = {
   attachments: false,
   parallelResponses: true,
-});
+};
+
+export const featuresConfigSchema =
+  featuresConfigObjectSchema.default(FEATURES_DEFAULTS);
 
 export const authenticationConfigObjectSchema = z.object({
   google: z
@@ -248,12 +257,14 @@ export const authenticationConfigObjectSchema = z.object({
     ),
 });
 
+export const AUTHENTICATION_DEFAULTS = {
+  google: false,
+  github: true,
+  vercel: false,
+};
+
 export const authenticationConfigSchema =
-  authenticationConfigObjectSchema.default({
-    google: false,
-    github: true,
-    vercel: false,
-  });
+  authenticationConfigObjectSchema.default(AUTHENTICATION_DEFAULTS);
 export const pathsConfigObjectSchema = z.object({
   tools: z
     .string()
@@ -263,9 +274,12 @@ export const pathsConfigObjectSchema = z.object({
     ),
 });
 
-export const pathsConfigSchema = pathsConfigObjectSchema.default({
+export const PATHS_DEFAULTS = {
   tools: "@/tools/chatjs",
-});
+};
+
+export const pathsConfigSchema =
+  pathsConfigObjectSchema.default(PATHS_DEFAULTS);
 
 export const desktopAppConfigObjectSchema = z.object({
   enabled: z
@@ -273,9 +287,12 @@ export const desktopAppConfigObjectSchema = z.object({
     .describe("Enable Electron desktop auth/runtime integration"),
 });
 
-export const desktopAppConfigSchema = desktopAppConfigObjectSchema.default({
+export const DESKTOP_APP_DEFAULTS = {
   enabled: false,
-});
+};
+
+export const desktopAppConfigSchema =
+  desktopAppConfigObjectSchema.default(DESKTOP_APP_DEFAULTS);
 
 export const configDescriptionSchema = z.object({
   appPrefix: z.string().default("chatjs"),

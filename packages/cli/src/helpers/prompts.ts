@@ -7,6 +7,11 @@ import {
 	text,
 } from "@clack/prompts";
 import {
+	AUTHENTICATION_DEFAULTS,
+	FEATURES_DEFAULTS,
+} from "../../../../apps/chat/lib/config-schema";
+import { GATEWAY_MODEL_DEFAULTS } from "../../../../apps/chat/lib/ai/gateway-model-defaults";
+import {
 	aiToolEnvRequirements,
 	authEnvRequirements,
 	featureEnvRequirements,
@@ -35,23 +40,21 @@ const FEATURE_KEYS = [
 	"parallelResponses",
 ] as const satisfies readonly FeatureKey[];
 
+const defaultTools = GATEWAY_MODEL_DEFAULTS["vercel"].tools;
+
 const FEATURE_DEFAULTS: Record<FeatureKey, boolean> = {
-	sandbox: false,
-	webSearch: false,
-	urlRetrieval: false,
-	deepResearch: false,
-	mcp: false,
-	imageGeneration: false,
-	attachments: false,
-	followupSuggestions: true,
-	parallelResponses: true,
+	sandbox: defaultTools.codeExecution.enabled,
+	webSearch: defaultTools.webSearch.enabled,
+	urlRetrieval: defaultTools.urlRetrieval.enabled,
+	deepResearch: defaultTools.deepResearch.enabled,
+	mcp: defaultTools.mcp.enabled,
+	imageGeneration: defaultTools.image.enabled,
+	attachments: FEATURES_DEFAULTS.attachments,
+	followupSuggestions: defaultTools.followupSuggestions.enabled,
+	parallelResponses: FEATURES_DEFAULTS.parallelResponses,
 };
 
-const AUTH_DEFAULTS: Record<AuthProvider, boolean> = {
-	google: false,
-	github: true,
-	vercel: false,
-};
+const AUTH_DEFAULTS: Record<AuthProvider, boolean> = AUTHENTICATION_DEFAULTS;
 
 const FEATURE_LABELS: Record<FeatureKey, string> = {
 	sandbox: "Code Sandbox",
