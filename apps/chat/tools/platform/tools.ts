@@ -54,18 +54,36 @@ export function getTools({
       ([name]) => name !== "retrieveUrl" || config.ai.tools.urlRetrieval.enabled
     )
   );
+  const documentTypes = config.ai.tools.documents.types;
+  const documentsEnabled = config.ai.tools.documents.enabled;
 
   return {
-    createTextDocument: createTextDocumentTool(documentToolProps),
-    createCodeDocument: createCodeDocumentTool(documentToolProps),
-    createSheetDocument: createSheetDocumentTool(documentToolProps),
-    editTextDocument: editTextDocumentTool(documentToolProps),
-    editCodeDocument: editCodeDocumentTool(documentToolProps),
-    editSheetDocument: editSheetDocumentTool(documentToolProps),
-    readDocument: readDocument({
-      session,
-      dataStream,
-    }),
+    ...(documentsEnabled
+      ? {
+          ...(documentTypes.text
+            ? {
+                createTextDocument: createTextDocumentTool(documentToolProps),
+                editTextDocument: editTextDocumentTool(documentToolProps),
+              }
+            : {}),
+          ...(documentTypes.code
+            ? {
+                createCodeDocument: createCodeDocumentTool(documentToolProps),
+                editCodeDocument: editCodeDocumentTool(documentToolProps),
+              }
+            : {}),
+          ...(documentTypes.sheet
+            ? {
+                createSheetDocument: createSheetDocumentTool(documentToolProps),
+                editSheetDocument: editSheetDocumentTool(documentToolProps),
+              }
+            : {}),
+          readDocument: readDocument({
+            session,
+            dataStream,
+          }),
+        }
+      : {}),
     ...(config.ai.tools.webSearch.enabled
       ? {
           webSearch: tavilyWebSearch({

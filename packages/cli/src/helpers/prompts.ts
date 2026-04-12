@@ -1,68 +1,111 @@
 import {
-	cancel,
-	confirm,
-	isCancel,
-	multiselect,
-	select,
-	text,
+  cancel,
+  confirm,
+  isCancel,
+  multiselect,
+  select,
+  text,
 } from "@clack/prompts";
+import type { RegistryIndexItem } from "../registry/fetch";
 import {
   authEnvRequirements,
-  featureEnvRequirements,
+  builtInToolEnvRequirements,
+  coreFeatureEnvRequirements,
   gatewayEnvRequirements,
 } from "./config-requirements";
 import {
   AUTH_PROVIDERS,
-  FEATURE_KEYS,
+  BUILT_IN_TOOL_KEYS,
+  CORE_FEATURE_KEYS,
+  DOCUMENT_TYPE_KEYS,
   GATEWAYS,
   type AuthProvider,
-  type FeatureKey,
+  type BuiltInToolKey,
+  type CoreFeatureKey,
+  type DocumentTypeKey,
   type Gateway,
 } from "../types";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
 
-const FEATURE_DEFAULTS: Record<FeatureKey, boolean> = {
-	sandbox: false,
-	webSearch: false,
-	urlRetrieval: false,
-	deepResearch: false,
-	mcp: false,
-	imageGeneration: false,
-	attachments: false,
-	followupSuggestions: true,
+const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
+  attachments: false,
   parallelResponses: true,
+  documents: true,
+  mcp: false,
+  followupSuggestions: true,
+};
+
+const DOCUMENT_TYPE_DEFAULTS: Record<DocumentTypeKey, boolean> = {
+  text: true,
+  code: true,
+  sheet: true,
+};
+
+const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
+  webSearch: false,
+  urlRetrieval: false,
+  deepResearch: false,
+  codeExecution: false,
+  imageGeneration: false,
+  videoGeneration: false,
 };
 
 const AUTH_DEFAULTS: Record<AuthProvider, boolean> = {
-	google: false,
-	github: true,
-	vercel: false,
+  google: false,
+  github: true,
+  vercel: false,
 };
 
-const FEATURE_LABELS: Record<FeatureKey, string> = {
-	sandbox: "Code Sandbox",
-	webSearch: "Web Search",
-	urlRetrieval: "URL Retrieval",
-	deepResearch: "Deep Research",
-	mcp: "MCP Tool Servers",
-	imageGeneration: "Image Generation",
-	attachments: "File Attachments",
-	followupSuggestions: "Follow-up Suggestions",
+const CORE_FEATURE_LABELS: Record<CoreFeatureKey, string> = {
+  attachments: "Attachments",
   parallelResponses: "Parallel Responses",
+  documents: "Documents",
+  mcp: "MCP Tool Servers",
+  followupSuggestions: "Follow-up Suggestions",
+};
+
+const DOCUMENT_TYPE_LABELS: Record<DocumentTypeKey, string> = {
+  text: "Text Documents",
+  code: "Code Documents",
+  sheet: "Spreadsheet Documents",
+};
+
+const DOCUMENT_TYPE_HINTS: Record<DocumentTypeKey, string> = {
+  text: "Notes, guides, markdown, and long-form writing",
+  code: "Code files and snippets",
+  sheet: "CSV-based tables and structured data",
+};
+
+const BUILT_IN_TOOL_LABELS: Record<BuiltInToolKey, string> = {
+  webSearch: "Web Search",
+  urlRetrieval: "URL Retrieval",
+  deepResearch: "Deep Research",
+  codeExecution: "Code Sandbox",
+  imageGeneration: "Image Generation",
+  videoGeneration: "Video Generation",
+};
+
+const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
+  webSearch: "Search the web from chat",
+  urlRetrieval: "Fetch structured content from a specific URL",
+  deepResearch: "Run multi-step web research and generate reports",
+  codeExecution: "Execute code in a sandboxed environment",
+  imageGeneration: "Generate images inside chat",
+  videoGeneration: "Generate videos inside chat",
 };
 
 const AUTH_LABELS: Record<AuthProvider, string> = {
-	google: "Google OAuth",
-	github: "GitHub OAuth",
-	vercel: "Vercel OAuth",
+  google: "Google OAuth",
+  github: "GitHub OAuth",
+  vercel: "Vercel OAuth",
 };
 
 function handleCancel(value: unknown): asserts value is never {
-	if (isCancel(value)) {
-		cancel("Operation cancelled.");
-		process.exit(1);
-	}
+  if (isCancel(value)) {
+    cancel("Operation cancelled.");
+    process.exit(1);
+  }
 }
 
 function toKebabCase(value: string | undefined): string {
@@ -74,12 +117,22 @@ function toKebabCase(value: string | undefined): string {
     .replace(/^-|-$/g, "");
 }
 
+function toSelectionRecord<T extends string>(
+  keys: readonly T[],
+  selected: readonly string[]
+): Record<T, boolean> {
+  return Object.fromEntries(
+    keys.map((key) => [key, selected.includes(key)])
+  ) as Record<T, boolean>;
+}
+
 export async function promptProjectName(
-	targetArg: string | undefined,
-	skipPrompt: boolean,
+  targetArg: string | undefined,
+  skipPrompt: boolean
 ): Promise<string> {
-	if (skipPrompt)
-		return toKebabCase(targetArg ?? "my-chat-app") || "my-chat-app";
+  if (skipPrompt) {
+    return toKebabCase(targetArg ?? "my-chat-app") || "my-chat-app";
+  }
 
   const name = await text({
     message: "What is your project named?",
@@ -91,11 +144,11 @@ export async function promptProjectName(
   });
   handleCancel(name);
 
-	return toKebabCase(name) || "my-chat-app";
+  return toKebabCase(name) || "my-chat-app";
 }
 
 export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
-	if (skipPrompt) return "vercel";
+  if (skipPrompt) return "vercel";
 
   const gateway = await select({
     message: `Which ${highlighter.info("AI gateway")} would you like to use?`,
@@ -108,52 +161,121 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
   });
   handleCancel(gateway);
 
-	return gateway;
+  return gateway;
 }
 
-export async function promptFeatures(
-	skipPrompt: boolean,
-): Promise<Record<FeatureKey, boolean>> {
-	if (skipPrompt) return { ...FEATURE_DEFAULTS };
+export async function promptCoreFeatures(
+  skipPrompt: boolean
+): Promise<Record<CoreFeatureKey, boolean>> {
+  if (skipPrompt) return { ...CORE_FEATURE_DEFAULTS };
 
-	const defaultFeatures = FEATURE_KEYS.filter((key) => FEATURE_DEFAULTS[key]);
+  const selected = await multiselect({
+    message: `Which ${highlighter.info("core features")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+    options: CORE_FEATURE_KEYS.map((key) => ({
+      value: key,
+      label: CORE_FEATURE_LABELS[key],
+      hint:
+        key === "documents"
+          ? "Create, edit, and review documents in chat"
+          : coreFeatureEnvRequirements[
+              key as keyof typeof coreFeatureEnvRequirements
+            ]?.description,
+    })),
+    initialValues: CORE_FEATURE_KEYS.filter((key) => CORE_FEATURE_DEFAULTS[key]),
+    required: false,
+  });
+  handleCancel(selected);
 
-	const selectedFeatures = await multiselect({
-		message: `Which ${highlighter.info("features")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
-		options: FEATURE_KEYS.map((key) => ({
-			value: key,
-			label: FEATURE_LABELS[key],
-			hint: featureEnvRequirements[key as keyof typeof featureEnvRequirements]
-				?.description,
-		})),
-		initialValues: defaultFeatures,
-		required: false,
-	});
-	handleCancel(selectedFeatures);
+  return toSelectionRecord(CORE_FEATURE_KEYS, selected as CoreFeatureKey[]);
+}
 
-	const features: Record<FeatureKey, boolean> = { ...FEATURE_DEFAULTS };
-	for (const key of FEATURE_KEYS) {
-		features[key] = false;
-	}
-	for (const key of selectedFeatures as FeatureKey[]) {
-		features[key] = true;
-	}
+export async function promptDocumentTypes(
+  skipPrompt: boolean,
+  documentsEnabled: boolean
+): Promise<Record<DocumentTypeKey, boolean>> {
+  if (!documentsEnabled) {
+    return toSelectionRecord(DOCUMENT_TYPE_KEYS, []);
+  }
 
-	if (features.deepResearch) {
-		features.webSearch = true;
-	}
+  if (skipPrompt) return { ...DOCUMENT_TYPE_DEFAULTS };
 
-	return features;
+  const selected = await multiselect({
+    message: `Which ${highlighter.info("document types")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+    options: DOCUMENT_TYPE_KEYS.map((key) => ({
+      value: key,
+      label: DOCUMENT_TYPE_LABELS[key],
+      hint: DOCUMENT_TYPE_HINTS[key],
+    })),
+    initialValues: DOCUMENT_TYPE_KEYS.filter((key) => DOCUMENT_TYPE_DEFAULTS[key]),
+    required: false,
+  });
+  handleCancel(selected);
+
+  return toSelectionRecord(DOCUMENT_TYPE_KEYS, selected as DocumentTypeKey[]);
+}
+
+export async function promptAssistantTools(
+  registryItems: RegistryIndexItem[],
+  skipPrompt: boolean
+): Promise<{
+  builtInTools: Record<BuiltInToolKey, boolean>;
+  installableTools: string[];
+}> {
+  const installableItems = registryItems.filter((item) => !item.hidden);
+
+  if (skipPrompt) {
+    return {
+      builtInTools: { ...BUILT_IN_TOOL_DEFAULTS },
+      installableTools: [],
+    };
+  }
+
+  const selected = await multiselect({
+    message: `Which ${highlighter.info("assistant tools")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
+    options: [
+      ...BUILT_IN_TOOL_KEYS.map((key) => ({
+        value: key,
+        label: BUILT_IN_TOOL_LABELS[key],
+        hint:
+          builtInToolEnvRequirements[
+            key as keyof typeof builtInToolEnvRequirements
+          ]?.description ?? BUILT_IN_TOOL_HINTS[key],
+      })),
+      ...installableItems.map((item) => ({
+        value: item.name,
+        label: item.name,
+        hint: item.description,
+      })),
+    ],
+    initialValues: BUILT_IN_TOOL_KEYS.filter((key) => BUILT_IN_TOOL_DEFAULTS[key]),
+    required: false,
+  });
+  handleCancel(selected);
+
+  const selectedValues = selected as string[];
+  const builtInTools = toSelectionRecord(
+    BUILT_IN_TOOL_KEYS,
+    selectedValues.filter((value): value is BuiltInToolKey =>
+      (BUILT_IN_TOOL_KEYS as readonly string[]).includes(value)
+    )
+  );
+
+  return {
+    builtInTools,
+    installableTools: selectedValues.filter(
+      (value) => !(BUILT_IN_TOOL_KEYS as readonly string[]).includes(value)
+    ),
+  };
 }
 
 export async function promptAuth(
-	skipPrompt: boolean,
+  skipPrompt: boolean
 ): Promise<Record<AuthProvider, boolean>> {
-	if (skipPrompt) return { ...AUTH_DEFAULTS };
+  if (skipPrompt) return { ...AUTH_DEFAULTS };
 
   const defaultProviders = AUTH_PROVIDERS.filter((p) => AUTH_DEFAULTS[p]);
 
-	let selectedProviders: AuthProvider[] = [];
+  let selectedProviders: AuthProvider[] = [];
 
   while (selectedProviders.length === 0) {
     const selected = await multiselect({
@@ -168,54 +290,45 @@ export async function promptAuth(
     });
     handleCancel(selected);
 
-		selectedProviders = selected as AuthProvider[];
-		if (selectedProviders.length === 0) {
-			logger.warn("At least one auth provider is required. Please select one.");
-		}
-	}
+    selectedProviders = selected as AuthProvider[];
+    if (selectedProviders.length === 0) {
+      logger.warn("At least one auth provider is required. Please select one.");
+    }
+  }
 
-	const auth: Record<AuthProvider, boolean> = {
-		google: false,
-		github: false,
-		vercel: false,
-	};
-	for (const p of selectedProviders) {
-		auth[p] = true;
-	}
-
-	return auth;
+  return toSelectionRecord(AUTH_PROVIDERS, selectedProviders);
 }
 
 export async function promptElectron(
-	skipPrompt: boolean,
-	explicitChoice?: boolean,
+  skipPrompt: boolean,
+  explicitChoice?: boolean
 ): Promise<boolean> {
-	if (typeof explicitChoice === "boolean") {
-		return explicitChoice;
-	}
+  if (typeof explicitChoice === "boolean") {
+    return explicitChoice;
+  }
 
-	if (skipPrompt) return false;
+  if (skipPrompt) return false;
 
-	const wantsElectron = await confirm({
-		message: `Include an ${highlighter.info("Electron")} desktop app?`,
-		initialValue: false,
-	});
-	handleCancel(wantsElectron);
+  const wantsElectron = await confirm({
+    message: `Include an ${highlighter.info("Electron")} desktop app?`,
+    initialValue: false,
+  });
+  handleCancel(wantsElectron);
 
-	return wantsElectron;
+  return wantsElectron;
 }
 
 export async function promptInstall(
-	packageManager: string,
-	skipPrompt: boolean,
+  packageManager: string,
+  skipPrompt: boolean
 ): Promise<boolean> {
-	if (skipPrompt) return true;
+  if (skipPrompt) return true;
 
-	const install = await confirm({
-		message: `Install dependencies with ${highlighter.info(packageManager)}?`,
-		initialValue: true,
-	});
-	handleCancel(install);
+  const install = await confirm({
+    message: `Install dependencies with ${highlighter.info(packageManager)}?`,
+    initialValue: true,
+  });
+  handleCancel(install);
 
-	return install;
+  return install;
 }

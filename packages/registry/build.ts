@@ -116,6 +116,7 @@ function getImportPackage(spec: string): string | null {
 
 type Meta = {
   description: string;
+  hidden?: boolean;
   extraDependencies?: string[];
   devDependencies?: string[];
   registryDependencies?: string[];
@@ -143,7 +144,7 @@ async function main(): Promise<void> {
     if (stat.isDirectory()) dirs.push(entry);
   }
 
-  const index: { name: string; description: string }[] = [];
+  const index: Array<{ name: string; description: string; hidden?: boolean }> = [];
 
   for (const name of dirs) {
     const dir = path.join(srcDir, name);
@@ -220,6 +221,7 @@ async function main(): Promise<void> {
     const item = {
       name,
       description: meta.description,
+      ...(meta.hidden ? { hidden: true } : {}),
       ...(dependencies.length > 0 ? { dependencies } : {}),
       ...(meta.devDependencies?.length
         ? { devDependencies: [...new Set(meta.devDependencies)].sort() }
@@ -240,7 +242,11 @@ async function main(): Promise<void> {
       JSON.stringify(item, null, 2) + "\n"
     );
 
-    index.push({ name, description: meta.description });
+    index.push({
+      name,
+      description: meta.description,
+      ...(meta.hidden ? { hidden: true } : {}),
+    });
     console.log(
       `  built ${name} (deps: ${dependencies.join(", ") || "none"})`
     );

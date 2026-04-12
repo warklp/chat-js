@@ -33,16 +33,25 @@ describe("buildConfigTs", () => {
       appUrl: "http://localhost:3000",
       withElectron: false,
       gateway: "vercel",
-      features: {
-        sandbox: false,
+      coreFeatures: {
+        attachments: false,
+        parallelResponses: true,
+        documents: true,
+        mcp: false,
+        followupSuggestions: true,
+      },
+      documentTypes: {
+        text: true,
+        code: true,
+        sheet: true,
+      },
+      builtInTools: {
         webSearch: false,
         urlRetrieval: false,
         deepResearch: false,
-        mcp: false,
+        codeExecution: false,
         imageGeneration: false,
-        attachments: false,
-        followupSuggestions: true,
-        parallelResponses: true,
+        videoGeneration: false,
       },
       auth: {
         google: false,
@@ -60,16 +69,25 @@ describe("buildConfigTs", () => {
       appUrl: "http://localhost:3000",
       withElectron: true,
       gateway: "vercel",
-      features: {
-        sandbox: false,
+      coreFeatures: {
+        attachments: false,
+        parallelResponses: true,
+        documents: true,
+        mcp: false,
+        followupSuggestions: true,
+      },
+      documentTypes: {
+        text: true,
+        code: true,
+        sheet: true,
+      },
+      builtInTools: {
         webSearch: false,
         urlRetrieval: false,
         deepResearch: false,
-        mcp: false,
+        codeExecution: false,
         imageGeneration: false,
-        attachments: false,
-        followupSuggestions: true,
-        parallelResponses: true,
+        videoGeneration: false,
       },
       auth: {
         google: false,

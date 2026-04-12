@@ -92,6 +92,14 @@ function createAiSchema<G extends GatewayType>(g: G) {
         mcp: z.object({
           enabled: z.boolean(),
         }),
+        documents: z.object({
+          enabled: z.boolean(),
+          types: z.object({
+            text: z.boolean(),
+            code: z.boolean(),
+            sheet: z.boolean(),
+          }),
+        }),
         followupSuggestions: z.object({
           enabled: z.boolean(),
           default: gatewayModelId<G>(),
@@ -404,6 +412,9 @@ interface AiToolsInputFor<G extends GatewayType> {
   code?: Partial<{ [P in keyof AiToolsShape["code"]]: GatewayModelIdMap[G] }>;
   codeExecution?: Partial<AiToolsShape["codeExecution"]>;
   deepResearch?: DeepResearchToolInputFor<G>;
+  documents?: Partial<AiToolsShape["documents"]> & {
+    types?: Partial<AiToolsShape["documents"]["types"]>;
+  };
   followupSuggestions?: FollowupSuggestionsToolInputFor<G>;
   image?: ImageToolInputFor<G>;
   mcp?: Partial<AiToolsShape["mcp"]>;

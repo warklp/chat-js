@@ -1,4 +1,9 @@
-import type { AuthProvider, FeatureKey, Gateway } from "../types";
+import type {
+  AuthProvider,
+  BuiltInToolKey,
+  CoreFeatureKey,
+  Gateway,
+} from "../types";
 
 type EnvVarName = string;
 
@@ -26,8 +31,21 @@ export const gatewayEnvRequirements: Record<Gateway, EnvRequirement> = {
   },
 };
 
-export const featureEnvRequirements: Partial<
-  Record<FeatureKey, EnvRequirement>
+export const coreFeatureEnvRequirements: Partial<
+  Record<CoreFeatureKey, EnvRequirement>
+> = {
+  mcp: {
+    options: [["MCP_ENCRYPTION_KEY"]],
+    description: "MCP_ENCRYPTION_KEY",
+  },
+  attachments: {
+    options: [["BLOB_READ_WRITE_TOKEN"]],
+    description: "BLOB_READ_WRITE_TOKEN",
+  },
+};
+
+export const builtInToolEnvRequirements: Partial<
+  Record<BuiltInToolKey, EnvRequirement>
 > = {
   webSearch: {
     options: [["TAVILY_API_KEY"], ["FIRECRAWL_API_KEY"]],
@@ -41,25 +59,17 @@ export const featureEnvRequirements: Partial<
     options: [["TAVILY_API_KEY"], ["FIRECRAWL_API_KEY"]],
     description: "TAVILY_API_KEY or FIRECRAWL_API_KEY",
   },
-  mcp: {
-    options: [["MCP_ENCRYPTION_KEY"]],
-    description: "MCP_ENCRYPTION_KEY",
-  },
-  imageGeneration: {
-    options: [["BLOB_READ_WRITE_TOKEN"]],
-    description: "BLOB_READ_WRITE_TOKEN",
-  },
-  attachments: {
-    options: [["BLOB_READ_WRITE_TOKEN"]],
-    description: "BLOB_READ_WRITE_TOKEN",
-  },
-  sandbox: {
+  codeExecution: {
     options: [
       ["VERCEL_OIDC_TOKEN"],
       ["VERCEL_TEAM_ID", "VERCEL_PROJECT_ID", "VERCEL_TOKEN"],
     ],
     description:
       "VERCEL_OIDC_TOKEN or VERCEL_TEAM_ID + VERCEL_PROJECT_ID + VERCEL_TOKEN",
+  },
+  imageGeneration: {
+    options: [["BLOB_READ_WRITE_TOKEN"]],
+    description: "BLOB_READ_WRITE_TOKEN",
   },
 };
 
