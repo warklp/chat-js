@@ -1,5 +1,5 @@
 ---
-"@chatjs/electron": patch
+"@chat-js/electron": patch
 "@chat-js/cli": patch
 "@chat-js/registry": patch
 ---

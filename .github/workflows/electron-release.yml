@@ -65,7 +65,7 @@ jobs:
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=@chatjs/electron@$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=@chat-js/electron@$VERSION" >> "$GITHUB_OUTPUT"
           echo "should_release=$SHOULD_RELEASE" >> "$GITHUB_OUTPUT"
 
   build:
@@ -158,8 +158,8 @@ jobs:
 
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" \
-              --title "@chatjs/electron $RELEASE_VERSION" \
-              --notes "Desktop artifact release for @chatjs/electron $RELEASE_VERSION." \
+              --title "@chat-js/electron $RELEASE_VERSION" \
+              --notes "Desktop artifact release for @chat-js/electron $RELEASE_VERSION." \
               --target "$GITHUB_SHA"
           fi
 

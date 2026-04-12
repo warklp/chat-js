@@ -13,16 +13,27 @@ export const AUTH_PROVIDERS = ["google", "github", "vercel"] as const;
 
 export type AuthProvider = (typeof AUTH_PROVIDERS)[number];
 
-export const FEATURE_KEYS = [
-  "sandbox",
+export const CORE_FEATURE_KEYS = [
+  "attachments",
+  "parallelResponses",
+  "documents",
+  "mcp",
+  "followupSuggestions",
+] as const;
+
+export type CoreFeatureKey = (typeof CORE_FEATURE_KEYS)[number];
+
+export const DOCUMENT_TYPE_KEYS = ["text", "code", "sheet"] as const;
+
+export type DocumentTypeKey = (typeof DOCUMENT_TYPE_KEYS)[number];
+
+export const BUILT_IN_TOOL_KEYS = [
   "webSearch",
   "urlRetrieval",
   "deepResearch",
-  "mcp",
+  "codeExecution",
   "imageGeneration",
-  "attachments",
-  "followupSuggestions",
-  "parallelResponses",
+  "videoGeneration",
 ] as const;
 
-export type FeatureKey = (typeof FEATURE_KEYS)[number];
+export type BuiltInToolKey = (typeof BUILT_IN_TOOL_KEYS)[number];
