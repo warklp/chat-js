@@ -1,9 +1,13 @@
-import type { ToolEnvVars } from "@chat-js/registry";
 import FirecrawlApp from "@mendable/firecrawl-js";
 import { tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { createModuleLogger } from "@/lib/logger";
+
+type ToolEnvVars = {
+  description?: string;
+  options: string[][];
+}[];
 
 export const toolEnvVars: ToolEnvVars = [
   {
