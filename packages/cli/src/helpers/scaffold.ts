@@ -162,7 +162,7 @@ async function applyElectronTemplateSourceTransforms(
 
   const packageJsonPath = join(destination, "package.json");
   await replaceInFile(packageJsonPath, [
-    ['"name": "@chatjs/electron"', '"name": "__PROJECT_NAME__-electron"'],
+    ['"name": "@chat-js/electron"', '"name": "__PROJECT_NAME__-electron"'],
     [
       '"url": "https://github.com/FranciscoMoretti/chat-js.git"',
       '"url": "https://github.com/__GITHUB_OWNER__/__GITHUB_REPO__.git"',

@@ -86,7 +86,7 @@ Releases are driven by Changesets for the whole repository.
 - Add a changeset for each releasable package you change.
 - Merge the generated version PR from the Changesets workflow.
 - Public packages such as `@chat-js/cli` publish to npm.
-- Desktop installers for `@chatjs/electron` publish to GitHub Releases.
+- Desktop installers for `@chat-js/electron` publish to GitHub Releases.
 
 ## License
 

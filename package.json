@@ -31,9 +31,9 @@
 		"db:branch:stop": "dotenv -e .env.local -- bun --filter=@chatjs/chat run db:branch:stop",
 		"start:chat": "dotenv -e .env.local -- bun --filter=@chatjs/chat run start",
 		"release": "changeset publish",
-		"dev:electron": "turbo run electron:dev --filter=@chatjs/electron",
-		"build:electron": "turbo run electron:build --filter=@chatjs/electron",
-		"dist:electron": "turbo run electron:make --filter=@chatjs/electron"
+		"dev:electron": "turbo run electron:dev --filter=@chat-js/electron",
+		"build:electron": "turbo run electron:build --filter=@chat-js/electron",
+		"dist:electron": "turbo run electron:make --filter=@chat-js/electron"
 	},
 	"overrides": {
 		"//@better-auth/core": "Pinned because @better-auth/electron and other @better-auth/* packages declare a strict peerDependency on @better-auth/core@1.5.6. Do not remove without auditing all @better-auth/* peer ranges.",

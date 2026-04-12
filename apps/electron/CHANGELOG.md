@@ -1,4 +1,4 @@
-# @chatjs/electron
+# @chat-js/electron
 
 ## 0.3.1
 
