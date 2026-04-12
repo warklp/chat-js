@@ -56,7 +56,9 @@ function formatValue(value: unknown, indent: number): string {
     const entries = Object.entries(value);
     if (entries.length === 0) return "{}";
     return `{\n${entries
-      .map(([k, v]) => `${inner}${formatKey(k)}: ${formatValue(v, indent + 1)}`)
+      .map(
+        ([k, v]) => `${inner}${formatKey(k)}: ${formatValue(v, indent + 1)}`
+      )
       .join(",\n")},\n${spaces}}`;
   }
 
@@ -66,7 +68,7 @@ function formatValue(value: unknown, indent: number): string {
 function generateConfig(
   obj: Record<string, unknown>,
   indent: number,
-  pathPrefix: string,
+  pathPrefix: string
 ): string {
   const spaces = "  ".repeat(indent);
 
@@ -84,12 +86,15 @@ function generateConfig(
         const nested = generateConfig(
           value as Record<string, unknown>,
           indent + 1,
-          path,
+          path
         );
         return `${spaces}${formatKey(key)}: {\n${nested}\n${spaces}},`;
       }
 
-      return `${spaces}${formatKey(key)}: ${formatValue(value, indent)},${comment}`;
+      return `${spaces}${formatKey(key)}: ${formatValue(
+        value,
+        indent
+      )},${comment}`;
     })
     .join("\n");
 }
