@@ -6,7 +6,7 @@ import type {
   GatewayVideoModelIdMap,
 } from "@/lib/ai/gateways/registry";
 
-export type { GatewayType };
+export type { GatewayType } from "@/lib/ai/gateways/registry";
 
 import { GATEWAY_MODEL_DEFAULTS } from "./ai/gateway-model-defaults";
 import type { ToolName } from "./ai/types";
