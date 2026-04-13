@@ -8,6 +8,17 @@ import {
 } from "@clack/prompts";
 import type { RegistryIndexItem } from "../registry/fetch";
 import {
+	AUTHENTICATION_DEFAULTS,
+	FEATURES_DEFAULTS,
+} from "../../../../apps/chat/lib/config-schema";
+import { GATEWAY_MODEL_DEFAULTS } from "../../../../apps/chat/lib/ai/gateway-model-defaults";
+import {
+	authEnvRequirements,
+	builtInToolEnvRequirements,
+	coreFeatureEnvRequirements,
+	gatewayEnvRequirements,
+} from "./config-requirements";
+import {
 	AUTH_PROVIDERS,
 	type AuthProvider,
 	BUILT_IN_TOOL_KEYS,
@@ -21,41 +32,33 @@ import {
 } from "../types";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
-import {
-	authEnvRequirements,
-	builtInToolEnvRequirements,
-	coreFeatureEnvRequirements,
-	gatewayEnvRequirements,
-} from "./config-requirements";
+
+const defaultTools = GATEWAY_MODEL_DEFAULTS["vercel"].tools;
 
 const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
-	attachments: false,
-	parallelResponses: true,
-	documents: true,
-	mcp: false,
-	followupSuggestions: true,
+	attachments: FEATURES_DEFAULTS.attachments,
+	parallelResponses: FEATURES_DEFAULTS.parallelResponses,
+	documents: defaultTools.documents.enabled,
+	mcp: defaultTools.mcp.enabled,
+	followupSuggestions: defaultTools.followupSuggestions.enabled,
 };
 
 const DOCUMENT_TYPE_DEFAULTS: Record<DocumentTypeKey, boolean> = {
-	text: true,
-	code: true,
-	sheet: true,
+	text: defaultTools.documents.types.text,
+	code: defaultTools.documents.types.code,
+	sheet: defaultTools.documents.types.sheet,
 };
 
 const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
-	webSearch: false,
-	urlRetrieval: false,
-	deepResearch: false,
-	codeExecution: false,
-	imageGeneration: false,
-	videoGeneration: false,
+	webSearch: defaultTools.webSearch.enabled,
+	urlRetrieval: defaultTools.urlRetrieval.enabled,
+	deepResearch: defaultTools.deepResearch.enabled,
+	codeExecution: defaultTools.codeExecution.enabled,
+	imageGeneration: defaultTools.image.enabled,
+	videoGeneration: defaultTools.video.enabled,
 };
 
-const AUTH_DEFAULTS: Record<AuthProvider, boolean> = {
-	google: false,
-	github: true,
-	vercel: false,
-};
+const AUTH_DEFAULTS: Record<AuthProvider, boolean> = AUTHENTICATION_DEFAULTS;
 
 const CORE_FEATURE_LABELS: Record<CoreFeatureKey, string> = {
 	attachments: "Attachments",

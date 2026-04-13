@@ -1,13 +1,15 @@
+import type { GatewayType } from "../../../apps/chat/lib/config-schema";
+
 export type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
 
-export const GATEWAYS = [
+export const GATEWAYS: readonly GatewayType[] = [
   "vercel",
   "openrouter",
   "openai",
   "openai-compatible",
 ] as const;
 
-export type Gateway = (typeof GATEWAYS)[number];
+export type Gateway = GatewayType;
 
 export const AUTH_PROVIDERS = ["google", "github", "vercel"] as const;
 

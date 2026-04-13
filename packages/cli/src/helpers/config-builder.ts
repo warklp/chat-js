@@ -1,3 +1,9 @@
+import { z } from "zod";
+import {
+  applyDefaults,
+  configDescriptionSchema,
+  type ConfigInput,
+} from "../../../../apps/chat/lib/config-schema";
 import type {
   AuthProvider,
   BuiltInToolKey,
@@ -6,126 +12,35 @@ import type {
   Gateway,
 } from "../types";
 
+function extractDescriptions(
+  schema: z.ZodType,
+  prefix = "",
+  result: Map<string, string> = new Map(),
+): Map<string, string> {
+  if (schema.description && prefix) {
+    result.set(prefix, schema.description);
+  }
+
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    for (const [key, propSchema] of Object.entries(shape)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      extractDescriptions(propSchema as z.ZodType, path, result);
+    }
+  }
+
+  if (schema instanceof z.ZodDiscriminatedUnion) {
+    for (const option of schema.options.values()) {
+      extractDescriptions(option, prefix, result);
+    }
+  }
+
+  return result;
+}
+
+const descriptions = extractDescriptions(configDescriptionSchema);
+
 const VALID_KEY_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
-
-const DESCRIPTIONS = new Map<string, string>([
-  ["features.attachments", "File attachments (requires BLOB_READ_WRITE_TOKEN)"],
-  [
-    "authentication.google",
-    "Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET)",
-  ],
-  [
-    "authentication.github",
-    "GitHub OAuth (requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET)",
-  ],
-  [
-    "authentication.vercel",
-    "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)",
-  ],
-  ["ai.tools.mcp.enabled", "Requires MCP_ENCRYPTION_KEY"],
-  ["ai.tools.documents.enabled", "Document create/edit/review support"],
-  ["ai.tools.webSearch.enabled", "Requires TAVILY_API_KEY or FIRECRAWL_API_KEY"],
-  ["ai.tools.urlRetrieval.enabled", "Requires FIRECRAWL_API_KEY"],
-  [
-    "ai.tools.codeExecution.enabled",
-    "Requires Vercel sandbox credentials outside Vercel",
-  ],
-  ["ai.tools.image.enabled", "Requires BLOB_READ_WRITE_TOKEN"],
-  ["ai.tools.deepResearch.enabled", "Requires web search access"],
-  [
-    "paths.tools",
-    "Import alias for the installable tools registry index and tool files",
-  ],
-]);
-
-type GeneratedConfig = {
-  appPrefix: string;
-  appName: string;
-  appDescription: string;
-  appUrl: string;
-  organization: {
-    name: string;
-    contact: {
-      privacyEmail: string;
-      legalEmail: string;
-    };
-  };
-  services: {
-    hosting: string;
-    aiProviders: string[];
-    paymentProcessors: string[];
-  };
-  features: {
-    attachments: boolean;
-    parallelResponses: boolean;
-  };
-  legal: {
-    minimumAge: number;
-    governingLaw: string;
-    refundPolicy: string;
-  };
-  policies: {
-    privacy: { title: string };
-    terms: { title: string };
-  };
-  authentication: Record<AuthProvider, boolean>;
-  desktopApp: {
-    enabled: boolean;
-  };
-  ai: {
-    gateway: Gateway;
-    tools: {
-      mcp: {
-        enabled: boolean;
-      };
-      followupSuggestions: {
-        enabled: boolean;
-      };
-      documents: {
-        enabled: boolean;
-        types: Record<DocumentTypeKey, boolean>;
-      };
-      webSearch: {
-        enabled: boolean;
-      };
-      urlRetrieval: {
-        enabled: boolean;
-      };
-      deepResearch: {
-        enabled: boolean;
-      };
-      codeExecution: {
-        enabled: boolean;
-      };
-      image: {
-        enabled: boolean;
-      };
-      video: {
-        enabled: boolean;
-      };
-    };
-  };
-  paths: {
-    tools: string;
-  };
-  anonymous: {
-    credits: number;
-    availableTools: never[];
-    rateLimit: {
-      requestsPerMinute: number;
-      requestsPerMonth: number;
-    };
-  };
-  attachments: {
-    maxBytes: number;
-    maxDimension: number;
-    acceptedTypes: {
-      "image/png": string[];
-      "image/jpeg": string[];
-      "application/pdf": string[];
-    };
-  };
-};
 
 const formatKey = (key: string) =>
   VALID_KEY_REGEX.test(key) ? key : JSON.stringify(key);
@@ -173,7 +88,7 @@ function generateConfig(
   return Object.entries(obj)
     .map(([key, value]) => {
       const path = pathPrefix ? `${pathPrefix}.${key}` : key;
-      const desc = DESCRIPTIONS.get(path);
+      const desc = descriptions.get(path);
       const comment = desc ? ` // ${desc}` : "";
 
       if (
@@ -197,6 +112,49 @@ function generateConfig(
     .join("\n");
 }
 
+function toConfigInput(input: {
+  appName: string;
+  appPrefix: string;
+  appUrl: string;
+  withElectron: boolean;
+  gateway: Gateway;
+  coreFeatures: Record<CoreFeatureKey, boolean>;
+  documentTypes: Record<DocumentTypeKey, boolean>;
+  builtInTools: Record<BuiltInToolKey, boolean>;
+  auth: Record<AuthProvider, boolean>;
+}): ConfigInput {
+  return {
+    appName: input.appName,
+    appPrefix: input.appPrefix,
+    appUrl: input.appUrl,
+    features: {
+      attachments: input.coreFeatures.attachments,
+      parallelResponses: input.coreFeatures.parallelResponses,
+    },
+    authentication: input.auth,
+    desktopApp: {
+      enabled: input.withElectron,
+    },
+    ai: {
+      gateway: input.gateway,
+      tools: {
+        mcp: { enabled: input.coreFeatures.mcp },
+        followupSuggestions: { enabled: input.coreFeatures.followupSuggestions },
+        documents: {
+          enabled: input.coreFeatures.documents,
+          types: input.documentTypes,
+        },
+        webSearch: { enabled: input.builtInTools.webSearch },
+        urlRetrieval: { enabled: input.builtInTools.urlRetrieval },
+        deepResearch: { enabled: input.builtInTools.deepResearch },
+        codeExecution: { enabled: input.builtInTools.codeExecution },
+        image: { enabled: input.builtInTools.imageGeneration },
+        video: { enabled: input.builtInTools.videoGeneration },
+      },
+    },
+  } as ConfigInput;
+}
+
 export function buildConfigTs(input: {
   appName: string;
   appPrefix: string;
@@ -208,94 +166,7 @@ export function buildConfigTs(input: {
   builtInTools: Record<BuiltInToolKey, boolean>;
   auth: Record<AuthProvider, boolean>;
 }): string {
-  const fullConfig: GeneratedConfig = {
-    appPrefix: input.appPrefix,
-    appName: input.appName,
-    appDescription: "AI chat powered by ChatJS",
-    appUrl: input.appUrl,
-    organization: {
-      name: "Your Organization",
-      contact: {
-        privacyEmail: "privacy@your-domain.com",
-        legalEmail: "legal@your-domain.com",
-      },
-    },
-    services: {
-      hosting: "Vercel",
-      aiProviders: ["OpenAI", "Anthropic", "Google"],
-      paymentProcessors: [],
-    },
-    features: {
-      attachments: input.coreFeatures.attachments,
-      parallelResponses: input.coreFeatures.parallelResponses,
-    },
-    legal: {
-      minimumAge: 13,
-      governingLaw: "United States",
-      refundPolicy: "no-refunds",
-    },
-    policies: {
-      privacy: { title: "Privacy Policy" },
-      terms: { title: "Terms of Service" },
-    },
-    authentication: input.auth,
-    desktopApp: {
-      enabled: input.withElectron,
-    },
-    ai: {
-      gateway: input.gateway,
-      tools: {
-        mcp: {
-          enabled: input.coreFeatures.mcp,
-        },
-        followupSuggestions: {
-          enabled: input.coreFeatures.followupSuggestions,
-        },
-        documents: {
-          enabled: input.coreFeatures.documents,
-          types: input.documentTypes,
-        },
-        webSearch: {
-          enabled: input.builtInTools.webSearch,
-        },
-        urlRetrieval: {
-          enabled: input.builtInTools.urlRetrieval,
-        },
-        deepResearch: {
-          enabled: input.builtInTools.deepResearch,
-        },
-        codeExecution: {
-          enabled: input.builtInTools.codeExecution,
-        },
-        image: {
-          enabled: input.builtInTools.imageGeneration,
-        },
-        video: {
-          enabled: input.builtInTools.videoGeneration,
-        },
-      },
-    },
-    paths: {
-      tools: "@/tools/chatjs",
-    },
-    anonymous: {
-      credits: 10,
-      availableTools: [],
-      rateLimit: {
-        requestsPerMinute: 5,
-        requestsPerMonth: 10,
-      },
-    },
-    attachments: {
-      maxBytes: 1048576,
-      maxDimension: 2048,
-      acceptedTypes: {
-        "image/png": [".png"],
-        "image/jpeg": [".jpg", ".jpeg"],
-        "application/pdf": [".pdf"],
-      },
-    },
-  };
+  const fullConfig = applyDefaults(toConfigInput(input));
 
   return `import { defineConfig } from "@/lib/config-schema";
 
