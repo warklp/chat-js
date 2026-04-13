@@ -29,6 +29,12 @@ function extractDescriptions(
     }
   }
 
+  if (schema instanceof z.ZodDiscriminatedUnion) {
+    for (const option of schema.options.values()) {
+      extractDescriptions(option, prefix, result);
+    }
+  }
+
   return result;
 }
 

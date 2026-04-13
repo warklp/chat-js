@@ -84,19 +84,23 @@ function createAiSchema<G extends GatewayType>(g: G) {
     tools: z
       .object({
         webSearch: z.object({
-          enabled: z.boolean(),
+          enabled: z
+            .boolean()
+            .describe("Requires TAVILY_API_KEY or FIRECRAWL_API_KEY"),
         }),
         urlRetrieval: z.object({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires FIRECRAWL_API_KEY"),
         }),
         codeExecution: z.object({
-          enabled: z.boolean(),
+          enabled: z
+            .boolean()
+            .describe("Requires Vercel sandbox credentials outside Vercel"),
         }),
         mcp: z.object({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires MCP_ENCRYPTION_KEY"),
         }),
         documents: z.object({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Document create/edit/review support"),
           types: z.object({
             text: z.boolean(),
             code: z.boolean(),
@@ -119,11 +123,13 @@ function createAiSchema<G extends GatewayType>(g: G) {
         }),
         image: z.discriminatedUnion("enabled", [
           z.object({
-            enabled: z.literal(true),
+            enabled: z.literal(true).describe("Requires BLOB_READ_WRITE_TOKEN"),
             default: gatewayImageModelId<G>(),
           }),
           z.object({
-            enabled: z.literal(false),
+            enabled: z
+              .literal(false)
+              .describe("Requires BLOB_READ_WRITE_TOKEN"),
             default: gatewayImageModelId<G>().optional(),
           }),
         ]),
@@ -138,7 +144,7 @@ function createAiSchema<G extends GatewayType>(g: G) {
           }),
         ]),
         deepResearch: deepResearchToolConfigSchema.extend({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires web search access"),
           defaultModel: gatewayModelId<G>(),
           finalReportModel: gatewayModelId<G>(),
         }),
@@ -345,7 +351,7 @@ export const configDescriptionSchema = z.object({
   }),
   authentication: authenticationConfigObjectSchema,
   desktopApp: desktopAppConfigObjectSchema,
-  ai: aiConfigSchema,
+  ai: gatewaySchemaMap.vercel,
   anonymous: anonymousConfigObjectSchema,
   attachments: attachmentsConfigObjectSchema,
   paths: pathsConfigObjectSchema,
