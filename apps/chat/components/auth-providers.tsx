@@ -74,33 +74,33 @@ export function SocialAuthProviders({
   const [lastUsedProvider, setLastUsedProvider] =
     useState<SocialAuthProvider | null>(null);
 
-  const providers = useMemo<AuthProviderDefinition[]>(
-    () =>
-      sortSocialAuthProvidersByLastUsed(
-        [
-          {
-            enabled: config.authentication.google,
-            icon: GoogleIcon,
-            id: "google",
-            label: "Google",
-          },
-          {
-            enabled: config.authentication.github,
-            icon: Github,
-            id: "github",
-            label: "GitHub",
-          },
-          {
-            enabled: config.authentication.vercel,
-            icon: VercelIcon,
-            id: "vercel",
-            label: "Vercel",
-          },
-        ].filter(({ enabled }) => enabled),
-        lastUsedProvider
-      ),
-    [lastUsedProvider]
-  );
+  const providers = useMemo<AuthProviderDefinition[]>(() => {
+    const providerDefinitions = [
+      {
+        enabled: config.authentication.google,
+        icon: GoogleIcon,
+        id: "google",
+        label: "Google",
+      },
+      {
+        enabled: config.authentication.github,
+        icon: Github,
+        id: "github",
+        label: "GitHub",
+      },
+      {
+        enabled: config.authentication.vercel,
+        icon: VercelIcon,
+        id: "vercel",
+        label: "Vercel",
+      },
+    ] satisfies AuthProviderDefinition[];
+
+    return sortSocialAuthProvidersByLastUsed(
+      providerDefinitions.filter(({ enabled }) => enabled),
+      lastUsedProvider
+    );
+  }, [lastUsedProvider]);
 
   useEffect(() => {
     const rememberedProvider = authClient.getLastUsedLoginMethod();
