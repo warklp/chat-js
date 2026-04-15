@@ -1,12 +1,20 @@
 "use client";
 
+import type { ComponentType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Github } from "lucide-react";
 import { toast } from "sonner";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
-import type { SocialAuthSignInOptions } from "@/lib/social-auth";
+import {
+  isSocialAuthProvider,
+  sortSocialAuthProvidersByLastUsed,
+  type SocialAuthProvider,
+  type SocialAuthSignInOptions,
+} from "@/lib/social-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -41,6 +49,13 @@ function VercelIcon({ className }: { className?: string }) {
   );
 }
 
+type AuthProviderDefinition = {
+  enabled: boolean;
+  icon: ComponentType<{ className?: string }>;
+  id: SocialAuthProvider;
+  label: string;
+};
+
 export function SocialAuthProviders({
   callbackURL,
   electronBrowserLabel,
@@ -56,6 +71,44 @@ export function SocialAuthProviders({
   query?: Record<string, string>;
   signInOptions?: SocialAuthSignInOptions;
 } = {}) {
+  const [lastUsedProvider, setLastUsedProvider] =
+    useState<SocialAuthProvider | null>(null);
+
+  const providers = useMemo<AuthProviderDefinition[]>(
+    () =>
+      sortSocialAuthProvidersByLastUsed(
+        [
+          {
+            enabled: config.authentication.google,
+            icon: GoogleIcon,
+            id: "google",
+            label: "Google",
+          },
+          {
+            enabled: config.authentication.github,
+            icon: Github,
+            id: "github",
+            label: "GitHub",
+          },
+          {
+            enabled: config.authentication.vercel,
+            icon: VercelIcon,
+            id: "vercel",
+            label: "Vercel",
+          },
+        ].filter(({ enabled }) => enabled),
+        lastUsedProvider
+      ),
+    [lastUsedProvider]
+  );
+
+  useEffect(() => {
+    const rememberedProvider = authClient.getLastUsedLoginMethod();
+    setLastUsedProvider(
+      isSocialAuthProvider(rememberedProvider) ? rememberedProvider : null
+    );
+  }, []);
+
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
   // URL in the user's default browser with the proper PKCE params.
@@ -63,7 +116,7 @@ export function SocialAuthProviders({
     return <ElectronBrowserSignIn buttonLabel={electronBrowserLabel} />;
   }
 
-  async function signIn(provider: "google" | "github" | "vercel") {
+  async function signIn(provider: SocialAuthProvider) {
     try {
       const result = await authClient.signIn.social({
         provider,
@@ -86,39 +139,29 @@ export function SocialAuthProviders({
 
   return (
     <div className="space-y-2">
-      {config.authentication.google ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("google")}
-          type="button"
-          variant="outline"
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Continue with Google
-        </Button>
-      ) : null}
-      {config.authentication.github ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("github")}
-          type="button"
-          variant="outline"
-        >
-          <Github className="mr-2 h-4 w-4" />
-          Continue with GitHub
-        </Button>
-      ) : null}
-      {config.authentication.vercel ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("vercel")}
-          type="button"
-          variant="outline"
-        >
-          <VercelIcon className="mr-2 h-4 w-4" />
-          Continue with Vercel
-        </Button>
-      ) : null}
+      {providers.map(({ icon: Icon, id, label }) => {
+        const isLastUsed = id === lastUsedProvider;
+
+        return (
+          <Button
+            className="w-full justify-between"
+            key={id}
+            onClick={() => signIn(id)}
+            type="button"
+            variant="outline"
+          >
+            <span className="flex items-center">
+              <Icon className="mr-2 h-4 w-4" />
+              Continue with {label}
+            </span>
+            {isLastUsed ? (
+              <Badge className="ml-3 shrink-0" variant="secondary">
+                Last used
+              </Badge>
+            ) : null}
+          </Button>
+        );
+      })}
     </div>
   );
 }
