@@ -1,11 +1,12 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -28,7 +29,19 @@ interface ChatIdContextType {
 const ChatIdContext = createContext<ChatIdContextType | undefined>(undefined);
 
 export function ChatIdProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
+
+  // On browser back/forward (popstate), force Next.js to re-fetch the RSC
+  // payload so initialMessages are never served from a stale RSC cache.
+  useEffect(() => {
+    const handlePopState = () => {
+      router.refresh();
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [router]);
+
   const [{ provisionalChatId, confirmedChatId }, setChatIdState] = useState<{
     provisionalChatId: string;
     confirmedChatId: string | null;
