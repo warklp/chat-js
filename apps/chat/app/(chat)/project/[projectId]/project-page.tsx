@@ -4,12 +4,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound, useParams } from "next/navigation";
 import type { ParamsOf } from "@/.next/types/routes";
 import { ChatSystem } from "@/components/chat-system";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { useTRPC } from "@/trpc/react";
 
 export function ProjectPage() {
   const { projectId } = useParams<ParamsOf<"/project/[projectId]">>();
-  const { id } = useChatId();
+  const { id } = useCurrentChat();
   const trpc = useTRPC();
 
   const { data: project } = useSuspenseQuery(

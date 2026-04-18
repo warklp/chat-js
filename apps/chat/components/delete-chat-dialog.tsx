@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteChat } from "@/hooks/chat-sync-hooks";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useCurrentChat } from "@/lib/chat-runtime";
 
 interface DeleteChatDialogProps {
   deleteId: string | null;
@@ -27,7 +27,7 @@ export function DeleteChatDialog({
   showDeleteDialog,
   setShowDeleteDialog,
 }: DeleteChatDialogProps) {
-  const { id: chatId, isPersisted, refreshChatID } = useChatId();
+  const { id: chatId, isPersisted, refreshChatID } = useCurrentChat();
   const router = useRouter();
   const { deleteChat } = useDeleteChat();
 

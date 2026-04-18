@@ -9,11 +9,11 @@ import {
   useGetChatMessagesQueryOptions,
 } from "@/hooks/chat-sync-hooks";
 import type { UiToolName } from "@/lib/ai/types";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { getDefaultThread } from "@/lib/thread-utils";
-import { useChatId } from "@/providers/chat-id-provider";
 
 export function ProjectChatPage() {
-  const { id } = useChatId();
+  const { id } = useCurrentChat();
   const params = useParams<ParamsOf<"/project/[projectId]/chat/[chatId]">>();
 
   const projectId = params.projectId;

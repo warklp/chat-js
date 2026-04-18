@@ -36,13 +36,13 @@ import {
   type SelectedModelValue,
   type UiToolName,
 } from "@/lib/ai/types";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { config } from "@/lib/config";
 import { processFilesForUpload } from "@/lib/files/upload-prep";
 import { useLastMessageId } from "@/lib/stores/hooks-base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import { cn, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
-import { useChatId } from "@/providers/chat-id-provider";
 import { useChatInput } from "@/providers/chat-input-provider";
 import { useChatModels } from "@/providers/chat-models-provider";
 import { useSession } from "@/providers/session-provider";
@@ -119,7 +119,7 @@ function PureMultimodalInput({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const addMessageToTree = useAddMessageToTree();
-  const { beginPendingPersistence } = useChatId();
+  const { beginPendingPersistence } = useCurrentChat();
   const pathname = usePathname();
   const router = useRouter();
   const {
@@ -317,11 +317,8 @@ function PureMultimodalInput({
       const projectMatch = pathname.match(PROJECT_ROUTE_REGEX);
       if (projectMatch) {
         const [, projectId] = projectMatch;
-        window.history.pushState(
-          {},
-          "",
-          `/project/${projectId}/chat/${chatIdToAdd}`
-        );
+        beginPendingPersistence(chatIdToAdd);
+        router.push(`/project/${projectId}/chat/${chatIdToAdd}`);
       }
     },
     [beginPendingPersistence, pathname, router, session?.user]

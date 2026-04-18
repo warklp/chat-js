@@ -7,7 +7,7 @@ import {
   useGetChatMessagesQueryOptions,
 } from "@/hooks/chat-sync-hooks";
 import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { useSession } from "@/providers/session-provider";
 
 function ChatPageContent({ chatId }: { chatId: string }) {
@@ -33,7 +33,7 @@ function ChatPageContent({ chatId }: { chatId: string }) {
 }
 
 export function ChatPage() {
-  const { id, isPersisted } = useChatId();
+  const { id, isPersisted } = useCurrentChat();
   const { data: session, isPending } = useSession();
 
   // Anonymous users can't access persisted chat pages

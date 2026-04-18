@@ -28,9 +28,9 @@ import {
 } from "@/hooks/chat-sync-hooks";
 import { usePublicChat } from "@/hooks/use-shared-chat";
 import type { Session } from "@/lib/auth";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import type { ProjectColorName, ProjectIconName } from "@/lib/project-icons";
 import { cn } from "@/lib/utils";
-import { useChatId } from "@/providers/chat-id-provider";
 import { ShareDialog } from "./share-button";
 
 interface HeaderBreadcrumbProps {
@@ -50,7 +50,7 @@ export function HeaderBreadcrumb({
   hasMessages,
   className,
 }: HeaderBreadcrumbProps) {
-  const { id: chatId, isPersisted, source } = useChatId();
+  const { id: chatId, isPersisted, source } = useCurrentChat();
   const isShared = source === "share";
   const isAuthenticated = !!user;
 

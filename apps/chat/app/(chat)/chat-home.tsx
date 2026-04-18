@@ -3,10 +3,10 @@ import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { ChatSystem } from "@/components/chat-system";
 import type { AppModelId } from "@/lib/ai/app-models";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useCurrentChat } from "@/lib/chat-runtime";
 
 export function ChatHome() {
-  const { id } = useChatId();
+  const { id } = useCurrentChat();
   const searchParams = useSearchParams();
   const overrideModelId = useMemo(() => {
     const value = searchParams.get("modelId");

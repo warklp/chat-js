@@ -29,9 +29,9 @@ When the user switches to a different chat or starts a new one, the key changes 
 
 ## Architecture
 
-### 1. `ChatIdProvider` Owns Draft Identity
+### 1. The Layout Runtime Owns Draft Identity
 
-The provider keeps a provisional id for writable routes that do not yet have a persisted chat id:
+The persistent chat shell keeps a provisional id for writable routes that do not yet have a persisted chat id:
 
 ```typescript
 const [{ provisionalChatId, confirmedChatId }, setChatIdState] = useState(() => ({
@@ -40,7 +40,7 @@ const [{ provisionalChatId, confirmedChatId }, setChatIdState] = useState(() => 
 }));
 ```
 
-For `/chat/:id`, the route id wins. For `/`, the provider exposes the current provisional id.
+For `/chat/:id`, the route id wins. For `/`, the runtime exposes the current provisional id.
 
 ### 2. The Writable Chat Runtime Lives In Layout
 
@@ -88,7 +88,7 @@ The remount strategy is preserved:
 
 ## Flow
 
-1. Visit `/` -> provider creates provisional id `abc123`
+1. Visit `/` -> layout runtime creates provisional id `abc123`
 2. Type and send -> local runtime still uses `abc123`
 3. Client persists under `abc123`
 4. Client navigates with `router.push("/chat/abc123")`

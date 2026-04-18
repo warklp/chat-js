@@ -5,13 +5,13 @@ import Image from "next/image";
 import { InternalLink } from "@/components/internal-link";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { config } from "@/lib/config";
-import { useChatId } from "@/providers/chat-id-provider";
 
 export function SidebarTopRow() {
   const { isMobile, openMobile, setOpenMobile, state, toggleSidebar } =
     useSidebar();
-  const { refreshChatID } = useChatId();
+  const { refreshChatID } = useCurrentChat();
   const isExpanded = isMobile ? openMobile : state === "expanded";
 
   return (

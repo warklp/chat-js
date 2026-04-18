@@ -5,6 +5,7 @@ import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PersistentChatShell } from "@/components/persistent-chat-shell";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import type { AppModelId } from "@/lib/ai/app-model-id";
+import { ChatRuntimeStateProvider } from "@/lib/chat-runtime";
 import { config } from "@/lib/config";
 import { isPlaywrightTestEnvironment } from "@/lib/constants";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
@@ -80,24 +81,25 @@ export default async function ChatLayout({
       <HydrateClient>
         <SessionProvider initialSession={session}>
           <ChatProviders>
-            <SidebarProvider defaultOpen={!isCollapsed}>
-              <AppSidebar />
-              <SidebarInset
-                style={
-                  {
-                    "--header-height": "calc(var(--spacing) * 13)",
-                  } as React.CSSProperties
-                }
-              >
-                <ChatModelsProvider models={chatModels}>
-                  <DefaultModelProvider defaultModel={defaultModel}>
-                    <KeyboardShortcuts />
-                    <PersistentChatShell />
-                    {children}
-                  </DefaultModelProvider>
-                </ChatModelsProvider>
-              </SidebarInset>
-            </SidebarProvider>
+            <ChatRuntimeStateProvider>
+              <SidebarProvider defaultOpen={!isCollapsed}>
+                <AppSidebar />
+                <SidebarInset
+                  style={
+                    {
+                      "--header-height": "calc(var(--spacing) * 13)",
+                    } as React.CSSProperties
+                  }
+                >
+                  <ChatModelsProvider models={chatModels}>
+                    <DefaultModelProvider defaultModel={defaultModel}>
+                      <KeyboardShortcuts />
+                      <PersistentChatShell>{children}</PersistentChatShell>
+                    </DefaultModelProvider>
+                  </ChatModelsProvider>
+                </SidebarInset>
+              </SidebarProvider>
+            </ChatRuntimeStateProvider>
           </ChatProviders>
         </SessionProvider>
       </HydrateClient>

@@ -13,10 +13,10 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getAnonymousSession } from "@/lib/anonymous-session-client";
+import { useChatRuntime, useCurrentChat } from "@/lib/chat-runtime";
 import type { Document, Project } from "@/lib/db/schema";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import type { UIChat } from "@/lib/types/ui-chat";
-import { useChatId } from "@/providers/chat-id-provider";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
 
@@ -68,7 +68,12 @@ export function useProject(
 export function useGetChatMessagesQueryOptions() {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const { id: chatId, isPendingPersistence, isPersisted, source } = useChatId();
+  const {
+    id: chatId,
+    isPendingPersistence,
+    isPersisted,
+    source,
+  } = useCurrentChat();
   const isShared = source === "share";
 
   return {
@@ -422,7 +427,7 @@ export function useSaveDocument(
 
 export function useDocuments(id: string, disable: boolean) {
   const trpc = useTRPC();
-  const { source } = useChatId();
+  const { source } = useCurrentChat();
   const isShared = source === "share";
   const { data: session } = useSession();
 
@@ -454,11 +459,11 @@ export function useGetAllChats(opts?: {
 export function useGetChatByIdQueryOptions(chatId: string) {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const { isPendingPersistence } = useChatId();
+  const { pendingPersistenceChatId } = useChatRuntime();
 
   return {
     ...trpc.chat.getChatById.queryOptions({ chatId }),
-    enabled: !!chatId && !!session?.user && !isPendingPersistence,
+    enabled: !!chatId && !!session?.user && pendingPersistenceChatId !== chatId,
   };
 }
 

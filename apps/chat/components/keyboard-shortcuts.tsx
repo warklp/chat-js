@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useCurrentChat } from "@/lib/chat-runtime";
 
 export function KeyboardShortcuts() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
-  const { refreshChatID } = useChatId();
+  const { refreshChatID } = useCurrentChat();
 
   // Keyboard shortcut for new chat
   useEffect(() => {

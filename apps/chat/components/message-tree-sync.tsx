@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useCurrentChat } from "@/lib/chat-runtime";
 import { useSetAllMessages } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
-import { useChatId } from "../providers/chat-id-provider";
 
 /**
  * Renderless component that syncs the server's message tree into the Zustand
@@ -13,7 +13,7 @@ import { useChatId } from "../providers/chat-id-provider";
  * switching) lives in the store (with-threads middleware).
  */
 export function MessageTreeSync() {
-  const { id, isPersisted, source } = useChatId();
+  const { id, isPersisted, source } = useCurrentChat();
   const isShared = source === "share";
   const trpc = useTRPC();
   const setAllMessages = useSetAllMessages();
