@@ -1,3 +1,5 @@
+import { ChatHome } from "./chat-home";
+
 export default function HomePage() {
-  return null;
+  return <ChatHome />;
 }

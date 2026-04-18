@@ -1,3 +1,5 @@
-export default async function ProjectPageRoute() {
-  return null;
+import { ProjectPage } from "./project-page";
+
+export default function ProjectPageRoute() {
+  return <ProjectPage />;
 }

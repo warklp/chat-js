@@ -5,13 +5,12 @@ import Image from "next/image";
 import { InternalLink } from "@/components/internal-link";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useCurrentChat } from "@/lib/chat-runtime";
 import { config } from "@/lib/config";
+import { resetHomeDraft } from "@/lib/home-draft-reset";
 
 export function SidebarTopRow() {
   const { isMobile, openMobile, setOpenMobile, state, toggleSidebar } =
     useSidebar();
-  const { refreshChatID } = useCurrentChat();
   const isExpanded = isMobile ? openMobile : state === "expanded";
 
   return (
@@ -22,7 +21,7 @@ export function SidebarTopRow() {
           href="/"
           onNavigate={() => {
             setOpenMobile(false);
-            refreshChatID();
+            resetHomeDraft();
           }}
         >
           <span className="flex cursor-pointer items-center gap-2 rounded-md p-1 font-semibold text-lg hover:bg-muted">

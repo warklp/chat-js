@@ -1,3 +1,5 @@
-export default async function ChatPageRoute() {
-  return null;
+import { ChatPage } from "./chat-page";
+
+export default function ChatPageRoute() {
+  return <ChatPage />;
 }

@@ -10,11 +10,15 @@ export function MainChatPanel({
   projectId,
   isReadonly,
   className,
+  persistedQueriesEnabled,
+  routeSource,
 }: {
   chatId: string;
   projectId?: string;
   isReadonly: boolean;
   className?: string;
+  persistedQueriesEnabled: boolean;
+  routeSource: "chat" | "home" | "project" | "share";
 }) {
   const { data: session } = useSession();
   const messageIds = useMessageIds() as string[];
@@ -27,7 +31,9 @@ export function MainChatPanel({
         className={"h-(--header-height)"}
         hasMessages={hasMessages}
         isReadonly={isReadonly}
+        persistedQueriesEnabled={persistedQueriesEnabled}
         projectId={projectId}
+        routeSource={routeSource}
         user={session?.user}
       />
 

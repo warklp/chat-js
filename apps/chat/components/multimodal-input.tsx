@@ -3,7 +3,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { useChatActions, useChatStoreApi } from "@ai-sdk-tools/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CameraIcon, FileIcon, ImageIcon, PlusIcon } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type React from "react";
 import {
   type ChangeEvent,
@@ -36,13 +36,22 @@ import {
   type SelectedModelValue,
   type UiToolName,
 } from "@/lib/ai/types";
-import { useCurrentChat } from "@/lib/chat-runtime";
+import {
+  createChatBootstrapEntry,
+  setChatBootstrap,
+} from "@/lib/chat-bootstrap";
+import { useCurrentChatRoute } from "@/lib/chat-route";
 import { config } from "@/lib/config";
+import {
+  buildDraftChatSubmission,
+  type ParallelRequestSpec,
+} from "@/lib/draft-chat-submission";
 import { processFilesForUpload } from "@/lib/files/upload-prep";
+import { resetHomeDraft, resetProjectDraft } from "@/lib/home-draft-reset";
 import { useLastMessageId } from "@/lib/stores/hooks-base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
-import { cn, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { cn, fetchWithErrorHandlers } from "@/lib/utils";
 import { useChatInput } from "@/providers/chat-input-provider";
 import { useChatModels } from "@/providers/chat-models-provider";
 import { useSession } from "@/providers/session-provider";
@@ -62,17 +71,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { LimitDisplay } from "./upgrade-cta/limit-display";
 import { LoginPrompt } from "./upgrade-cta/login-prompt";
 
-const PROJECT_ROUTE_REGEX = /^\/project\/([^/]+)$/;
 const PROJECT_CHAT_ROUTE_REGEX = /^\/project\/([^/]+)(?:\/chat\/[^/]+)?$/;
-
-interface ParallelRequestSpec {
-  assistantMessageId: string;
-  createdAt: Date;
-  isPrimary: boolean;
-  modelId: AppModelId;
-  parallelGroupId: string;
-  parallelIndex: number;
-}
 
 /** Derive accept string for images only */
 function getAcceptImages(acceptedTypes: Record<string, string[]>): string {
@@ -119,9 +118,8 @@ function PureMultimodalInput({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const addMessageToTree = useAddMessageToTree();
-  const { beginPendingPersistence } = useCurrentChat();
-  const pathname = usePathname();
   const router = useRouter();
+  const currentRoute = useCurrentChatRoute();
   const {
     setMessages,
     sendMessage,
@@ -299,31 +297,6 @@ function PureMultimodalInput({
     ]
   );
 
-  // Update URL when sending message in new chat or project
-  // Anonymous users stay on / - no URL redirect for them
-  const updateChatUrl = useCallback(
-    (chatIdToAdd: string) => {
-      if (!session?.user) {
-        return;
-      }
-
-      if (pathname === "/") {
-        beginPendingPersistence(chatIdToAdd);
-        router.push(`/chat/${chatIdToAdd}`);
-        return;
-      }
-
-      // Handle project routes: /project/:projectId -> /project/:projectId/chat/:chatId
-      const projectMatch = pathname.match(PROJECT_ROUTE_REGEX);
-      if (projectMatch) {
-        const [, projectId] = projectMatch;
-        beginPendingPersistence(chatIdToAdd);
-        router.push(`/project/${projectId}/chat/${chatIdToAdd}`);
-      }
-    },
-    [beginPendingPersistence, pathname, router, session?.user]
-  );
-
   const getCurrentProjectId = useCallback(() => {
     const projectMatch = window.location.pathname.match(
       PROJECT_CHAT_ROUTE_REGEX
@@ -381,6 +354,15 @@ function PureMultimodalInput({
     });
   }, [chatId, queryClient, trpc]);
 
+  const resetDraftRoute = useCallback(() => {
+    if (currentRoute.source === "project" && currentRoute.projectId) {
+      resetProjectDraft(currentRoute.projectId);
+      return;
+    }
+
+    resetHomeDraft();
+  }, [currentRoute.projectId, currentRoute.source]);
+
   const drainSecondaryParallelRequest = useCallback(
     async ({
       message,
@@ -432,6 +414,10 @@ function PureMultimodalInput({
       message: ChatMessage;
       secondaryRequestSpecs: ParallelRequestSpec[];
     }) => {
+      if (secondaryRequestSpecs.length === 0) {
+        return;
+      }
+
       await fetchWithErrorHandlers("/api/chat/prepare", {
         method: "POST",
         headers: {
@@ -501,52 +487,47 @@ function PureMultimodalInput({
       trimMessagesInEditMode(parentMessageId);
     }
 
-    const isParallelRequest =
-      parallelResponsesEnabled && requestedModelIds.length > 1;
-    const parallelGroupId = isParallelRequest ? generateUUID() : null;
-    const requestSpecs = isParallelRequest
-      ? requestedModelIds.map(
-          (modelId, parallelIndex): ParallelRequestSpec => ({
-            assistantMessageId: generateUUID(),
-            createdAt: new Date(Date.now() + parallelIndex),
-            isPrimary: parallelIndex === 0,
-            modelId,
-            parallelGroupId: parallelGroupId || generateUUID(),
-            parallelIndex,
-          })
-        )
-      : [];
-
-    const message: ChatMessage = {
-      id: generateUUID(),
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
-      metadata: {
-        createdAt: new Date(),
-        parentMessageId: effectiveParentMessageId,
-        parallelGroupId,
-        parallelIndex: null,
-        isPrimaryParallel: null,
-        selectedModel: normalizedSelectedModel,
-        activeStreamId: null,
-        selectedTool: selectedTool || undefined,
-      },
-      role: "user",
-    };
+    const { message, requestSpecs } = buildDraftChatSubmission({
+      attachments,
+      input,
+      normalizedSelectedModel,
+      parallelResponsesEnabled,
+      parentMessageId: effectiveParentMessageId,
+      selectedTool,
+    });
 
     onSendMessage?.(message);
 
-    const primaryRequest = requestSpecs[0];
+    const primaryRequest = requestSpecs[0] ?? null;
+
+    if (session?.user && currentRoute.type === "provisional") {
+      if (primaryRequest) {
+        handleModelChange(primaryRequest.modelId);
+      }
+
+      setChatBootstrap(
+        createChatBootstrapEntry({
+          chatId,
+          message,
+          projectId: currentRoute.projectId,
+          requestSpecs,
+        })
+      );
+
+      if (currentRoute.source === "project" && currentRoute.projectId) {
+        router.push(`/project/${currentRoute.projectId}/chat/${chatId}`);
+      } else {
+        router.push(`/chat/${chatId}`);
+      }
+
+      resetDraftRoute();
+
+      if (!isMobile) {
+        editorRef.current?.focus();
+      }
+
+      return;
+    }
 
     if (primaryRequest) {
       sendMessage(message, {
@@ -592,8 +573,6 @@ function PureMultimodalInput({
       addMessageToTree(message);
     }
 
-    updateChatUrl(chatId);
-
     // Refocus after submit
     if (!isMobile) {
       editorRef.current?.focus();
@@ -603,21 +582,25 @@ function PureMultimodalInput({
     attachments,
     isMobile,
     chatId,
+    currentRoute.projectId,
+    currentRoute.source,
+    currentRoute.type,
+    editorRef,
     handleModelChange,
     invalidatePersistedMessages,
-    selectedTool,
-    isEditMode,
     getInputValue,
-    parentMessageId,
-    normalizedSelectedModel,
-    editorRef,
+    isEditMode,
     lastMessageId,
+    normalizedSelectedModel,
     onSendMessage,
+    parentMessageId,
     parallelResponsesEnabled,
-    requestedModelIds,
+    resetDraftRoute,
     runParallelSecondaryRequests,
+    router,
+    selectedTool,
     sendMessage,
-    updateChatUrl,
+    session?.user,
     trimMessagesInEditMode,
   ]);
 

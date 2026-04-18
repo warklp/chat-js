@@ -1,7 +1,7 @@
 "use client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound, useParams } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ParamsOf } from "@/.next/types/routes";
 import { ChatSystem } from "@/components/chat-system";
 import {
@@ -9,17 +9,59 @@ import {
   useGetChatMessagesQueryOptions,
 } from "@/hooks/chat-sync-hooks";
 import type { UiToolName } from "@/lib/ai/types";
-import { useCurrentChat } from "@/lib/chat-runtime";
+import { getChatBootstrap, useChatBootstrap } from "@/lib/chat-bootstrap";
 import { getDefaultThread } from "@/lib/thread-utils";
 
 export function ProjectChatPage() {
-  const { id } = useCurrentChat();
   const params = useParams<ParamsOf<"/project/[projectId]/chat/[chatId]">>();
-
   const projectId = params.projectId;
-  const getChatByIdQueryOptions = useGetChatByIdQueryOptions(id);
+  const chatId = params.chatId;
+
+  if (!(chatId && projectId)) {
+    return notFound();
+  }
+
+  const liveBootstrapEntry = useChatBootstrap(chatId);
+  const [initialBootstrapEntry, setInitialBootstrapEntry] = useState(() =>
+    chatId ? (liveBootstrapEntry ?? getChatBootstrap(chatId)) : null
+  );
+
+  useEffect(() => {
+    if (liveBootstrapEntry) {
+      setInitialBootstrapEntry(liveBootstrapEntry);
+      return;
+    }
+
+    setInitialBootstrapEntry((currentEntry) =>
+      currentEntry?.chatId === chatId ? currentEntry : getChatBootstrap(chatId)
+    );
+  }, [chatId, liveBootstrapEntry]);
+
+  const handleBootstrapSettled = useCallback(() => {
+    setInitialBootstrapEntry(null);
+  }, []);
+
+  const bootstrapEntry = liveBootstrapEntry ?? initialBootstrapEntry;
+
+  if (bootstrapEntry) {
+    return (
+      <ChatSystem
+        bootstrapEntry={bootstrapEntry}
+        id={chatId}
+        initialMessages={bootstrapEntry.initialMessages}
+        isReadonly={false}
+        onBootstrapSettled={handleBootstrapSettled}
+        persistedQueriesEnabled={!liveBootstrapEntry}
+        projectId={projectId}
+        routeSource="project"
+      />
+    );
+  }
+
+  const getChatByIdQueryOptions = useGetChatByIdQueryOptions(chatId);
   const { data: chat } = useSuspenseQuery(getChatByIdQueryOptions);
-  const getMessagesByChatIdQueryOptions = useGetChatMessagesQueryOptions();
+  const getMessagesByChatIdQueryOptions =
+    useGetChatMessagesQueryOptions(chatId);
   const { data: messages } = useSuspenseQuery(getMessagesByChatIdQueryOptions);
 
   const initialThreadMessages = useMemo(() => {
@@ -50,10 +92,6 @@ export function ProjectChatPage() {
     return null;
   }, [messages]);
 
-  if (!id) {
-    return notFound();
-  }
-
   if (!chat) {
     return notFound();
   }
@@ -65,6 +103,7 @@ export function ProjectChatPage() {
       initialTool={initialTool}
       isReadonly={false}
       projectId={projectId}
+      routeSource="project"
     />
   );
 }

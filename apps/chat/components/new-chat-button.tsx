@@ -5,11 +5,10 @@ import { useEffect, useState } from "react";
 import { InternalLink } from "@/components/internal-link";
 import { getNewChatShortcutText } from "@/components/keyboard-shortcuts";
 import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
-import { useCurrentChat } from "@/lib/chat-runtime";
+import { resetHomeDraft } from "@/lib/home-draft-reset";
 
 export function NewChatButton() {
   const { setOpenMobile } = useSidebar();
-  const { refreshChatID } = useCurrentChat();
   const [shortcutText, setShortcutText] = useState("Ctrl+Shift+O");
 
   useEffect(() => {
@@ -23,7 +22,7 @@ export function NewChatButton() {
         href="/"
         onNavigate={() => {
           setOpenMobile(false);
-          refreshChatID();
+          resetHomeDraft();
         }}
       >
         <Plus aria-label="New Chat" size={16} />

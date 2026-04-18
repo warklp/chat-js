@@ -14,7 +14,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteChat } from "@/hooks/chat-sync-hooks";
-import { useCurrentChat } from "@/lib/chat-runtime";
+import { useCurrentChatRoute } from "@/lib/chat-route";
+import { resetHomeDraft, resetProjectDraft } from "@/lib/home-draft-reset";
 
 interface DeleteChatDialogProps {
   deleteId: string | null;
@@ -27,7 +28,7 @@ export function DeleteChatDialog({
   showDeleteDialog,
   setShowDeleteDialog,
 }: DeleteChatDialogProps) {
-  const { id: chatId, isPersisted, refreshChatID } = useCurrentChat();
+  const currentRoute = useCurrentChatRoute();
   const router = useRouter();
   const { deleteChat } = useDeleteChat();
 
@@ -47,16 +48,22 @@ export function DeleteChatDialog({
 
     setShowDeleteDialog(false);
 
-    if (deleteId === chatId && isPersisted) {
-      refreshChatID();
-      router.push("/");
+    if (deleteId === currentRoute.id && currentRoute.type === "chat") {
+      if (currentRoute.source === "project" && currentRoute.projectId) {
+        resetProjectDraft(currentRoute.projectId);
+        router.push(`/project/${currentRoute.projectId}`);
+      } else {
+        resetHomeDraft();
+        router.push("/");
+      }
     }
   }, [
     deleteId,
     deleteChat,
-    chatId,
-    isPersisted,
-    refreshChatID,
+    currentRoute.id,
+    currentRoute.projectId,
+    currentRoute.source,
+    currentRoute.type,
     router,
     setShowDeleteDialog,
   ]);

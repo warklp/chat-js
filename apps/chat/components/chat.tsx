@@ -16,11 +16,15 @@ export function Chat({
   initialMessages: _initialMessages,
   isReadonly,
   projectId,
+  persistedQueriesEnabled,
+  routeSource,
 }: {
   id: string;
   initialMessages: ChatMessage[];
   isReadonly: boolean;
   projectId?: string;
+  persistedQueriesEnabled: boolean;
+  routeSource: "chat" | "home" | "project" | "share";
 }) {
   const isSecondaryPanelVisible = useArtifactSelector(
     (state) => state.isVisible
@@ -33,7 +37,9 @@ export function Chat({
           chatId={id}
           className="flex h-full min-w-0 flex-1 flex-col"
           isReadonly={isReadonly}
+          persistedQueriesEnabled={persistedQueriesEnabled}
           projectId={projectId}
+          routeSource={routeSource}
         />
       </ChatLayoutMain>
 

@@ -13,14 +13,18 @@ function PureChatHeader({
   chatId,
   isReadonly,
   hasMessages,
+  persistedQueriesEnabled,
   projectId,
+  routeSource,
   user,
   className,
 }: {
   chatId: string;
   isReadonly: boolean;
   hasMessages: boolean;
+  persistedQueriesEnabled: boolean;
   projectId?: string;
+  routeSource: "chat" | "home" | "project" | "share";
   user?: Session["user"];
   className?: string;
 }) {
@@ -39,7 +43,9 @@ function PureChatHeader({
             className="ml-2"
             hasMessages={hasMessages}
             isReadonly={isReadonly}
+            persistedQueriesEnabled={persistedQueriesEnabled}
             projectId={projectId}
+            routeSource={routeSource}
             user={user}
           />
         </div>

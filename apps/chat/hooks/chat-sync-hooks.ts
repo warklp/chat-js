@@ -13,7 +13,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getAnonymousSession } from "@/lib/anonymous-session-client";
-import { useChatRuntime, useCurrentChat } from "@/lib/chat-runtime";
+import { useCurrentChatRoute } from "@/lib/chat-route";
 import type { Document, Project } from "@/lib/db/schema";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import type { UIChat } from "@/lib/types/ui-chat";
@@ -65,24 +65,13 @@ export function useProject(
   });
 }
 
-export function useGetChatMessagesQueryOptions() {
+export function useGetChatMessagesQueryOptions(chatId: string) {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const {
-    id: chatId,
-    isPendingPersistence,
-    isPersisted,
-    source,
-  } = useCurrentChat();
-  const isShared = source === "share";
 
   return {
     ...trpc.chat.getChatMessages.queryOptions({ chatId: chatId || "" }),
-    enabled:
-      !!chatId &&
-      !isPendingPersistence &&
-      isPersisted &&
-      (isShared || !!session?.user),
+    enabled: !!chatId && !!session?.user,
   };
 }
 
@@ -427,7 +416,7 @@ export function useSaveDocument(
 
 export function useDocuments(id: string, disable: boolean) {
   const trpc = useTRPC();
-  const { source } = useCurrentChat();
+  const { source } = useCurrentChatRoute();
   const isShared = source === "share";
   const { data: session } = useSession();
 
@@ -456,19 +445,19 @@ export function useGetAllChats(opts?: {
   });
 }
 
-export function useGetChatByIdQueryOptions(chatId: string) {
+export function useGetChatByIdQueryOptions(chatId?: string | null) {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const { pendingPersistenceChatId } = useChatRuntime();
+  const normalizedChatId = chatId ?? "";
 
   return {
-    ...trpc.chat.getChatById.queryOptions({ chatId }),
-    enabled: !!chatId && !!session?.user && pendingPersistenceChatId !== chatId,
+    ...trpc.chat.getChatById.queryOptions({ chatId: normalizedChatId }),
+    enabled: !!normalizedChatId && !!session?.user,
   };
 }
 
 export function useGetChatById(
-  chatId: string,
+  chatId?: string | null,
   { enabled }: { enabled?: boolean } = {}
 ) {
   const options = useGetChatByIdQueryOptions(chatId);

@@ -49,7 +49,6 @@ import {
   getProjectById,
   getUserById,
   saveChatIfNotExists,
-  saveMessage,
   saveMessageIfNotExists,
   updateMessage,
   updateMessageActiveStreamId,
@@ -506,8 +505,9 @@ async function executeChatRequest({
   const streamId = generateUUID();
 
   if (!isAnonymous) {
-    // Save placeholder assistant message immediately (needed for document creation)
-    await saveMessage({
+    // The bootstrap request can be replayed before chatConfirmed arrives, so
+    // creating the placeholder must be idempotent.
+    await saveMessageIfNotExists({
       id: messageId,
       chatId,
       message: {
@@ -525,6 +525,11 @@ async function executeChatRequest({
           activeStreamId: streamId,
         },
       },
+    });
+
+    await updateMessageActiveStreamId({
+      id: messageId,
+      activeStreamId: streamId,
     });
   }
 
@@ -812,6 +817,20 @@ export async function POST(request: NextRequest) {
       return new ChatSDKError("bad_request:api").toResponse();
     }
 
+    log.info(
+      {
+        chatId,
+        userMessageId: userMessage.id,
+        projectId: projectId ?? null,
+        assistantMessageId: assistantMessageId ?? null,
+        requestSelectedModelId: requestSelectedModelId ?? null,
+        parallelGroupId: parallelGroupId ?? null,
+        parallelIndex: parallelIndex ?? null,
+        isPrimaryParallel: isPrimaryParallel ?? null,
+      },
+      "POST /api/chat received"
+    );
+
     const selectedModelId = resolveSelectedModelId({
       requestSelectedModelId,
       selectedModel: userMessage.metadata.selectedModel,
@@ -821,6 +840,15 @@ export async function POST(request: NextRequest) {
       log.warn("No selectedModel in user message metadata");
       return new ChatSDKError("bad_request:api").toResponse();
     }
+
+    log.info(
+      {
+        chatId,
+        selectedModelId,
+        selectedTool: userMessage.metadata.selectedTool ?? null,
+      },
+      "POST /api/chat resolved selection"
+    );
 
     const sessionSetup = await validateAndSetupSession({
       request,

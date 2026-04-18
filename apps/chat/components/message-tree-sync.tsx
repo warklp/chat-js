@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
-import { useCurrentChat } from "@/lib/chat-runtime";
 import { useSetAllMessages } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
 
@@ -12,8 +11,15 @@ import { useTRPC } from "@/trpc/react";
  * store and handles home-page reset. Tree logic (sibling info, thread
  * switching) lives in the store (with-threads middleware).
  */
-export function MessageTreeSync() {
-  const { id, isPersisted, source } = useCurrentChat();
+export function MessageTreeSync({
+  chatId: id,
+  persistedQueriesEnabled,
+  source,
+}: {
+  chatId: string;
+  persistedQueriesEnabled: boolean;
+  source: "chat" | "home" | "project" | "share";
+}) {
   const isShared = source === "share";
   const trpc = useTRPC();
   const setAllMessages = useSetAllMessages();
@@ -23,7 +29,7 @@ export function MessageTreeSync() {
     ...(isShared
       ? trpc.chat.getPublicChatMessages.queryOptions({ chatId: id })
       : trpc.chat.getChatMessages.queryOptions({ chatId: id })),
-    enabled: !!id && isPersisted,
+    enabled: !!id && persistedQueriesEnabled,
   });
 
   // Sync server data → store whenever React Query resolves

@@ -3,10 +3,12 @@ import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { ChatSystem } from "@/components/chat-system";
 import type { AppModelId } from "@/lib/ai/app-models";
-import { useCurrentChat } from "@/lib/chat-runtime";
+import { useHomeDraftVersion } from "@/lib/home-draft-reset";
+import { generateUUID } from "@/lib/utils";
 
 export function ChatHome() {
-  const { id } = useCurrentChat();
+  const draftVersion = useHomeDraftVersion();
+  const id = useMemo(() => generateUUID(), [draftVersion]);
   const searchParams = useSearchParams();
   const overrideModelId = useMemo(() => {
     const value = searchParams.get("modelId");
@@ -18,6 +20,8 @@ export function ChatHome() {
       initialMessages={[]}
       isReadonly={false}
       overrideModelId={overrideModelId}
+      persistedQueriesEnabled={false}
+      routeSource="home"
     />
   );
 }
