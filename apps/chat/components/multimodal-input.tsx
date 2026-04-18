@@ -3,6 +3,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { useChatActions, useChatStoreApi } from "@ai-sdk-tools/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CameraIcon, FileIcon, ImageIcon, PlusIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import {
   type ChangeEvent,
@@ -118,7 +119,9 @@ function PureMultimodalInput({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const addMessageToTree = useAddMessageToTree();
-  useChatId();
+  const { beginPendingPersistence } = useChatId();
+  const pathname = usePathname();
+  const router = useRouter();
   const {
     setMessages,
     sendMessage,
@@ -304,14 +307,14 @@ function PureMultimodalInput({
         return;
       }
 
-      const currentPath = window.location.pathname;
-      if (currentPath === "/") {
-        window.history.pushState({}, "", `/chat/${chatIdToAdd}`);
+      if (pathname === "/") {
+        beginPendingPersistence(chatIdToAdd);
+        router.push(`/chat/${chatIdToAdd}`);
         return;
       }
 
       // Handle project routes: /project/:projectId -> /project/:projectId/chat/:chatId
-      const projectMatch = currentPath.match(PROJECT_ROUTE_REGEX);
+      const projectMatch = pathname.match(PROJECT_ROUTE_REGEX);
       if (projectMatch) {
         const [, projectId] = projectMatch;
         window.history.pushState(
@@ -321,7 +324,7 @@ function PureMultimodalInput({
         );
       }
     },
-    [session?.user]
+    [beginPendingPersistence, pathname, router, session?.user]
   );
 
   const getCurrentProjectId = useCallback(() => {

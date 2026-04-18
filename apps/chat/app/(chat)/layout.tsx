@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { getChatModels } from "@/app/actions/get-chat-models";
 import { AppSidebar } from "@/components/app-sidebar";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { PersistentChatShell } from "@/components/persistent-chat-shell";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import type { AppModelId } from "@/lib/ai/app-model-id";
 import { config } from "@/lib/config";
@@ -91,7 +92,7 @@ export default async function ChatLayout({
                 <ChatModelsProvider models={chatModels}>
                   <DefaultModelProvider defaultModel={defaultModel}>
                     <KeyboardShortcuts />
-
+                    <PersistentChatShell />
                     {children}
                   </DefaultModelProvider>
                 </ChatModelsProvider>

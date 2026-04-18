@@ -8,6 +8,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
+import { useChatId } from "@/providers/chat-id-provider";
 
 interface SuggestedActionsProps {
   chatId: string;
@@ -28,6 +30,8 @@ function PureSuggestedActions({
   className,
 }: SuggestedActionsProps) {
   const { sendMessage } = useChatActions<ChatMessage>();
+  const { beginPendingPersistence } = useChatId();
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(
     () =>
@@ -117,7 +121,8 @@ function PureSuggestedActions({
     }
 
     setSelectedCategoryId(null);
-    window.history.pushState({}, "", `/chat/${chatId}`);
+    beginPendingPersistence(chatId);
+    router.push(`/chat/${chatId}`);
 
     sendMessage(
       {

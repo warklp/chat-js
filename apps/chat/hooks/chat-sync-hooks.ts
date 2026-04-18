@@ -68,12 +68,16 @@ export function useProject(
 export function useGetChatMessagesQueryOptions() {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const { id: chatId, isPersisted, source } = useChatId();
+  const { id: chatId, isPendingPersistence, isPersisted, source } = useChatId();
   const isShared = source === "share";
 
   return {
     ...trpc.chat.getChatMessages.queryOptions({ chatId: chatId || "" }),
-    enabled: !!chatId && isPersisted && (isShared || !!session?.user),
+    enabled:
+      !!chatId &&
+      !isPendingPersistence &&
+      isPersisted &&
+      (isShared || !!session?.user),
   };
 }
 
@@ -450,10 +454,11 @@ export function useGetAllChats(opts?: {
 export function useGetChatByIdQueryOptions(chatId: string) {
   const { data: session } = useSession();
   const trpc = useTRPC();
+  const { isPendingPersistence } = useChatId();
 
   return {
     ...trpc.chat.getChatById.queryOptions({ chatId }),
-    enabled: !!chatId && !!session?.user,
+    enabled: !!chatId && !!session?.user && !isPendingPersistence,
   };
 }
 
