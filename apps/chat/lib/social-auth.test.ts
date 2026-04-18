@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getEnabledSocialAuthProviders,
   isSocialAuthProvider,
   sortSocialAuthProvidersByLastUsed,
 } from "./social-auth";
@@ -37,5 +38,27 @@ describe("sortSocialAuthProvidersByLastUsed", () => {
         ({ id }) => id
       )
     ).toEqual(["google", "github", "vercel"]);
+  });
+});
+
+describe("getEnabledSocialAuthProviders", () => {
+  it("derives enabled providers from authentication config", () => {
+    expect(
+      getEnabledSocialAuthProviders({
+        github: true,
+        google: false,
+        vercel: true,
+      })
+    ).toEqual(["github", "vercel"]);
+  });
+
+  it("returns providers in config order", () => {
+    expect(
+      getEnabledSocialAuthProviders({
+        github: true,
+        google: true,
+        vercel: false,
+      })
+    ).toEqual(["google", "github"]);
   });
 });

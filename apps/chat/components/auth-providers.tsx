@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
 import {
+  getEnabledSocialAuthProviders,
   isSocialAuthProvider,
   type SocialAuthProvider,
   type SocialAuthSignInOptions,
@@ -50,11 +51,25 @@ function VercelIcon({ className }: { className?: string }) {
 }
 
 type AuthProviderDefinition = {
-  enabled: boolean;
   icon: ComponentType<{ className?: string }>;
   id: SocialAuthProvider;
   label: string;
 };
+
+const AUTH_PROVIDER_METADATA = {
+  github: {
+    icon: Github,
+    label: "GitHub",
+  },
+  google: {
+    icon: GoogleIcon,
+    label: "Google",
+  },
+  vercel: {
+    icon: VercelIcon,
+    label: "Vercel",
+  },
+} satisfies Record<SocialAuthProvider, Omit<AuthProviderDefinition, "id">>;
 
 export function SocialAuthProviders({
   callbackURL,
@@ -75,29 +90,15 @@ export function SocialAuthProviders({
     useState<SocialAuthProvider | null>(null);
 
   const providers = useMemo<AuthProviderDefinition[]>(() => {
-    const providerDefinitions = [
-      {
-        enabled: config.authentication.google,
-        icon: GoogleIcon,
-        id: "google",
-        label: "Google",
-      },
-      {
-        enabled: config.authentication.github,
-        icon: Github,
-        id: "github",
-        label: "GitHub",
-      },
-      {
-        enabled: config.authentication.vercel,
-        icon: VercelIcon,
-        id: "vercel",
-        label: "Vercel",
-      },
-    ] satisfies AuthProviderDefinition[];
+    const providerDefinitions = getEnabledSocialAuthProviders(
+      config.authentication
+    ).map((id) => ({
+      id,
+      ...AUTH_PROVIDER_METADATA[id],
+    }));
 
     return sortSocialAuthProvidersByLastUsed(
-      providerDefinitions.filter(({ enabled }) => enabled),
+      providerDefinitions,
       lastUsedProvider
     );
   }, [lastUsedProvider]);
