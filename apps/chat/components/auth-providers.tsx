@@ -2,7 +2,7 @@
 
 import { Github } from "lucide-react";
 import type { ComponentType } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Badge } from "@/components/ui/badge";
@@ -86,8 +86,10 @@ export function SocialAuthProviders({
   query?: Record<string, string>;
   signInOptions?: SocialAuthSignInOptions;
 } = {}) {
-  const [lastUsedProvider, setLastUsedProvider] =
-    useState<SocialAuthProvider | null>(null);
+  const [lastUsedProvider] = useState<SocialAuthProvider | null>(() => {
+    const remembered = authClient.getLastUsedLoginMethod();
+    return isSocialAuthProvider(remembered) ? remembered : null;
+  });
 
   const providers = useMemo<AuthProviderDefinition[]>(() => {
     const providerDefinitions = getEnabledSocialAuthProviders(
@@ -102,11 +104,6 @@ export function SocialAuthProviders({
       lastUsedProvider
     );
   }, [lastUsedProvider]);
-
-  const [lastUsedProvider, setLastUsedProvider] = useState<SocialAuthProvider | null>(() => {
-    const remembered = authClient.getLastUsedLoginMethod();
-    return isSocialAuthProvider(remembered) ? remembered : null;
-  });
 
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
