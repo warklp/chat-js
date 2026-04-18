@@ -103,12 +103,10 @@ export function SocialAuthProviders({
     );
   }, [lastUsedProvider]);
 
-  useEffect(() => {
-    const rememberedProvider = authClient.getLastUsedLoginMethod();
-    setLastUsedProvider(
-      isSocialAuthProvider(rememberedProvider) ? rememberedProvider : null
-    );
-  }, []);
+  const [lastUsedProvider, setLastUsedProvider] = useState<SocialAuthProvider | null>(() => {
+    const remembered = authClient.getLastUsedLoginMethod();
+    return isSocialAuthProvider(remembered) ? remembered : null;
+  });
 
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
