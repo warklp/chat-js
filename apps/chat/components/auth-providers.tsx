@@ -1,12 +1,21 @@
 "use client";
 
 import { Github } from "lucide-react";
+import type { ComponentType } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
-import type { SocialAuthSignInOptions } from "@/lib/social-auth";
+import {
+  getEnabledSocialAuthProviders,
+  isSocialAuthProvider,
+  type SocialAuthProvider,
+  type SocialAuthSignInOptions,
+  sortSocialAuthProvidersByLastUsed,
+} from "@/lib/social-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -41,6 +50,27 @@ function VercelIcon({ className }: { className?: string }) {
   );
 }
 
+type AuthProviderDefinition = {
+  icon: ComponentType<{ className?: string }>;
+  id: SocialAuthProvider;
+  label: string;
+};
+
+const AUTH_PROVIDER_METADATA = {
+  github: {
+    icon: Github,
+    label: "GitHub",
+  },
+  google: {
+    icon: GoogleIcon,
+    label: "Google",
+  },
+  vercel: {
+    icon: VercelIcon,
+    label: "Vercel",
+  },
+} satisfies Record<SocialAuthProvider, Omit<AuthProviderDefinition, "id">>;
+
 export function SocialAuthProviders({
   callbackURL,
   electronBrowserLabel,
@@ -56,6 +86,25 @@ export function SocialAuthProviders({
   query?: Record<string, string>;
   signInOptions?: SocialAuthSignInOptions;
 } = {}) {
+  const [lastUsedProvider] = useState<SocialAuthProvider | null>(() => {
+    const remembered = authClient.getLastUsedLoginMethod();
+    return isSocialAuthProvider(remembered) ? remembered : null;
+  });
+
+  const providers = useMemo<AuthProviderDefinition[]>(() => {
+    const providerDefinitions = getEnabledSocialAuthProviders(
+      config.authentication
+    ).map((id) => ({
+      id,
+      ...AUTH_PROVIDER_METADATA[id],
+    }));
+
+    return sortSocialAuthProvidersByLastUsed(
+      providerDefinitions,
+      lastUsedProvider
+    );
+  }, [lastUsedProvider]);
+
   // In the Electron app, use the @better-auth/electron bridges exposed by
   // setupRenderer() in the preload script. requestAuth() opens the sign-in
   // URL in the user's default browser with the proper PKCE params.
@@ -63,7 +112,7 @@ export function SocialAuthProviders({
     return <ElectronBrowserSignIn buttonLabel={electronBrowserLabel} />;
   }
 
-  async function signIn(provider: "google" | "github" | "vercel") {
+  async function signIn(provider: SocialAuthProvider) {
     try {
       const result = await authClient.signIn.social({
         provider,
@@ -86,39 +135,30 @@ export function SocialAuthProviders({
 
   return (
     <div className="space-y-2">
-      {config.authentication.google ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("google")}
-          type="button"
-          variant="outline"
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Continue with Google
-        </Button>
-      ) : null}
-      {config.authentication.github ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("github")}
-          type="button"
-          variant="outline"
-        >
-          <Github className="mr-2 h-4 w-4" />
-          Continue with GitHub
-        </Button>
-      ) : null}
-      {config.authentication.vercel ? (
-        <Button
-          className="w-full"
-          onClick={() => signIn("vercel")}
-          type="button"
-          variant="outline"
-        >
-          <VercelIcon className="mr-2 h-4 w-4" />
-          Continue with Vercel
-        </Button>
-      ) : null}
+      {providers.map(({ icon: Icon, id, label }) => {
+        const isLastUsed = id === lastUsedProvider;
+
+        return (
+          <Button
+            className="relative w-full"
+            key={id}
+            onClick={() => signIn(id)}
+            type="button"
+            variant="outline"
+          >
+            <Icon className="mr-2 h-4 w-4" />
+            Continue with {label}
+            {isLastUsed ? (
+              <Badge
+                className="absolute top-0 right-2 h-5 -translate-y-1/2 px-1.5 text-[10px]"
+                variant="default"
+              >
+                Last used
+              </Badge>
+            ) : null}
+          </Button>
+        );
+      })}
     </div>
   );
 }
