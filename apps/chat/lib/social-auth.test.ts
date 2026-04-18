@@ -27,9 +27,7 @@ describe("sortSocialAuthProvidersByLastUsed", () => {
 
   it("moves the remembered provider to the front", () => {
     expect(
-      sortSocialAuthProvidersByLastUsed(providers, "github").map(
-        ({ id }) => id
-      )
+      sortSocialAuthProvidersByLastUsed(providers, "github").map(({ id }) => id)
     ).toEqual(["github", "google", "vercel"]);
   });
 

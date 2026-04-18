@@ -1,8 +1,8 @@
 "use client";
 
+import { Github } from "lucide-react";
 import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Github } from "lucide-react";
 import { toast } from "sonner";
 import { ElectronBrowserSignIn } from "@/components/electron-auth-ui";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,9 @@ import authClient from "@/lib/auth-client";
 import { config } from "@/lib/config";
 import {
   isSocialAuthProvider,
-  sortSocialAuthProvidersByLastUsed,
   type SocialAuthProvider,
   type SocialAuthSignInOptions,
+  sortSocialAuthProvidersByLastUsed,
 } from "@/lib/social-auth";
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -144,18 +144,19 @@ export function SocialAuthProviders({
 
         return (
           <Button
-            className="w-full justify-between"
+            className="relative w-full"
             key={id}
             onClick={() => signIn(id)}
             type="button"
             variant="outline"
           >
-            <span className="flex items-center">
-              <Icon className="mr-2 h-4 w-4" />
-              Continue with {label}
-            </span>
+            <Icon className="mr-2 h-4 w-4" />
+            Continue with {label}
             {isLastUsed ? (
-              <Badge className="ml-3 shrink-0" variant="secondary">
+              <Badge
+                className="absolute top-0 right-2 h-5 -translate-y-1/2 px-1.5 text-[10px]"
+                variant="default"
+              >
                 Last used
               </Badge>
             ) : null}
