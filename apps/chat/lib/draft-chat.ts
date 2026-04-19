@@ -56,14 +56,6 @@ export function resetDraftChatId(projectId?: string | null) {
   emitChange();
 }
 
-function useDraftVersion(projectId?: string | null) {
-  return useSyncExternalStore(
-    subscribe,
-    () => getDraftVersion(projectId),
-    () => getDraftVersion(projectId)
-  );
-}
-
 export function useDraftChatId(projectId?: string | null) {
   return useSyncExternalStore(
     subscribe,
