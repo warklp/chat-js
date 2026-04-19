@@ -9,22 +9,20 @@ import {
 import { MainChatPanel } from "@/components/chat/main-chat-panel";
 import { SecondaryChatPanel } from "@/components/chat/secondary-chat-panel";
 import { useArtifactSelector } from "@/hooks/use-artifact";
-import type { ChatMessage } from "@/lib/ai/types";
+import type { ChatRouteSource } from "@/lib/chat-route";
 
 export function Chat({
   id,
-  initialMessages: _initialMessages,
   isReadonly,
   projectId,
   persistedQueriesEnabled,
   routeSource,
 }: {
   id: string;
-  initialMessages: ChatMessage[];
   isReadonly: boolean;
   projectId?: string;
   persistedQueriesEnabled: boolean;
-  routeSource: "chat" | "home" | "project" | "share";
+  routeSource: ChatRouteSource;
 }) {
   const isSecondaryPanelVisible = useArtifactSelector(
     (state) => state.isVisible

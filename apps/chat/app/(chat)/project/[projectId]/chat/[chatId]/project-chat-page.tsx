@@ -1,15 +1,13 @@
 "use client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound, useParams } from "next/navigation";
-import { useMemo } from "react";
 import type { ParamsOf } from "@/.next/types/routes";
 import { ChatSystem } from "@/components/chat-system";
 import {
   useGetChatByIdQueryOptions,
   useGetChatMessagesQueryOptions,
 } from "@/hooks/chat-sync-hooks";
-import type { UiToolName } from "@/lib/ai/types";
-import { getDefaultThread } from "@/lib/thread-utils";
+import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
 import { useResolvedChatBootstrap } from "@/lib/use-resolved-chat-bootstrap";
 
 function ProjectChatPageContent({
@@ -24,34 +22,7 @@ function ProjectChatPageContent({
   const getMessagesByChatIdQueryOptions =
     useGetChatMessagesQueryOptions(chatId);
   const { data: messages } = useSuspenseQuery(getMessagesByChatIdQueryOptions);
-
-  const initialThreadMessages = useMemo(() => {
-    if (!messages) {
-      return [];
-    }
-    return getDefaultThread(
-      messages.map((msg) => ({ ...msg, id: msg.id.toString() }))
-    );
-  }, [messages]);
-
-  const initialTool = useMemo<UiToolName | null>(() => {
-    const lastAssistantMessage = messages?.findLast(
-      (m) => m.role === "assistant"
-    );
-    if (!(lastAssistantMessage && Array.isArray(lastAssistantMessage.parts))) {
-      return null;
-    }
-    for (const part of lastAssistantMessage.parts) {
-      if (
-        part?.type === "tool-deepResearch" &&
-        part?.state === "output-available" &&
-        part?.output?.format === "clarifying_questions"
-      ) {
-        return "deepResearch";
-      }
-    }
-    return null;
-  }, [messages]);
+  const { initialMessages, initialTool } = useChatSystemInitialState(messages);
 
   if (!chat) {
     return notFound();
@@ -60,7 +31,7 @@ function ProjectChatPageContent({
   return (
     <ChatSystem
       id={chat.id}
-      initialMessages={initialThreadMessages}
+      initialMessages={initialMessages}
       initialTool={initialTool}
       isReadonly={false}
       projectId={projectId}

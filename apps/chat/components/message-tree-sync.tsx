@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import { useSetAllMessages } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
 
@@ -18,7 +19,7 @@ export function MessageTreeSync({
 }: {
   chatId: string;
   persistedQueriesEnabled: boolean;
-  source: "chat" | "home" | "project" | "share";
+  source: ChatRouteSource;
 }) {
   const isShared = source === "share";
   const trpc = useTRPC();

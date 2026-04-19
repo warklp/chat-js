@@ -787,9 +787,118 @@ async function finalizeMessageAndCredits({
   }
 }
 
+type ChatPostBody = {
+  assistantMessageId?: string;
+  id: string;
+  isPrimaryParallel?: boolean | null;
+  message: ChatMessage;
+  parallelGroupId?: string | null;
+  parallelIndex?: number | null;
+  prevMessages: ChatMessage[];
+  projectId?: string;
+  selectedModelId?: AppModelId;
+};
+
+type ChatPostBodyResult =
+  | { success: false; error: Response }
+  | { success: true; body: ChatPostBody };
+
+async function readChatPostBody(
+  request: NextRequest
+): Promise<ChatPostBodyResult> {
+  const body = (await request.json()) as ChatPostBody;
+
+  if (!body.message) {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  return { success: true, body };
+}
+
+async function prepareChatPersistenceAndCredits({
+  anonymousSession,
+  chatId,
+  projectId,
+  userId,
+  userMessage,
+}: {
+  anonymousSession: AnonymousSession | null;
+  chatId: string;
+  projectId?: string;
+  userId: string | null;
+  userMessage: ChatMessage;
+}): Promise<{ error: Response } | { isNewChat: boolean }> {
+  if (userId) {
+    return handleUserValidationAndCredits({
+      chatId,
+      userId,
+      userMessage,
+      projectId,
+    });
+  }
+
+  if (anonymousSession) {
+    // Cookies must be updated before streaming starts.
+    await setAnonymousSession({
+      ...anonymousSession,
+      remainingCredits: anonymousSession.remainingCredits - 1,
+    });
+  }
+
+  return { isNewChat: false };
+}
+
+async function prepareChatExecutionInputs({
+  anonymousPreviousMessages,
+  chatId,
+  isAnonymous,
+  userId,
+  userMessage,
+}: {
+  anonymousPreviousMessages: ChatMessage[];
+  chatId: string;
+  isAnonymous: boolean;
+  userId: string | null;
+  userMessage: ChatMessage;
+}): Promise<
+  | { error: Response }
+  | { mcpConnectors: McpConnector[]; previousMessages: ChatMessage[] }
+> {
+  const [contextResult, mcpConnectors] = await Promise.all([
+    prepareRequestContext({
+      userMessage,
+      chatId,
+      isAnonymous,
+      anonymousPreviousMessages,
+    }),
+    config.ai.tools.mcp.enabled && userId && !isAnonymous
+      ? getMcpConnectorsByUserId({ userId })
+      : Promise.resolve([]),
+  ]);
+
+  if (contextResult.error) {
+    return { error: contextResult.error };
+  }
+
+  return {
+    previousMessages: contextResult.previousMessages,
+    mcpConnectors,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const log = createModuleLogger("api:chat");
   try {
+    const bodyResult = await readChatPostBody(request);
+
+    if (!bodyResult.success) {
+      log.warn("No user message found");
+      return bodyResult.error;
+    }
+
     const {
       id: chatId,
       message: userMessage,
@@ -800,22 +909,7 @@ export async function POST(request: NextRequest) {
       parallelGroupId,
       parallelIndex,
       isPrimaryParallel,
-    }: {
-      id: string;
-      message: ChatMessage;
-      prevMessages: ChatMessage[];
-      projectId?: string;
-      assistantMessageId?: string;
-      selectedModelId?: AppModelId;
-      parallelGroupId?: string | null;
-      parallelIndex?: number | null;
-      isPrimaryParallel?: boolean | null;
-    } = await request.json();
-
-    if (!userMessage) {
-      log.warn("No user message found");
-      return new ChatSDKError("bad_request:api").toResponse();
-    }
+    } = bodyResult.body;
 
     log.info(
       {
@@ -860,50 +954,33 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, isAnonymous, anonymousSession } = sessionSetup;
+    const persistenceResult = await prepareChatPersistenceAndCredits({
+      anonymousSession,
+      chatId,
+      projectId,
+      userId,
+      userMessage,
+    });
 
-    const selectedTool = userMessage.metadata.selectedTool ?? null;
-    let isNewChat = false;
-
-    // Handle authenticated user validation and credit check
-    if (userId) {
-      const result = await handleUserValidationAndCredits({
-        chatId,
-        userId,
-        userMessage,
-        projectId,
-      });
-      if ("error" in result) {
-        return result.error;
-      }
-      isNewChat = result.isNewChat;
-    } else if (anonymousSession) {
-      // Pre-deduct credits for anonymous users (cookies must be set before streaming)
-      await setAnonymousSession({
-        ...anonymousSession,
-        remainingCredits: anonymousSession.remainingCredits - 1,
-      });
+    if ("error" in persistenceResult) {
+      return persistenceResult.error;
     }
 
-    const explicitlyRequestedTools =
-      determineExplicitlyRequestedTools(selectedTool);
+    const executionInputs = await prepareChatExecutionInputs({
+      anonymousPreviousMessages,
+      chatId,
+      isAnonymous,
+      userId,
+      userMessage,
+    });
 
-    const [contextResult, mcpConnectors] = await Promise.all([
-      prepareRequestContext({
-        userMessage,
-        chatId,
-        isAnonymous,
-        anonymousPreviousMessages,
-      }),
-      config.ai.tools.mcp.enabled && userId && !isAnonymous
-        ? getMcpConnectorsByUserId({ userId })
-        : Promise.resolve([]),
-    ]);
-
-    if (contextResult.error) {
-      return contextResult.error;
+    if ("error" in executionInputs) {
+      return executionInputs.error;
     }
 
-    const { previousMessages } = contextResult;
+    const explicitlyRequestedTools = determineExplicitlyRequestedTools(
+      userMessage.metadata.selectedTool ?? null
+    );
 
     // Create AbortController with timeout
     const abortController = new AbortController();
@@ -914,7 +991,7 @@ export async function POST(request: NextRequest) {
     return await executeChatRequest({
       chatId,
       userMessage,
-      previousMessages,
+      previousMessages: executionInputs.previousMessages,
       selectedModelId,
       assistantMessageId,
       parallelGroupId:
@@ -924,10 +1001,10 @@ export async function POST(request: NextRequest) {
       explicitlyRequestedTools,
       userId,
       isAnonymous,
-      isNewChat,
+      isNewChat: persistenceResult.isNewChat,
       abortController,
       timeoutId,
-      mcpConnectors,
+      mcpConnectors: executionInputs.mcpConnectors,
     });
   } catch (error) {
     log.error(

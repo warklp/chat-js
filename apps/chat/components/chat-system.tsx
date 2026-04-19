@@ -10,6 +10,7 @@ import { ArtifactProvider } from "@/hooks/use-artifact";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
 import type { ChatBootstrapEntry } from "@/lib/chat-bootstrap";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
 import { useThreadEpoch } from "@/lib/stores/hooks-threads";
 import { ChatInputProvider } from "@/providers/chat-input-provider";
@@ -65,7 +66,7 @@ export const ChatSystem = memo(function PureChatSystem({
   overrideModelId?: AppModelId;
   projectId?: string;
   persistedQueriesEnabled?: boolean;
-  routeSource?: "chat" | "home" | "project" | "share";
+  routeSource?: ChatRouteSource;
 }) {
   return (
     <ArtifactProvider key={id}>
@@ -90,7 +91,6 @@ export const ChatSystem = memo(function PureChatSystem({
               />
               <Chat
                 id={id}
-                initialMessages={initialMessages}
                 isReadonly={isReadonly}
                 key={id}
                 persistedQueriesEnabled={persistedQueriesEnabled}
@@ -114,7 +114,6 @@ export const ChatSystem = memo(function PureChatSystem({
               />
               <Chat
                 id={id}
-                initialMessages={initialMessages}
                 isReadonly={isReadonly}
                 key={id}
                 persistedQueriesEnabled={persistedQueriesEnabled}

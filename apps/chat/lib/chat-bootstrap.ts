@@ -1,10 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { AppModelId } from "@/lib/ai/app-model-id";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ParallelRequestSpec } from "./draft-chat-submission";
-import { runParallelRequestSpecs } from "./parallel-chat-requests";
+import {
+  createParallelRequestBody,
+  type ParallelRequestBody,
+  runParallelRequestSpecs,
+} from "./parallel-chat-requests";
 
 interface PersistedParallelRequestSpec
   extends Omit<ParallelRequestSpec, "createdAt"> {
@@ -146,26 +149,16 @@ export function createChatBootstrapEntry({
   };
 }
 
-export function getChatBootstrapPrimaryRequestBody(entry: ChatBootstrapEntry): {
-  assistantMessageId: string;
-  isPrimaryParallel: true;
-  parallelGroupId: string | null;
-  parallelIndex: number;
-  selectedModelId: AppModelId;
-} | null {
+export function getChatBootstrapPrimaryRequestBody(
+  entry: ChatBootstrapEntry
+): ParallelRequestBody | null {
   const primaryRequest = entry.requestSpecs[0];
 
   if (!primaryRequest) {
     return null;
   }
 
-  return {
-    assistantMessageId: primaryRequest.assistantMessageId,
-    selectedModelId: primaryRequest.modelId,
-    parallelGroupId: primaryRequest.parallelGroupId,
-    parallelIndex: primaryRequest.parallelIndex,
-    isPrimaryParallel: true,
-  };
+  return createParallelRequestBody(primaryRequest, true);
 }
 
 export function getChatBootstrapSecondaryRequestSpecs(

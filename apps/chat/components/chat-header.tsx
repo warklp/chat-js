@@ -5,6 +5,7 @@ import { HeaderActions } from "@/components/header-actions";
 import { HeaderBreadcrumb } from "@/components/header-breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Session } from "@/lib/auth";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import { cn } from "@/lib/utils";
 import { ShareButton } from "./share-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -24,7 +25,7 @@ function PureChatHeader({
   hasMessages: boolean;
   persistedQueriesEnabled: boolean;
   projectId?: string;
-  routeSource: "chat" | "home" | "project" | "share";
+  routeSource: ChatRouteSource;
   user?: Session["user"];
   className?: string;
 }) {

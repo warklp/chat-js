@@ -28,6 +28,7 @@ import {
 } from "@/hooks/chat-sync-hooks";
 import { usePublicChat } from "@/hooks/use-shared-chat";
 import type { Session } from "@/lib/auth";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import type { ProjectColorName, ProjectIconName } from "@/lib/project-icons";
 import { cn } from "@/lib/utils";
 import { ShareDialog } from "./share-button";
@@ -39,7 +40,7 @@ interface HeaderBreadcrumbProps {
   isReadonly: boolean;
   persistedQueriesEnabled: boolean;
   projectId?: string;
-  routeSource: "chat" | "home" | "project" | "share";
+  routeSource: ChatRouteSource;
   user?: Session["user"];
 }
 

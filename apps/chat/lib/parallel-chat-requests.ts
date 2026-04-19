@@ -1,8 +1,30 @@
+import type { AppModelId } from "@/lib/ai/app-model-id";
 import type { ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/utils";
 import type { ParallelRequestSpec } from "./draft-chat-submission";
 
 type AddMessageToTree = (message: ChatMessage) => void;
+
+export interface ParallelRequestBody {
+  assistantMessageId: string;
+  isPrimaryParallel: boolean;
+  parallelGroupId: string | null;
+  parallelIndex: number;
+  selectedModelId: AppModelId;
+}
+
+export function createParallelRequestBody(
+  requestSpec: ParallelRequestSpec,
+  isPrimaryParallel = requestSpec.isPrimary
+): ParallelRequestBody {
+  return {
+    assistantMessageId: requestSpec.assistantMessageId,
+    selectedModelId: requestSpec.modelId,
+    parallelGroupId: requestSpec.parallelGroupId,
+    parallelIndex: requestSpec.parallelIndex,
+    isPrimaryParallel,
+  };
+}
 
 function createAssistantPlaceholder({
   activeStreamId,
@@ -107,11 +129,7 @@ async function drainParallelRequest({
       message,
       prevMessages: [],
       projectId,
-      assistantMessageId: requestSpec.assistantMessageId,
-      selectedModelId: requestSpec.modelId,
-      parallelGroupId: requestSpec.parallelGroupId,
-      parallelIndex: requestSpec.parallelIndex,
-      isPrimaryParallel: false,
+      ...createParallelRequestBody(requestSpec, false),
     }),
   });
 

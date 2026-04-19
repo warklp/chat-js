@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { InternalLink } from "@/components/internal-link";
 import { getNewChatShortcutText } from "@/components/keyboard-shortcuts";
 import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
-import { resetHomeDraft } from "@/lib/home-draft-reset";
+import { resetDraftChatId } from "@/lib/draft-chat";
 
 export function NewChatButton() {
   const { setOpenMobile } = useSidebar();
@@ -22,7 +22,7 @@ export function NewChatButton() {
         href="/"
         onNavigate={() => {
           setOpenMobile(false);
-          resetHomeDraft();
+          resetDraftChatId();
         }}
       >
         <Plus aria-label="New Chat" size={16} />

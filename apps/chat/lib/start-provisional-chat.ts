@@ -8,8 +8,8 @@ import {
   setChatBootstrap,
 } from "@/lib/chat-bootstrap";
 import { useCurrentChatRoute } from "@/lib/chat-route";
+import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
-import { resetHomeDraft, resetProjectDraft } from "@/lib/home-draft-reset";
 import { useModelChange } from "@/providers/default-model-provider";
 import { useSession } from "@/providers/session-provider";
 
@@ -49,10 +49,10 @@ export function useStartProvisionalChat(chatId: string) {
 
       if (currentRoute.source === "project" && currentRoute.projectId) {
         router.push(`/project/${currentRoute.projectId}/chat/${chatId}`);
-        resetProjectDraft(currentRoute.projectId);
+        resetDraftChatId(currentRoute.projectId);
       } else {
         router.push(`/chat/${chatId}`);
-        resetHomeDraft();
+        resetDraftChatId();
       }
 
       onStarted?.();

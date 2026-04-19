@@ -41,6 +41,7 @@ import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
 import { processFilesForUpload } from "@/lib/files/upload-prep";
 import {
   addPendingAssistantMessages,
+  createParallelRequestBody,
   markParallelRequestSpecsFailed,
   runParallelRequestSpecs,
 } from "@/lib/parallel-chat-requests";
@@ -384,13 +385,7 @@ function PureMultimodalInput({
 
     if (primaryRequest) {
       sendMessage(message, {
-        body: {
-          assistantMessageId: primaryRequest.assistantMessageId,
-          selectedModelId: primaryRequest.modelId,
-          parallelGroupId: primaryRequest.parallelGroupId,
-          parallelIndex: primaryRequest.parallelIndex,
-          isPrimaryParallel: true,
-        },
+        body: createParallelRequestBody(primaryRequest, true),
       });
 
       addMessageToTree(message);

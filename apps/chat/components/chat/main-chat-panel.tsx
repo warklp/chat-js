@@ -1,6 +1,7 @@
 "use client";
 
 import { ChatHeader } from "@/components/chat-header";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import { useSession } from "@/providers/session-provider";
 import { ChatContent } from "./chat-content";
@@ -18,7 +19,7 @@ export function MainChatPanel({
   isReadonly: boolean;
   className?: string;
   persistedQueriesEnabled: boolean;
-  routeSource: "chat" | "home" | "project" | "share";
+  routeSource: ChatRouteSource;
 }) {
   const { data: session } = useSession();
   const messageIds = useMessageIds() as string[];
