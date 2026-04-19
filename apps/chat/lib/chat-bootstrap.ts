@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 import type { AppModelId } from "@/lib/ai/app-model-id";
 import type { ChatMessage } from "@/lib/ai/types";
-import { fetchWithErrorHandlers } from "@/lib/utils";
 import type { ParallelRequestSpec } from "./draft-chat-submission";
+import { runParallelRequestSpecs } from "./parallel-chat-requests";
 
 interface PersistedParallelRequestSpec
   extends Omit<ParallelRequestSpec, "createdAt"> {
@@ -15,30 +15,16 @@ interface SerializedBootstrapEntry {
   chatId: string;
   initialMessages: ChatMessage[];
   message: ChatMessage;
-  primaryRequestBody: {
-    assistantMessageId: string;
-    isPrimaryParallel: true;
-    parallelGroupId: string | null;
-    parallelIndex: number;
-    selectedModelId: AppModelId;
-  } | null;
   projectId: string | null;
-  secondaryRequestSpecs: PersistedParallelRequestSpec[];
+  requestSpecs: PersistedParallelRequestSpec[];
 }
 
 export interface ChatBootstrapEntry {
   chatId: string;
   initialMessages: ChatMessage[];
   message: ChatMessage;
-  primaryRequestBody: {
-    assistantMessageId: string;
-    isPrimaryParallel: true;
-    parallelGroupId: string | null;
-    parallelIndex: number;
-    selectedModelId: AppModelId;
-  } | null;
   projectId: string | null;
-  secondaryRequestSpecs: ParallelRequestSpec[];
+  requestSpecs: ParallelRequestSpec[];
 }
 
 const STORAGE_KEY_PREFIX = "chat-bootstrap:";
@@ -66,7 +52,7 @@ function serializeEntry(entry: ChatBootstrapEntry): SerializedBootstrapEntry {
     ...entry,
     initialMessages: entry.initialMessages.map(serializeMessage),
     message: serializeMessage(entry.message),
-    secondaryRequestSpecs: entry.secondaryRequestSpecs.map((requestSpec) => ({
+    requestSpecs: entry.requestSpecs.map((requestSpec) => ({
       ...requestSpec,
       createdAt: requestSpec.createdAt.toISOString(),
     })),
@@ -90,7 +76,7 @@ function deserializeEntry(entry: SerializedBootstrapEntry): ChatBootstrapEntry {
         createdAt: new Date(entry.message.metadata.createdAt),
       },
     },
-    secondaryRequestSpecs: entry.secondaryRequestSpecs.map((requestSpec) => ({
+    requestSpecs: entry.requestSpecs.map((requestSpec) => ({
       ...requestSpec,
       createdAt: new Date(requestSpec.createdAt),
     })),
@@ -140,83 +126,6 @@ function readEntryFromStorage(chatId: string) {
   }
 }
 
-async function drainResponse(response: Response) {
-  if (!response.body) {
-    return;
-  }
-
-  const reader = response.body.getReader();
-
-  while (true) {
-    const { done } = await reader.read();
-
-    if (done) {
-      break;
-    }
-  }
-}
-
-async function drainSecondaryParallelRequest({
-  chatId,
-  message,
-  projectId,
-  requestSpec,
-}: {
-  chatId: string;
-  message: ChatMessage;
-  projectId: string | null;
-  requestSpec: ParallelRequestSpec;
-}) {
-  const response = await fetchWithErrorHandlers("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      id: chatId,
-      message,
-      prevMessages: [],
-      projectId,
-      assistantMessageId: requestSpec.assistantMessageId,
-      selectedModelId: requestSpec.modelId,
-      parallelGroupId: requestSpec.parallelGroupId,
-      parallelIndex: requestSpec.parallelIndex,
-      isPrimaryParallel: false,
-    }),
-  });
-
-  await drainResponse(response);
-}
-
-async function runParallelSecondaryRequests(entry: ChatBootstrapEntry) {
-  if (entry.secondaryRequestSpecs.length === 0) {
-    return;
-  }
-
-  await fetchWithErrorHandlers("/api/chat/prepare", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      id: entry.chatId,
-      message: entry.message,
-      projectId: entry.projectId,
-    }),
-  });
-
-  await Promise.all(
-    entry.secondaryRequestSpecs.map((requestSpec) =>
-      drainSecondaryParallelRequest({
-        chatId: entry.chatId,
-        message: entry.message,
-        projectId: entry.projectId,
-        requestSpec,
-      })
-    )
-  );
-}
-
 export function createChatBootstrapEntry({
   chatId,
   message,
@@ -228,24 +137,41 @@ export function createChatBootstrapEntry({
   projectId: string | null;
   requestSpecs: ParallelRequestSpec[];
 }): ChatBootstrapEntry {
-  const primaryRequest = requestSpecs[0];
-
   return {
     chatId,
     projectId,
     message,
     initialMessages: [message],
-    primaryRequestBody: primaryRequest
-      ? {
-          assistantMessageId: primaryRequest.assistantMessageId,
-          selectedModelId: primaryRequest.modelId,
-          parallelGroupId: primaryRequest.parallelGroupId,
-          parallelIndex: primaryRequest.parallelIndex,
-          isPrimaryParallel: true,
-        }
-      : null,
-    secondaryRequestSpecs: requestSpecs.slice(1),
+    requestSpecs,
   };
+}
+
+export function getChatBootstrapPrimaryRequestBody(entry: ChatBootstrapEntry): {
+  assistantMessageId: string;
+  isPrimaryParallel: true;
+  parallelGroupId: string | null;
+  parallelIndex: number;
+  selectedModelId: AppModelId;
+} | null {
+  const primaryRequest = entry.requestSpecs[0];
+
+  if (!primaryRequest) {
+    return null;
+  }
+
+  return {
+    assistantMessageId: primaryRequest.assistantMessageId,
+    selectedModelId: primaryRequest.modelId,
+    parallelGroupId: primaryRequest.parallelGroupId,
+    parallelIndex: primaryRequest.parallelIndex,
+    isPrimaryParallel: true,
+  };
+}
+
+export function getChatBootstrapSecondaryRequestSpecs(
+  entry: ChatBootstrapEntry
+) {
+  return entry.requestSpecs.slice(1);
 }
 
 export function setChatBootstrap(entry: ChatBootstrapEntry) {
@@ -288,6 +214,11 @@ export function useChatBootstrap(chatId: string | null) {
   );
 }
 
-export async function runBootstrapSecondaryRequests(entry: ChatBootstrapEntry) {
-  await runParallelSecondaryRequests(entry);
+export function runBootstrapSecondaryRequests(entry: ChatBootstrapEntry) {
+  return runParallelRequestSpecs({
+    chatId: entry.chatId,
+    message: entry.message,
+    projectId: entry.projectId,
+    requestSpecs: getChatBootstrapSecondaryRequestSpecs(entry),
+  });
 }

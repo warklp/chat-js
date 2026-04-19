@@ -1,7 +1,6 @@
 "use client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound, redirect, useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 import type { ParamsOf } from "@/.next/types/routes";
 import { ChatSystem } from "@/components/chat-system";
 import {
@@ -9,7 +8,7 @@ import {
   useGetChatMessagesQueryOptions,
 } from "@/hooks/chat-sync-hooks";
 import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
-import { getChatBootstrap, useChatBootstrap } from "@/lib/chat-bootstrap";
+import { useResolvedChatBootstrap } from "@/lib/use-resolved-chat-bootstrap";
 import { useSession } from "@/providers/session-provider";
 
 function ChatPageContent({ chatId }: { chatId: string }) {
@@ -38,31 +37,9 @@ function ChatPageContent({ chatId }: { chatId: string }) {
 
 export function ChatPage() {
   const { id: chatId } = useParams<ParamsOf<"/chat/[id]">>();
-  const liveBootstrapEntry = useChatBootstrap(chatId);
-  const [initialBootstrapEntry, setInitialBootstrapEntry] = useState(() =>
-    chatId ? (liveBootstrapEntry ?? getChatBootstrap(chatId)) : null
-  );
+  const { bootstrapEntry, clearResolvedBootstrap, hasLiveBootstrapEntry } =
+    useResolvedChatBootstrap(chatId);
   const { data: session, isPending } = useSession();
-
-  useEffect(() => {
-    if (!chatId) {
-      setInitialBootstrapEntry(null);
-      return;
-    }
-
-    if (liveBootstrapEntry) {
-      setInitialBootstrapEntry(liveBootstrapEntry);
-      return;
-    }
-
-    setInitialBootstrapEntry((currentEntry) =>
-      currentEntry?.chatId === chatId ? currentEntry : getChatBootstrap(chatId)
-    );
-  }, [chatId, liveBootstrapEntry]);
-
-  const handleBootstrapSettled = useCallback(() => {
-    setInitialBootstrapEntry(null);
-  }, []);
 
   // Anonymous users can't access persisted chat pages
   if (!(isPending || session?.user)) {
@@ -73,8 +50,6 @@ export function ChatPage() {
     return notFound();
   }
 
-  const bootstrapEntry = liveBootstrapEntry ?? initialBootstrapEntry;
-
   if (bootstrapEntry) {
     return (
       <ChatSystem
@@ -82,8 +57,8 @@ export function ChatPage() {
         id={chatId}
         initialMessages={bootstrapEntry.initialMessages}
         isReadonly={false}
-        onBootstrapSettled={handleBootstrapSettled}
-        persistedQueriesEnabled={!liveBootstrapEntry}
+        onBootstrapSettled={clearResolvedBootstrap}
+        persistedQueriesEnabled={!hasLiveBootstrapEntry}
         routeSource="chat"
       />
     );

@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatSystem } from "@/components/chat-system";
 import type { AppModelId } from "@/lib/ai/app-models";
 import { useHomeDraftVersion } from "@/lib/home-draft-reset";
@@ -8,12 +8,22 @@ import { generateUUID } from "@/lib/utils";
 
 export function ChatHome() {
   const draftVersion = useHomeDraftVersion();
-  const id = useMemo(() => generateUUID(), [draftVersion]);
+  const [id, setId] = useState(() => generateUUID());
+  const previousDraftVersion = useRef(draftVersion);
   const searchParams = useSearchParams();
-  const overrideModelId = useMemo(() => {
-    const value = searchParams.get("modelId");
-    return (value as AppModelId) || undefined;
-  }, [searchParams]);
+
+  useEffect(() => {
+    if (previousDraftVersion.current === draftVersion) {
+      return;
+    }
+
+    previousDraftVersion.current = draftVersion;
+    setId(generateUUID());
+  }, [draftVersion]);
+
+  const value = searchParams.get("modelId");
+  const overrideModelId = (value as AppModelId) || undefined;
+
   return (
     <ChatSystem
       id={id}

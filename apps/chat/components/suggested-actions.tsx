@@ -8,23 +8,15 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
-import {
-  createChatBootstrapEntry,
-  setChatBootstrap,
-} from "@/lib/chat-bootstrap";
-import { useCurrentChatRoute } from "@/lib/chat-route";
 import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
-import { resetHomeDraft, resetProjectDraft } from "@/lib/home-draft-reset";
+import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
 import { cn } from "@/lib/utils";
-import { useModelChange } from "@/providers/default-model-provider";
-import { useSession } from "@/providers/session-provider";
 
 interface SuggestedActionsProps {
   chatId: string;
@@ -38,10 +30,7 @@ function PureSuggestedActions({
   className,
 }: SuggestedActionsProps) {
   const { sendMessage } = useChatActions<ChatMessage>();
-  const { data: session } = useSession();
-  const currentRoute = useCurrentChatRoute();
-  const changeModel = useModelChange();
-  const router = useRouter();
+  const startProvisionalChat = useStartProvisionalChat(chatId);
   const containerRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(
     () =>
@@ -131,62 +120,35 @@ function PureSuggestedActions({
     }
 
     setSelectedCategoryId(null);
+    const submission = buildDraftChatSubmission({
+      attachments: [],
+      input: text,
+      normalizedSelectedModel: selectedModelId,
+      parallelResponsesEnabled: false,
+      parentMessageId: null,
+      selectedTool: null,
+    });
 
-    if (session?.user && currentRoute.type === "provisional") {
-      void changeModel(selectedModelId);
-
-      const { message, requestSpecs } = buildDraftChatSubmission({
-        attachments: [],
-        input: text,
-        normalizedSelectedModel: selectedModelId,
-        parallelResponsesEnabled: false,
-        parentMessageId: null,
-        selectedTool: null,
-      });
-
-      setChatBootstrap(
-        createChatBootstrapEntry({
-          chatId,
-          message,
-          projectId: currentRoute.projectId,
-          requestSpecs,
-        })
-      );
-
-      if (currentRoute.source === "project" && currentRoute.projectId) {
-        router.push(`/project/${currentRoute.projectId}/chat/${chatId}`);
-        resetProjectDraft(currentRoute.projectId);
-      } else {
-        router.push(`/chat/${chatId}`);
-        resetHomeDraft();
-      }
-
+    if (
+      startProvisionalChat({
+        message: submission.message,
+        requestSpecs: submission.requestSpecs,
+      })
+    ) {
       return;
     }
 
-    sendMessage(
-      {
-        role: "user",
-        parts: [{ type: "text", text }],
-        metadata: {
-          selectedModel: selectedModelId,
-          createdAt: new Date(),
-          parentMessageId: null,
-          activeStreamId: null,
+    sendMessage(submission.message, {
+      body: {
+        data: {
+          deepResearch: false,
+          webSearch: false,
+          reason: false,
+          generateImage: false,
+          writeOrCode: false,
         },
       },
-      {
-        body: {
-          data: {
-            deepResearch: false,
-            webSearch: false,
-            reason: false,
-            generateImage: false,
-            writeOrCode: false,
-          },
-        },
-      }
-    );
+    });
   };
 
   return (

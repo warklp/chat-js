@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk-tools/store";
+import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -13,15 +14,22 @@ import type { ChatMessage } from "@/lib/ai/types";
 import {
   type ChatBootstrapEntry,
   clearChatBootstrap,
+  getChatBootstrapPrimaryRequestBody,
+  getChatBootstrapSecondaryRequestSpecs,
   runBootstrapSecondaryRequests,
   useChatBootstrap,
 } from "@/lib/chat-bootstrap";
+import {
+  addPendingAssistantMessages,
+  markParallelRequestSpecsFailed,
+} from "@/lib/parallel-chat-requests";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,
 } from "@/lib/stores/hooks-threads";
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
+import { useTRPC } from "@/trpc/react";
 
 function isResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return !!(activeStreamId && !activeStreamId.startsWith("pending:"));
@@ -40,13 +48,16 @@ export function ChatSync({
 }) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
-  const { setDataStream } = useDataStream();
+  const { dataStream, setDataStream } = useDataStream();
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
   const [autoResume, setAutoResume] = useState(() => !bootstrapEntry);
 
   const isAuthenticated = !!session?.user;
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
   const hasBootstrappedRef = useRef(false);
+  const hasStartedBootstrapSecondariesRef = useRef(false);
   const hasSettledBootstrapRef = useRef(false);
   const liveBootstrapEntry = useChatBootstrap(id);
 
@@ -112,11 +123,62 @@ export function ChatSync({
         setAutoResume(false);
       }
 
+      if (bootstrapEntry && !hasSettledBootstrapRef.current) {
+        clearChatBootstrap(bootstrapEntry.chatId);
+      }
+
       const { message, description } = getStreamErrorToastContent(error);
       toast.error(message, description ? { description } : undefined);
     },
   });
   const { sendMessage, setMessages, status, stop } = chatHelpers;
+
+  useEffect(() => {
+    if (!bootstrapEntry) {
+      hasStartedBootstrapSecondariesRef.current = false;
+      return;
+    }
+
+    if (
+      hasStartedBootstrapSecondariesRef.current ||
+      getChatBootstrapSecondaryRequestSpecs(bootstrapEntry).length === 0
+    ) {
+      return;
+    }
+
+    const isChatConfirmed = dataStream.some(
+      (delta) =>
+        delta.type === "data-chatConfirmed" &&
+        delta.data.chatId === bootstrapEntry.chatId
+    );
+
+    if (!isChatConfirmed) {
+      return;
+    }
+
+    hasStartedBootstrapSecondariesRef.current = true;
+
+    runBootstrapSecondaryRequests(bootstrapEntry)
+      .then((failedRequestSpecs) => {
+        if (failedRequestSpecs.length > 0) {
+          markParallelRequestSpecsFailed({
+            addMessageToTree,
+            message: bootstrapEntry.message,
+            requestSpecs: failedRequestSpecs,
+          });
+          toast.error("Failed to complete all parallel responses");
+        }
+
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getChatMessages.queryKey({
+            chatId: bootstrapEntry.chatId,
+          }),
+        });
+      })
+      .catch(() => {
+        toast.error("Failed to complete all parallel responses");
+      });
+  }, [addMessageToTree, bootstrapEntry, dataStream, queryClient, trpc]);
 
   useEffect(() => {
     if (!(bootstrapEntry && !hasBootstrappedRef.current)) {
@@ -129,60 +191,20 @@ export function ChatSync({
       setMessages([]);
 
       sendMessage(bootstrapEntry.message, {
-        body: bootstrapEntry.primaryRequestBody ?? undefined,
+        body: getChatBootstrapPrimaryRequestBody(bootstrapEntry) ?? undefined,
       });
       addMessageToTree(bootstrapEntry.message);
-
-      const primaryAssistantPlaceholder = bootstrapEntry.primaryRequestBody
-        ? {
-            assistantMessageId:
-              bootstrapEntry.primaryRequestBody.assistantMessageId,
-            createdAt: bootstrapEntry.message.metadata.createdAt,
-            isPrimary: true,
-            modelId: bootstrapEntry.primaryRequestBody.selectedModelId,
-            parallelGroupId: bootstrapEntry.primaryRequestBody.parallelGroupId,
-            parallelIndex: bootstrapEntry.primaryRequestBody.parallelIndex,
-          }
-        : null;
-
-      for (const requestSpec of [
-        ...(primaryAssistantPlaceholder ? [primaryAssistantPlaceholder] : []),
-        ...bootstrapEntry.secondaryRequestSpecs,
-      ]) {
-        addMessageToTree({
-          id: requestSpec.assistantMessageId,
-          parts: [],
-          role: "assistant",
-          metadata: {
-            createdAt: requestSpec.createdAt,
-            parentMessageId: bootstrapEntry.message.id,
-            parallelGroupId: requestSpec.parallelGroupId,
-            parallelIndex: requestSpec.parallelIndex,
-            isPrimaryParallel: requestSpec.isPrimary,
-            selectedModel: requestSpec.modelId,
-            activeStreamId: `pending:${requestSpec.assistantMessageId}`,
-            selectedTool: undefined,
-          },
-        });
-      }
-
-      runBootstrapSecondaryRequests(bootstrapEntry).catch(() => {
-        clearChatBootstrap(bootstrapEntry.chatId);
-        toast.error("Failed to start chat");
+      addPendingAssistantMessages({
+        addMessageToTree,
+        message: bootstrapEntry.message,
+        requestSpecs: bootstrapEntry.requestSpecs,
       });
     }, 0);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [
-    addMessageToTree,
-    bootstrapEntry,
-    id,
-    sendMessage,
-    setMessages,
-    threadInitialMessages.length,
-  ]);
+  }, [addMessageToTree, bootstrapEntry, sendMessage, setMessages]);
 
   useEffect(() => {
     if (liveBootstrapEntry) {
