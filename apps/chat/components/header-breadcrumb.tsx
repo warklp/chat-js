@@ -28,9 +28,9 @@ import {
 } from "@/hooks/chat-sync-hooks";
 import { usePublicChat } from "@/hooks/use-shared-chat";
 import type { Session } from "@/lib/auth";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import type { ProjectColorName, ProjectIconName } from "@/lib/project-icons";
 import { cn } from "@/lib/utils";
-import { useChatId } from "@/providers/chat-id-provider";
 import { ShareDialog } from "./share-button";
 
 interface HeaderBreadcrumbProps {
@@ -38,24 +38,27 @@ interface HeaderBreadcrumbProps {
   className?: string;
   hasMessages?: boolean;
   isReadonly: boolean;
+  persistedQueriesEnabled: boolean;
   projectId?: string;
+  routeSource: ChatRouteSource;
   user?: Session["user"];
 }
 
 export function HeaderBreadcrumb({
-  chatId: _chatId,
+  chatId,
   projectId: _projectId,
   user,
   isReadonly,
   hasMessages,
   className,
+  persistedQueriesEnabled,
+  routeSource,
 }: HeaderBreadcrumbProps) {
-  const { id: chatId, isPersisted, source } = useChatId();
-  const isShared = source === "share";
+  const isShared = routeSource === "share";
   const isAuthenticated = !!user;
 
   const { data: chat } = useGetChatById(chatId, {
-    enabled: !isShared && isPersisted,
+    enabled: !isShared && persistedQueriesEnabled,
   });
   const { data: publicChat } = usePublicChat(chatId, {
     enabled: isShared,

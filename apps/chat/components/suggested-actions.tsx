@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
+import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
+import { createParallelRequestBody } from "@/lib/parallel-chat-requests";
+import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
 import { cn } from "@/lib/utils";
 
 interface SuggestedActionsProps {
@@ -28,6 +31,7 @@ function PureSuggestedActions({
   className,
 }: SuggestedActionsProps) {
   const { sendMessage } = useChatActions<ChatMessage>();
+  const startProvisionalChat = useStartProvisionalChat(chatId);
   const containerRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(
     () =>
@@ -117,31 +121,30 @@ function PureSuggestedActions({
     }
 
     setSelectedCategoryId(null);
-    window.history.pushState({}, "", `/chat/${chatId}`);
+    const submission = buildDraftChatSubmission({
+      attachments: [],
+      input: text,
+      normalizedSelectedModel: selectedModelId,
+      parallelResponsesEnabled: false,
+      parentMessageId: null,
+      selectedTool: null,
+    });
 
-    sendMessage(
-      {
-        role: "user",
-        parts: [{ type: "text", text }],
-        metadata: {
-          selectedModel: selectedModelId,
-          createdAt: new Date(),
-          parentMessageId: null,
-          activeStreamId: null,
-        },
-      },
-      {
-        body: {
-          data: {
-            deepResearch: false,
-            webSearch: false,
-            reason: false,
-            generateImage: false,
-            writeOrCode: false,
-          },
-        },
-      }
-    );
+    if (
+      startProvisionalChat({
+        message: submission.message,
+        requestSpecs: submission.requestSpecs,
+      })
+    ) {
+      return;
+    }
+
+    const primaryRequest = submission.requestSpecs[0];
+    if (primaryRequest) {
+      sendMessage(submission.message, {
+        body: createParallelRequestBody(primaryRequest, true),
+      });
+    }
   };
 
   return (

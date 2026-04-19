@@ -2,14 +2,16 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { notFound, useParams } from "next/navigation";
-import type { ParamsOf } from "@/.next/types/routes";
 import { ChatSystem } from "@/components/chat-system";
-import { useChatId } from "@/providers/chat-id-provider";
+import { useDraftChatId } from "@/lib/draft-chat";
 import { useTRPC } from "@/trpc/react";
 
-export function ProjectPage() {
-  const { projectId } = useParams<ParamsOf<"/project/[projectId]">>();
-  const { id } = useChatId();
+type ProjectPageParams = {
+  projectId?: string;
+};
+
+function ProjectPageContent({ projectId }: { projectId: string }) {
+  const id = useDraftChatId(projectId);
   const trpc = useTRPC();
 
   const { data: project } = useSuspenseQuery(
@@ -20,12 +22,28 @@ export function ProjectPage() {
     return notFound();
   }
 
+  if (!id) {
+    return null;
+  }
+
   return (
     <ChatSystem
       id={id}
       initialMessages={[]}
       isReadonly={false}
+      persistedQueriesEnabled={false}
       projectId={project.id}
+      routeSource="project"
     />
   );
+}
+
+export function ProjectPage() {
+  const { projectId } = useParams<ProjectPageParams>();
+
+  if (!projectId) {
+    return notFound();
+  }
+
+  return <ProjectPageContent projectId={projectId} />;
 }
