@@ -401,18 +401,22 @@ function PureMultimodalInput({
         message,
         projectId: currentRoute.projectId,
         requestSpecs: requestSpecs.slice(1),
-      }).then(async (failedRequestSpecs) => {
-        if (failedRequestSpecs.length > 0) {
-          markParallelRequestSpecsFailed({
-            addMessageToTree,
-            message,
-            requestSpecs: failedRequestSpecs,
-          });
-          toast.error("Failed to complete all parallel responses");
-        }
+      })
+        .then(async (failedRequestSpecs) => {
+          if (failedRequestSpecs.length > 0) {
+            markParallelRequestSpecsFailed({
+              addMessageToTree,
+              message,
+              requestSpecs: failedRequestSpecs,
+            });
+            toast.error("Failed to complete all parallel responses");
+          }
 
-        await invalidatePersistedMessages();
-      });
+          await invalidatePersistedMessages();
+        })
+        .catch(() => {
+          toast.error("Failed to complete all parallel responses");
+        });
     } else {
       sendMessage(message);
       addMessageToTree(message);

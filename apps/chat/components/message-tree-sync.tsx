@@ -9,8 +9,8 @@ import { useTRPC } from "@/trpc/react";
 
 /**
  * Renderless component that syncs the server's message tree into the Zustand
- * store and handles home-page reset. Tree logic (sibling info, thread
- * switching) lives in the store (with-threads middleware).
+ * store. Tree logic (sibling info, thread switching) lives in the store
+ * (with-threads middleware).
  */
 export function MessageTreeSync({
   chatId: id,

@@ -30,6 +30,7 @@ import { calculateMessagesTokens } from "@/lib/ai/token-utils";
 import {
   type ChatMessage,
   getPrimarySelectedModelId,
+  isSelectedModelValue,
   type ToolName,
 } from "@/lib/ai/types";
 import {
@@ -803,36 +804,158 @@ type ChatPostBodyResult =
   | { success: false; error: Response }
   | { success: true; body: ChatPostBody };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseMessageDate(value: unknown): Date | null {
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeChatMessage(value: unknown): ChatMessage | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const metadata = value.metadata;
+
+  if (
+    typeof value.id !== "string" ||
+    !Array.isArray(value.parts) ||
+    typeof value.role !== "string" ||
+    !isRecord(metadata) ||
+    !isSelectedModelValue(metadata.selectedModel)
+  ) {
+    return null;
+  }
+
+  const createdAt = parseMessageDate(metadata.createdAt);
+  if (!createdAt) {
+    return null;
+  }
+
+  const parentMessageId = metadata.parentMessageId;
+  const activeStreamId = metadata.activeStreamId;
+
+  const hasValidParentMessageId =
+    parentMessageId === null || typeof parentMessageId === "string";
+  const hasValidActiveStreamId =
+    activeStreamId === null || typeof activeStreamId === "string";
+
+  if (!(hasValidParentMessageId && hasValidActiveStreamId)) {
+    return null;
+  }
+
+  return {
+    ...(value as ChatMessage),
+    metadata: {
+      ...(metadata as ChatMessage["metadata"]),
+      createdAt,
+      parentMessageId,
+      activeStreamId,
+      selectedModel: metadata.selectedModel,
+    },
+  };
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function optionalNullableString(value: unknown): string | null | undefined {
+  if (value === null || typeof value === "string") {
+    return value;
+  }
+  return undefined;
+}
+
+function optionalNullableInteger(value: unknown): number | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  return typeof value === "number" && Number.isInteger(value)
+    ? value
+    : undefined;
+}
+
+function optionalNullableBoolean(value: unknown): boolean | null | undefined {
+  if (value === null || typeof value === "boolean") {
+    return value;
+  }
+  return undefined;
+}
+
 async function readChatPostBody(
   request: NextRequest
 ): Promise<ChatPostBodyResult> {
-  const body = (await request.json()) as ChatPostBody;
+  let rawBody: unknown;
 
-  if (!body.message) {
+  try {
+    rawBody = await request.json();
+  } catch {
     return {
       success: false,
       error: new ChatSDKError("bad_request:api").toResponse(),
     };
   }
 
-  return { success: true, body };
+  if (!isRecord(rawBody)) {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  const userMessage = normalizeChatMessage(rawBody.message);
+  const anonymousPreviousMessages = Array.isArray(rawBody.prevMessages)
+    ? rawBody.prevMessages.map(normalizeChatMessage)
+    : null;
+
+  if (
+    typeof rawBody.id !== "string" ||
+    !userMessage ||
+    userMessage.role !== "user" ||
+    !anonymousPreviousMessages ||
+    anonymousPreviousMessages.some((message) => !message)
+  ) {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  return {
+    success: true,
+    body: {
+      assistantMessageId: optionalString(rawBody.assistantMessageId),
+      id: rawBody.id,
+      isPrimaryParallel: optionalNullableBoolean(rawBody.isPrimaryParallel),
+      message: userMessage,
+      parallelGroupId: optionalNullableString(rawBody.parallelGroupId),
+      parallelIndex: optionalNullableInteger(rawBody.parallelIndex),
+      prevMessages: anonymousPreviousMessages as ChatMessage[],
+      projectId: optionalString(rawBody.projectId),
+      selectedModelId: optionalString(rawBody.selectedModelId) as
+        | AppModelId
+        | undefined,
+    },
+  };
 }
 
 async function prepareChatPersistenceAndCredits({
-  anonymousSession,
   chatId,
   projectId,
   userId,
   userMessage,
 }: {
-  anonymousSession: AnonymousSession | null;
   chatId: string;
   projectId?: string;
   userId: string | null;
   userMessage: ChatMessage;
 }): Promise<{ error: Response } | { isNewChat: boolean }> {
   if (userId) {
-    return handleUserValidationAndCredits({
+    return await handleUserValidationAndCredits({
       chatId,
       userId,
       userMessage,
@@ -840,15 +963,22 @@ async function prepareChatPersistenceAndCredits({
     });
   }
 
-  if (anonymousSession) {
-    // Cookies must be updated before streaming starts.
-    await setAnonymousSession({
-      ...anonymousSession,
-      remainingCredits: anonymousSession.remainingCredits - 1,
-    });
+  return { isNewChat: false };
+}
+
+async function consumeAnonymousCreditBeforeStream(
+  anonymousSession: AnonymousSession | null
+) {
+  if (!anonymousSession) {
+    return;
   }
 
-  return { isNewChat: false };
+  // Cookies must be updated before streaming starts, but only after request
+  // context validation has succeeded.
+  await setAnonymousSession({
+    ...anonymousSession,
+    remainingCredits: anonymousSession.remainingCredits - 1,
+  });
 }
 
 async function prepareChatExecutionInputs({
@@ -955,7 +1085,6 @@ export async function POST(request: NextRequest) {
 
     const { userId, isAnonymous, anonymousSession } = sessionSetup;
     const persistenceResult = await prepareChatPersistenceAndCredits({
-      anonymousSession,
       chatId,
       projectId,
       userId,
@@ -977,6 +1106,8 @@ export async function POST(request: NextRequest) {
     if ("error" in executionInputs) {
       return executionInputs.error;
     }
+
+    await consumeAnonymousCreditBeforeStream(anonymousSession);
 
     const explicitlyRequestedTools = determineExplicitlyRequestedTools(
       userMessage.metadata.selectedTool ?? null

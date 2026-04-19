@@ -38,6 +38,14 @@ export function buildDraftChatSubmission({
   selectedTool: UiToolName | null;
 }): DraftChatSubmission {
   const requestedModelIds = expandSelectedModelValue(normalizedSelectedModel);
+  const primaryModelId = requestedModelIds[0];
+
+  if (!primaryModelId) {
+    throw new Error(
+      "Cannot build a draft chat submission without a selected model"
+    );
+  }
+
   const isParallelRequest =
     parallelResponsesEnabled && requestedModelIds.length > 1;
   const parallelGroupId = isParallelRequest ? generateUUID() : null;
@@ -57,7 +65,7 @@ export function buildDraftChatSubmission({
           assistantMessageId: generateUUID(),
           createdAt: new Date(Date.now()),
           isPrimary: true,
-          modelId: requestedModelIds[0] as AppModelId,
+          modelId: primaryModelId,
           parallelGroupId: null,
           parallelIndex: 0,
         },

@@ -146,7 +146,7 @@ export function ChatSync({
       return;
     }
 
-    const isChatConfirmed = dataStream.some(
+    const isChatConfirmed = (dataStream ?? []).some(
       (delta) =>
         delta.type === "data-chatConfirmed" &&
         delta.data.chatId === bootstrapEntry.chatId
@@ -169,7 +169,7 @@ export function ChatSync({
           toast.error("Failed to complete all parallel responses");
         }
 
-        queryClient.invalidateQueries({
+        return queryClient.invalidateQueries({
           queryKey: trpc.chat.getChatMessages.queryKey({
             chatId: bootstrapEntry.chatId,
           }),

@@ -1,9 +1,9 @@
 ---
 title: Provisional Chat IDs
-description: Preserve chat runtime state across `/` to `/chat/:id` navigation with a layout-owned shell
+description: Preserve first-message state across `/` to `/chat/:id` navigation with draft IDs and bootstrap entries
 ---
 
-This pattern keeps the writable chat runtime mounted while the URL moves from `/` to `/chat/:id`.
+This pattern keeps the first message and request metadata intact while the URL moves from `/` to `/chat/:id`.
 
 ## The Problem
 
@@ -11,90 +11,91 @@ The first-message flow has two competing requirements:
 
 1. The user starts on `/`
 2. The first message should persist under `/chat/:id`
-3. The `useChat` runtime must not remount during that transition
+3. The submitted message must survive the page transition
 4. Switching to another chat still must remount and reset state
 
 If the writable chat UI is mounted separately by both pages, Next.js route navigation remounts the runtime. If you bypass Next with `window.history.pushState`, the URL changes but the App Router tree does not.
 
 ## The Solution
 
-Use a provisional client-generated chat id, but mount the writable chat runtime once in the shared `(chat)` layout.
+Use a provisional client-generated chat id for draft routes and store a `ChatBootstrapEntry` before navigating to the persisted route.
 
-- `/` uses a draft id generated on the client
+- `/` and `/project/:projectId` use draft ids generated on the client by `useDraftChatId`
 - the first persisted chat reuses that same id
+- the submitted message and parallel request specs are stored in a bootstrap entry
 - the app navigates with `router.push("/chat/:id")`
-- the layout-owned runtime keeps the same key, so `useChat` stays mounted
+- `ChatPage` and `ProjectChatPage` read the bootstrap entry and pass it into `ChatSystem`
 
 When the user switches to a different chat or starts a new one, the key changes and the runtime remounts on purpose.
 
 ## Architecture
 
-### 1. The Layout Runtime Owns Draft Identity
+### 1. Draft Routes Own Draft Identity
 
-The persistent chat shell keeps a provisional id for writable routes that do not yet have a persisted chat id:
+`ChatHome` and `ProjectPage` ask for a draft id when they render writable routes that do not yet have a persisted chat id:
 
 ```typescript
-const [{ provisionalChatId, confirmedChatId }, setChatIdState] = useState(() => ({
-  provisionalChatId: generateUUID(),
-  confirmedChatId: null,
-}));
+const id = useDraftChatId(projectId);
 ```
 
-For `/chat/:id`, the route id wins. For `/`, the runtime exposes the current provisional id.
+The hook keeps separate home and project draft versions. `resetDraftChatId` advances the version after a provisional chat is promoted so a later fresh draft gets a new id.
 
-### 2. The Writable Chat Runtime Lives In Layout
+### 2. Pages Mount The Writable Runtime
 
-The shared chat layout mounts a persistent client shell:
+The pages mount `ChatSystem` directly:
 
 ```tsx
-<KeyboardShortcuts />
-<PersistentChatShell />
-{children}
+<ChatSystem
+  id={id}
+  initialMessages={[]}
+  persistedQueriesEnabled={false}
+  routeSource="home"
+/>
 ```
 
-That shell renders the writable `ChatSystem` for `/` and `/chat/:id`. The pages themselves become thin route/data wrappers.
+Persisted routes use `ChatRouteSystem`, which loads persisted messages unless a bootstrap entry is available.
 
-### 3. The Runtime Key Stays Stable Across First Send
+### 3. Bootstrap Entries Bridge The Navigation
 
-`ChatSystem` still uses the chat id as the remount key:
+Before navigating, `useStartProvisionalChat` stores the submitted message and request specs:
 
-```tsx
-<DataStreamProvider key={id}>
-  <CustomStoreProvider<ChatMessage> initialMessages={initialMessages} key={id}>
+```typescript
+setChatBootstrap(
+  createChatBootstrapEntry({ chatId, message, projectId, requestSpecs })
+);
 ```
 
-On `/`, `id` is the provisional id. On the first send, the client persists the chat under that same id, then navigates to `/chat/:id`. Because the key does not change, the runtime does not remount.
+`ChatPage` and `ProjectChatPage` call `useResolvedChatBootstrap(chatId)` and pass the result to `ChatSystem`. `ChatSync` sends the primary request, creates pending assistant placeholders, and starts secondary parallel requests after the server confirms the chat.
 
 ### 4. Navigation Uses The App Router
 
-For the non-project first-message flow, the input navigates with the real router:
+For the first-message flow, the input navigates with the real router:
 
 ```typescript
-if (pathname === "/") {
-  router.push(`/chat/${chatId}`);
-}
+router.push(projectId ? `/project/${projectId}/chat/${chatId}` : `/chat/${chatId}`);
 ```
 
-This keeps the App Router, browser history, and chat runtime in sync.
+This keeps the App Router, browser history, and chat route state in sync.
 
 ### 5. Full Resets Still Happen Via Key Changes
 
 The remount strategy is preserved:
 
-- `/` draft -> `/chat/:id` with the same id: no remount
+- `/` draft -> `/chat/:id` with the same id: bootstrap replays the submitted message
 - `/chat/a` -> `/chat/b`: key changes, full remount
 - `/chat/a` -> `/`: new provisional id, full remount
 - tree branch switch inside one chat: same chat id, `threadEpoch` changes, `ChatSync` remounts
 
 ## Flow
 
-1. Visit `/` -> layout runtime creates provisional id `abc123`
-2. Type and send -> local runtime still uses `abc123`
-3. Client persists under `abc123`
+1. Visit `/` -> `ChatHome` calls `useDraftChatId()` and renders `ChatSystem` with draft id `abc123`
+2. Type and send -> `buildDraftChatSubmission` creates the user message and request specs
+3. `useStartProvisionalChat` stores a `ChatBootstrapEntry` for `abc123`
 4. Client navigates with `router.push("/chat/abc123")`
-5. Layout shell stays mounted
-6. `ChatSystem` key stays `abc123`, so `useChat` does not remount
-7. Later navigation to another chat or a fresh home draft changes the key and resets state
+5. `ChatPage` calls `useResolvedChatBootstrap("abc123")`
+6. `ChatSystem` receives the bootstrap entry and `ChatSync` sends the primary request
+7. When bootstrap settles, the entry is cleared and persisted message queries resume
+8. Later navigation to another chat or a fresh home draft changes the key and resets state
 
 ## Benefits
 

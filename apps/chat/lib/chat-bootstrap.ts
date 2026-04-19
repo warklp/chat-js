@@ -95,10 +95,14 @@ function writeEntryToStorage(entry: ChatBootstrapEntry) {
     return;
   }
 
-  window.sessionStorage.setItem(
-    storageKey(entry.chatId),
-    JSON.stringify(serializeEntry(entry))
-  );
+  try {
+    window.sessionStorage.setItem(
+      storageKey(entry.chatId),
+      JSON.stringify(serializeEntry(entry))
+    );
+  } catch (error) {
+    console.warn("Failed to persist bootstrap entry", error);
+  }
 }
 
 function deleteEntryFromStorage(chatId: string) {
@@ -106,7 +110,11 @@ function deleteEntryFromStorage(chatId: string) {
     return;
   }
 
-  window.sessionStorage.removeItem(storageKey(chatId));
+  try {
+    window.sessionStorage.removeItem(storageKey(chatId));
+  } catch (error) {
+    console.warn("Failed to delete bootstrap entry", error);
+  }
 }
 
 function readEntryFromStorage(chatId: string) {
@@ -114,7 +122,14 @@ function readEntryFromStorage(chatId: string) {
     return null;
   }
 
-  const raw = window.sessionStorage.getItem(storageKey(chatId));
+  let raw: string | null;
+
+  try {
+    raw = window.sessionStorage.getItem(storageKey(chatId));
+  } catch (error) {
+    console.warn("Failed to read bootstrap entry", error);
+    return null;
+  }
 
   if (!raw) {
     return null;

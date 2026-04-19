@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
 import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
+import { createParallelRequestBody } from "@/lib/parallel-chat-requests";
 import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
 import { cn } from "@/lib/utils";
 
@@ -138,17 +139,12 @@ function PureSuggestedActions({
       return;
     }
 
-    sendMessage(submission.message, {
-      body: {
-        data: {
-          deepResearch: false,
-          webSearch: false,
-          reason: false,
-          generateImage: false,
-          writeOrCode: false,
-        },
-      },
-    });
+    const primaryRequest = submission.requestSpecs[0];
+    if (primaryRequest) {
+      sendMessage(submission.message, {
+        body: createParallelRequestBody(primaryRequest, true),
+      });
+    }
   };
 
   return (

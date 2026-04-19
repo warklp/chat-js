@@ -43,13 +43,16 @@ function getDraftChatId(projectId: string | null | undefined, version: number) {
 }
 
 export function resetDraftChatId(projectId?: string | null) {
+  const currentVersion = getDraftVersion(projectId);
+  draftIds.delete(getDraftKey(projectId, currentVersion));
+
   if (projectId) {
-    projectDraftVersions.set(projectId, getDraftVersion(projectId) + 1);
+    projectDraftVersions.set(projectId, currentVersion + 1);
     emitChange();
     return;
   }
 
-  homeDraftVersion += 1;
+  homeDraftVersion = currentVersion + 1;
   emitChange();
 }
 
@@ -62,6 +65,9 @@ function useDraftVersion(projectId?: string | null) {
 }
 
 export function useDraftChatId(projectId?: string | null) {
-  const draftVersion = useDraftVersion(projectId);
-  return getDraftChatId(projectId, draftVersion);
+  return useSyncExternalStore(
+    subscribe,
+    () => getDraftChatId(projectId, getDraftVersion(projectId)),
+    () => null
+  );
 }
