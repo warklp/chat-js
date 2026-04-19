@@ -1,7 +1,8 @@
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import {
   createChatBootstrapEntry,
@@ -13,11 +14,50 @@ import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import { useModelChange } from "@/providers/default-model-provider";
 import { useSession } from "@/providers/session-provider";
 
+function getProvisionalChatHref({
+  chatId,
+  projectId,
+  source,
+}: {
+  chatId: string;
+  projectId: string | null;
+  source: "home" | "project";
+}) {
+  if (source === "project") {
+    return projectId ? (`/project/${projectId}/chat/${chatId}` as Route) : null;
+  }
+
+  return `/chat/${chatId}` as Route;
+}
+
 export function useStartProvisionalChat(chatId: string) {
   const router = useRouter();
   const currentRoute = useCurrentChatRoute();
   const changeModel = useModelChange();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    if (!(session?.user && currentRoute.type === "provisional")) {
+      return;
+    }
+
+    const href = getProvisionalChatHref({
+      chatId,
+      projectId: currentRoute.projectId,
+      source: currentRoute.source,
+    });
+
+    if (href) {
+      router.prefetch(href);
+    }
+  }, [
+    chatId,
+    currentRoute.projectId,
+    currentRoute.source,
+    currentRoute.type,
+    router,
+    session?.user,
+  ]);
 
   return useCallback(
     ({
@@ -47,11 +87,21 @@ export function useStartProvisionalChat(chatId: string) {
         })
       );
 
-      if (currentRoute.source === "project" && currentRoute.projectId) {
-        router.push(`/project/${currentRoute.projectId}/chat/${chatId}`);
+      const href = getProvisionalChatHref({
+        chatId,
+        projectId: currentRoute.projectId,
+        source: currentRoute.source,
+      });
+
+      if (!href) {
+        return false;
+      }
+
+      router.push(href);
+
+      if (currentRoute.source === "project") {
         resetDraftChatId(currentRoute.projectId);
       } else {
-        router.push(`/chat/${chatId}`);
         resetDraftChatId();
       }
 
