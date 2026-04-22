@@ -9,91 +9,87 @@ import { MessageTreeSync } from "@/components/message-tree-sync";
 import { ArtifactProvider } from "@/hooks/use-artifact";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
-import type { ChatBootstrapEntry } from "@/lib/chat-bootstrap";
 import type { ChatRouteSource } from "@/lib/chat-route";
+import type { InitialChatTransition } from "@/lib/chat-runtime-transition";
 import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
 import { useThreadEpoch } from "@/lib/stores/hooks-threads";
+import type { UIChat } from "@/lib/types/ui-chat";
 import { ChatInputProvider } from "@/providers/chat-input-provider";
 
 function ChatThreadSync({
-  bootstrapEntry,
   id,
-  onBootstrapSettled,
   projectId,
+  transition,
   withHandler,
 }: {
-  bootstrapEntry?: ChatBootstrapEntry | null;
   id: string;
-  onBootstrapSettled?: () => void;
   projectId?: string;
+  transition?: InitialChatTransition | null;
   withHandler: boolean;
 }) {
   const threadEpoch = useThreadEpoch();
+
   return (
     <>
       <ChatSync
-        bootstrapEntry={bootstrapEntry}
         id={id}
         key={`chat-sync:${id}:${threadEpoch}`}
-        onBootstrapSettled={onBootstrapSettled}
         projectId={projectId}
+        transition={transition}
       />
       {withHandler ? (
-        <DataStreamHandler id={id} key={`stream:${id}:${threadEpoch}`} />
+        <DataStreamHandler key={`stream:${id}:${threadEpoch}`} />
       ) : null}
     </>
   );
 }
 
 export const ChatSystem = memo(function PureChatSystem({
-  bootstrapEntry,
+  chat,
   id,
   initialMessages,
   isReadonly,
   initialTool = null,
-  onBootstrapSettled,
   overrideModelId,
   projectId,
-  persistedQueriesEnabled = true,
   routeSource = projectId ? "project" : "chat",
+  runtimeKey,
+  syncedMessages,
+  transition,
 }: {
-  bootstrapEntry?: ChatBootstrapEntry | null;
+  chat?: UIChat | null;
   id: string;
   initialMessages: ChatMessage[];
   isReadonly: boolean;
   initialTool?: UiToolName | null;
-  onBootstrapSettled?: () => void;
   overrideModelId?: AppModelId;
   projectId?: string;
-  persistedQueriesEnabled?: boolean;
   routeSource?: ChatRouteSource;
+  runtimeKey: string;
+  syncedMessages?: ChatMessage[] | null;
+  transition?: InitialChatTransition | null;
 }) {
   return (
-    <ArtifactProvider key={id}>
-      <DataStreamProvider key={id}>
+    <ArtifactProvider key={runtimeKey}>
+      <DataStreamProvider key={runtimeKey}>
         <CustomStoreProvider<ChatMessage>
           initialMessages={initialMessages}
-          key={id}
+          key={runtimeKey}
         >
-          <MessageTreeSync
-            chatId={id}
-            persistedQueriesEnabled={persistedQueriesEnabled}
-            source={routeSource}
-          />
+          <MessageTreeSync messages={syncedMessages} />
           {isReadonly ? (
             <>
               <ChatThreadSync
-                bootstrapEntry={bootstrapEntry}
                 id={id}
-                onBootstrapSettled={onBootstrapSettled}
                 projectId={projectId}
+                transition={transition}
                 withHandler={false}
               />
               <Chat
+                chat={chat}
                 id={id}
                 isReadonly={isReadonly}
-                key={id}
-                persistedQueriesEnabled={persistedQueriesEnabled}
+                key={runtimeKey}
                 projectId={projectId}
                 routeSource={routeSource}
               />
@@ -106,17 +102,16 @@ export const ChatSystem = memo(function PureChatSystem({
               overrideModelId={overrideModelId}
             >
               <ChatThreadSync
-                bootstrapEntry={bootstrapEntry}
                 id={id}
-                onBootstrapSettled={onBootstrapSettled}
                 projectId={projectId}
+                transition={transition}
                 withHandler={true}
               />
               <Chat
+                chat={chat}
                 id={id}
                 isReadonly={isReadonly}
-                key={id}
-                persistedQueriesEnabled={persistedQueriesEnabled}
+                key={runtimeKey}
                 projectId={projectId}
                 routeSource={routeSource}
               />

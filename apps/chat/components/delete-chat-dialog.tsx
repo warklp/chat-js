@@ -48,7 +48,10 @@ export function DeleteChatDialog({
 
     setShowDeleteDialog(false);
 
-    if (deleteId === currentRoute.id && currentRoute.type === "chat") {
+    if (
+      deleteId === currentRoute.id &&
+      (currentRoute.type === "chat" || currentRoute.type === "projectChat")
+    ) {
       if (currentRoute.source === "project" && currentRoute.projectId) {
         resetDraftChatId(currentRoute.projectId);
         router.push(`/project/${currentRoute.projectId}`);

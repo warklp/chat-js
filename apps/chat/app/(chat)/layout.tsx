@@ -14,9 +14,11 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { getQueryClient, HydrateClient, trpc } from "@/trpc/server";
 import { auth } from "../../lib/auth";
 import { ChatProviders } from "./chat-providers";
+import { ChatRouteHost } from "./chat-route-host";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export default async function ChatLayout({
   children,
@@ -94,7 +96,7 @@ export default async function ChatLayout({
                 <ChatModelsProvider models={chatModels}>
                   <DefaultModelProvider defaultModel={defaultModel}>
                     <KeyboardShortcuts />
-                    {children}
+                    <ChatRouteHost>{children}</ChatRouteHost>
                   </DefaultModelProvider>
                 </ChatModelsProvider>
               </SidebarInset>

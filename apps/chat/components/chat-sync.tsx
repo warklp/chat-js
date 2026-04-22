@@ -11,55 +11,86 @@ import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
+import type { InitialChatTransition } from "@/lib/chat-runtime-transition";
 import {
-  type ChatBootstrapEntry,
-  clearChatBootstrap,
-  getChatBootstrapPrimaryRequestBody,
-  getChatBootstrapSecondaryRequestSpecs,
-  runBootstrapSecondaryRequests,
-  useChatBootstrap,
-} from "@/lib/chat-bootstrap";
-import {
-  addPendingAssistantMessages,
   markParallelRequestSpecsFailed,
+  runParallelRequestSpecs,
 } from "@/lib/parallel-chat-requests";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,
 } from "@/lib/stores/hooks-threads";
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { useChatRuntimeTransition } from "@/providers/chat-runtime-transition-provider";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
+
+function getResumableActiveStreamId(activeStreamId: string | null | undefined) {
+  return activeStreamId && !activeStreamId.startsWith("pending:")
+    ? activeStreamId
+    : null;
+}
 
 function isResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return !!(activeStreamId && !activeStreamId.startsWith("pending:"));
 }
 
+const reconnectClaimTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const RECONNECT_CLAIM_TTL_MS = 60_000;
+
+function claimReconnectStream(activeStreamId: string | null | undefined) {
+  const streamId = getResumableActiveStreamId(activeStreamId);
+  if (!streamId) {
+    return false;
+  }
+
+  if (reconnectClaimTimeouts.has(streamId)) {
+    return false;
+  }
+
+  const timeout = setTimeout(() => {
+    reconnectClaimTimeouts.delete(streamId);
+  }, RECONNECT_CLAIM_TTL_MS);
+  reconnectClaimTimeouts.set(streamId, timeout);
+  return true;
+}
+
+function releaseReconnectStream(activeStreamId: string | null | undefined) {
+  const streamId = getResumableActiveStreamId(activeStreamId);
+  if (!streamId) {
+    return;
+  }
+
+  const timeout = reconnectClaimTimeouts.get(streamId);
+  if (timeout) {
+    clearTimeout(timeout);
+  }
+  reconnectClaimTimeouts.delete(streamId);
+}
+
 export function ChatSync({
-  bootstrapEntry,
   id,
-  onBootstrapSettled,
   projectId,
+  transition,
 }: {
-  bootstrapEntry?: ChatBootstrapEntry | null;
   id: string;
-  onBootstrapSettled?: () => void;
   projectId?: string;
+  transition?: InitialChatTransition | null;
 }) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
   const { dataStream, setDataStream } = useDataStream();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const [autoResume, setAutoResume] = useState(() => !bootstrapEntry);
+  const [autoResume, setAutoResume] = useState(true);
+  const { markTransitionPhase, settleTransition } = useChatRuntimeTransition();
 
   const isAuthenticated = !!session?.user;
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
-  const hasBootstrappedRef = useRef(false);
-  const hasStartedBootstrapSecondariesRef = useRef(false);
-  const hasSettledBootstrapRef = useRef(false);
-  const liveBootstrapEntry = useChatBootstrap(id);
+  const hasHandledTransitionConfirmationRef = useRef(false);
+  const hasSettledTransitionRef = useRef(false);
+  const claimedReconnectStreamIdRef = useRef<string | null>(null);
 
   const lastMessage = threadInitialMessages.at(-1);
   const lastMessageRef = useRef(lastMessage);
@@ -77,6 +108,8 @@ export function ChatSync({
     messages: threadInitialMessages,
     generateId: generateUUID,
     onFinish: ({ message }) => {
+      releaseReconnectStream(claimedReconnectStreamIdRef.current);
+      claimedReconnectStreamIdRef.current = null;
       addMessageToTree(message);
       saveChatMessage({ message, chatId: id });
       setAutoResume(true);
@@ -98,11 +131,22 @@ export function ChatSync({
       },
       prepareReconnectToStreamRequest({ id: chatId }) {
         const current = lastMessageRef.current;
-        const partialMessageId = isResumableActiveStreamId(
-          current?.metadata?.activeStreamId
-        )
+        const activeStreamId = current?.metadata?.activeStreamId ?? null;
+        const partialMessageId = isResumableActiveStreamId(activeStreamId)
           ? (current?.id ?? null)
           : null;
+        const didClaim = claimReconnectStream(activeStreamId);
+
+        if (!(didClaim || !partialMessageId)) {
+          return {
+            api: `/api/chat/${chatId}/stream?messageId=${partialMessageId}&duplicate=1`,
+          };
+        }
+
+        if (didClaim) {
+          claimedReconnectStreamIdRef.current = activeStreamId;
+        }
+
         return {
           api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
         };
@@ -115,6 +159,9 @@ export function ChatSync({
       );
     },
     onError: (error) => {
+      releaseReconnectStream(claimedReconnectStreamIdRef.current);
+      claimedReconnectStreamIdRef.current = null;
+
       if (
         error instanceof ChatSDKError &&
         error.type === "not_found" &&
@@ -123,118 +170,122 @@ export function ChatSync({
         setAutoResume(false);
       }
 
-      if (bootstrapEntry && !hasSettledBootstrapRef.current) {
-        clearChatBootstrap(bootstrapEntry.chatId);
+      if (transition && !hasSettledTransitionRef.current) {
+        hasSettledTransitionRef.current = true;
+        settleTransition(transition.chatId);
       }
 
       const { message, description } = getStreamErrorToastContent(error);
       toast.error(message, description ? { description } : undefined);
     },
   });
-  const { sendMessage, setMessages, status, stop } = chatHelpers;
+  const { status } = chatHelpers;
 
   useEffect(() => {
-    if (!bootstrapEntry) {
-      hasStartedBootstrapSecondariesRef.current = false;
+    if (!transition) {
+      hasHandledTransitionConfirmationRef.current = false;
+      hasSettledTransitionRef.current = false;
       return;
     }
 
-    if (
-      hasStartedBootstrapSecondariesRef.current ||
-      getChatBootstrapSecondaryRequestSpecs(bootstrapEntry).length === 0
-    ) {
+    if (hasHandledTransitionConfirmationRef.current) {
       return;
     }
 
     const isChatConfirmed = (dataStream ?? []).some(
       (delta) =>
         delta.type === "data-chatConfirmed" &&
-        delta.data.chatId === bootstrapEntry.chatId
+        delta.data.chatId === transition.chatId
     );
 
     if (!isChatConfirmed) {
       return;
     }
 
-    hasStartedBootstrapSecondariesRef.current = true;
+    hasHandledTransitionConfirmationRef.current = true;
+    markTransitionPhase(transition.chatId, "confirmed");
 
-    runBootstrapSecondaryRequests(bootstrapEntry)
+    const invalidatePersistedChatQueries = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getChatMessages.queryKey({
+            chatId: transition.chatId,
+          }),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getChatById.queryKey({
+            chatId: transition.chatId,
+          }),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: trpc.chat.getAllChats.queryKey(),
+          exact: false,
+        }),
+      ]);
+    };
+
+    const secondaryRequestSpecs = transition.requestSpecs.slice(1);
+
+    if (secondaryRequestSpecs.length === 0) {
+      invalidatePersistedChatQueries().catch(() => {
+        toast.error("Failed to refresh chat history");
+      });
+      return;
+    }
+
+    runParallelRequestSpecs({
+      chatId: transition.chatId,
+      message: transition.message,
+      projectId: transition.projectId,
+      requestSpecs: secondaryRequestSpecs,
+    })
       .then((failedRequestSpecs) => {
         if (failedRequestSpecs.length > 0) {
           markParallelRequestSpecsFailed({
             addMessageToTree,
-            message: bootstrapEntry.message,
+            message: transition.message,
             requestSpecs: failedRequestSpecs,
           });
           toast.error("Failed to complete all parallel responses");
         }
 
-        return queryClient.invalidateQueries({
-          queryKey: trpc.chat.getChatMessages.queryKey({
-            chatId: bootstrapEntry.chatId,
-          }),
-        });
+        return invalidatePersistedChatQueries();
       })
       .catch(() => {
         toast.error("Failed to complete all parallel responses");
       });
-  }, [addMessageToTree, bootstrapEntry, dataStream, queryClient, trpc]);
+  }, [
+    addMessageToTree,
+    dataStream,
+    markTransitionPhase,
+    queryClient,
+    transition,
+    trpc,
+  ]);
 
   useEffect(() => {
-    if (!(bootstrapEntry && !hasBootstrappedRef.current)) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      hasBootstrappedRef.current = true;
-      setAutoResume(false);
-      setMessages([]);
-
-      sendMessage(bootstrapEntry.message, {
-        body: getChatBootstrapPrimaryRequestBody(bootstrapEntry) ?? undefined,
-      });
-      addMessageToTree(bootstrapEntry.message);
-      addPendingAssistantMessages({
-        addMessageToTree,
-        message: bootstrapEntry.message,
-        requestSpecs: bootstrapEntry.requestSpecs,
-      });
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [addMessageToTree, bootstrapEntry, sendMessage, setMessages]);
-
-  useEffect(() => {
-    if (liveBootstrapEntry) {
-      hasSettledBootstrapRef.current = false;
-      return;
-    }
-
     if (
       !(
-        bootstrapEntry &&
-        hasBootstrappedRef.current &&
+        transition &&
+        transition.phase === "confirmed" &&
         (status === "ready" || status === "error") &&
-        !hasSettledBootstrapRef.current
+        !hasSettledTransitionRef.current
       )
     ) {
       return;
     }
 
-    hasSettledBootstrapRef.current = true;
-    onBootstrapSettled?.();
-  }, [bootstrapEntry, liveBootstrapEntry, onBootstrapSettled, status]);
+    hasSettledTransitionRef.current = true;
+    settleTransition(transition.chatId);
+  }, [settleTransition, status, transition]);
 
-  // Backstop: if we remount ChatSync (e.g. threadEpoch changes), ensure the prior
-  // in-flight stream is aborted and we don't replay old deltas.
+  // Keep route changes from turning an in-flight stream into a client-side
+  // partial finish. The server owns persisted stream finalization.
   useEffect(
     () => () => {
-      stop?.();
       setDataStream([]);
     },
-    [setDataStream, stop]
+    [setDataStream]
   );
 
   useCompleteDataPart();

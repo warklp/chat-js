@@ -20,46 +20,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  useGetChatById,
-  usePinChat,
-  useProject,
-  useRenameChat,
-} from "@/hooks/chat-sync-hooks";
+import { usePinChat, useProject, useRenameChat } from "@/hooks/chat-sync-hooks";
 import { usePublicChat } from "@/hooks/use-shared-chat";
 import type { Session } from "@/lib/auth";
 import type { ChatRouteSource } from "@/lib/chat-route";
 import type { ProjectColorName, ProjectIconName } from "@/lib/project-icons";
+import type { UIChat } from "@/lib/types/ui-chat";
 import { cn } from "@/lib/utils";
 import { ShareDialog } from "./share-button";
 
 interface HeaderBreadcrumbProps {
+  chat?: UIChat | null;
   chatId: string;
   className?: string;
   hasMessages?: boolean;
   isReadonly: boolean;
-  persistedQueriesEnabled: boolean;
   projectId?: string;
   routeSource: ChatRouteSource;
   user?: Session["user"];
 }
 
 export function HeaderBreadcrumb({
+  chat,
   chatId,
-  projectId: _projectId,
   user,
   isReadonly,
   hasMessages,
   className,
-  persistedQueriesEnabled,
   routeSource,
 }: HeaderBreadcrumbProps) {
   const isShared = routeSource === "share";
   const isAuthenticated = !!user;
 
-  const { data: chat } = useGetChatById(chatId, {
-    enabled: !isShared && persistedQueriesEnabled,
-  });
   const { data: publicChat } = usePublicChat(chatId, {
     enabled: isShared,
   });

@@ -13,9 +13,7 @@ import {
   sheetArtifact,
 } from "@/lib/artifacts/sheet/client";
 import { textArtifact } from "@/lib/artifacts/text/client";
-import { clearChatBootstrap } from "@/lib/chat-bootstrap";
 import { useChatInput } from "@/providers/chat-input-provider";
-import { useSession } from "@/providers/session-provider";
 import { useDataStream } from "./data-stream-provider";
 
 function createTypedMetadataSetter<M extends ArtifactMetadata>(
@@ -95,13 +93,11 @@ function processArtifactStreamPart({
   }
 }
 
-export function DataStreamHandler({ id }: { id: string }) {
+export function DataStreamHandler() {
   const { dataStream } = useDataStream();
   const { artifact, setArtifact, setMetadata } = useArtifact();
   const lastProcessedIndex = useRef(-1);
-  const { data: session } = useSession();
   const { setSelectedTool } = useChatInput();
-  const isAuthenticated = !!session;
 
   useEffect(() => {
     if (!dataStream?.length) {
@@ -112,14 +108,6 @@ export function DataStreamHandler({ id }: { id: string }) {
     lastProcessedIndex.current = dataStream.length - 1;
 
     for (const delta of newDeltas) {
-      if (
-        delta.type === "data-chatConfirmed" &&
-        isAuthenticated &&
-        id === delta.data.chatId
-      ) {
-        clearChatBootstrap(delta.data.chatId);
-      }
-
       handleResearchUpdate({ delta, setSelectedTool });
 
       processArtifactStreamPart({
@@ -129,15 +117,7 @@ export function DataStreamHandler({ id }: { id: string }) {
         setMetadata,
       });
     }
-  }, [
-    dataStream,
-    setArtifact,
-    setMetadata,
-    artifact,
-    isAuthenticated,
-    setSelectedTool,
-    id,
-  ]);
+  }, [dataStream, setArtifact, setMetadata, artifact, setSelectedTool]);
 
   return null;
 }

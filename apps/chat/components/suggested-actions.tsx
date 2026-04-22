@@ -15,8 +15,12 @@ import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
 import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
-import { createParallelRequestBody } from "@/lib/parallel-chat-requests";
+import {
+  addPendingAssistantMessages,
+  createParallelRequestBody,
+} from "@/lib/parallel-chat-requests";
 import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
+import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { cn } from "@/lib/utils";
 
 interface SuggestedActionsProps {
@@ -32,6 +36,7 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const { sendMessage } = useChatActions<ChatMessage>();
   const startProvisionalChat = useStartProvisionalChat(chatId);
+  const addMessageToTree = useAddMessageToTree();
   const containerRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(
     () =>
@@ -143,6 +148,12 @@ function PureSuggestedActions({
     if (primaryRequest) {
       sendMessage(submission.message, {
         body: createParallelRequestBody(primaryRequest, true),
+      });
+      addMessageToTree(submission.message);
+      addPendingAssistantMessages({
+        addMessageToTree,
+        message: submission.message,
+        requestSpecs: submission.requestSpecs,
       });
     }
   };

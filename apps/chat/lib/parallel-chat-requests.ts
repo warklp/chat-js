@@ -52,6 +52,22 @@ function createAssistantPlaceholder({
   };
 }
 
+export function createPendingAssistantMessage({
+  activeStreamId,
+  message,
+  requestSpec,
+}: {
+  activeStreamId: string | null;
+  message: ChatMessage;
+  requestSpec: ParallelRequestSpec;
+}) {
+  return createAssistantPlaceholder({
+    activeStreamId,
+    parentMessageId: message.id,
+    requestSpec,
+  });
+}
+
 export function addPendingAssistantMessages({
   addMessageToTree,
   message,
@@ -63,9 +79,9 @@ export function addPendingAssistantMessages({
 }) {
   for (const requestSpec of requestSpecs) {
     addMessageToTree(
-      createAssistantPlaceholder({
+      createPendingAssistantMessage({
         activeStreamId: `pending:${requestSpec.assistantMessageId}`,
-        parentMessageId: message.id,
+        message,
         requestSpec,
       })
     );

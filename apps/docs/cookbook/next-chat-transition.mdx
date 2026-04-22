@@ -1,0 +1,99 @@
+---
+title: Next.js Chat Transition
+description: Keep the first-message chat runtime alive while App Router moves from a draft route to a persisted chat route
+---
+
+This pattern lets a user send the first message on `/` or `/project/:projectId`, navigate with the Next.js App Router to the persisted chat URL, and keep the same writable chat runtime alive during that transition.
+
+## The Problem
+
+The first-message flow has competing requirements:
+
+1. A new chat needs a real URL like `/chat/:id` or `/project/:projectId/chat/:chatId`
+2. The submitted message and pending assistant placeholders must survive the route change
+3. Normal navigation between existing chats must still reset the runtime
+4. The App Router tree must stay in sync with browser history
+
+Using `window.history.pushState` updates the URL but bypasses Next.js routing. Mounting a separate chat runtime in every page keeps routing honest, but the first-message navigation remounts the store and loses optimistic state.
+
+## The Solution
+
+`ChatRouteHost` owns the writable chat route subtree under the chat layout. It renders the same `ChatSystem` for draft and persisted chat routes, and it passes a transition object through `ChatRuntimeTransitionProvider` while the first request is moving from draft route to persisted route.
+
+The transition has three important pieces:
+
+- a client-generated draft chat id from `useDraftChatId`
+- a stable `runtimeKey` from `getBaseChatRuntimeKey`
+- the submitted user message plus `ParallelRequestSpec` values from `buildDraftChatSubmission`
+
+During the transition, `/` and `/chat/:id` share the same runtime key. After the server confirms the chat and the stream settles, the transition is cleared and future route changes use normal path-based keys.
+
+## Parts Involved
+
+| Part | Responsibility |
+| --- | --- |
+| `parseChatIdFromPathname` | Classifies `/`, `/chat/:id`, `/project/:projectId`, `/project/:projectId/chat/:chatId`, `/share/:id`, and passthrough routes |
+| `ChatRouteHost` | Hosts writable chat routes, loads persisted chat/message data, owns transition state, and decides when to render fallback children |
+| `ChatRuntimeTransitionProvider` | Exposes `startInitialTransition`, `markTransitionPhase`, `settleTransition`, and the active transition |
+| `useDraftChatId` / `resetDraftChatId` | Generates per-home and per-project draft ids and advances them after promotion |
+| `buildDraftChatSubmission` | Creates the user message and request specs, including parallel response metadata |
+| `useStartProvisionalChat` | Starts the transition, sends the primary request, adds optimistic messages, and calls `router.push` |
+| `ChatSystem` | Keys the artifact, data stream, and message store by `runtimeKey` instead of only by chat id |
+| `MessageTreeSync` | Copies already-loaded server messages into the message tree; route fetching lives in `ChatRouteHost` |
+| `ChatSync` | Handles `data-chatConfirmed`, invalidates persisted queries, runs secondary parallel requests, and settles the transition |
+| `DataStreamHandler` | Processes stream deltas for artifacts, research updates, and selected tool reset |
+| `/api/chat` | Idempotently saves the user message and assistant placeholder, streams the primary response, and emits `data-chatConfirmed` |
+| `/api/chat/prepare` | Creates the chat and saves the user message before secondary parallel requests run |
+
+## Flow
+
+1. `ChatRouteHost` parses `/` or `/project/:projectId` as a draft route.
+2. It gets a draft id from `useDraftChatId` and renders `ChatSystem`.
+3. `MultimodalInput` or `SuggestedActions` calls `buildDraftChatSubmission`.
+4. `useStartProvisionalChat` stores an `InitialChatTransition`, sends the primary request, adds the user and pending assistant messages, and calls `router.push`.
+5. The destination route re-renders through `ChatRouteHost`, but `getChatRuntimeKey` returns the same transition key, so the chat runtime stays mounted.
+6. `/api/chat` persists the chat, user message, and assistant placeholder idempotently, then streams `data-chatConfirmed`.
+7. `ChatSync` marks the transition confirmed, invalidates persisted chat queries, and runs secondary parallel requests through `/api/chat/prepare` plus `/api/chat`.
+8. When the primary stream reaches `ready` or `error`, `ChatSync` settles the transition.
+9. Later navigation uses normal route keys again, so `/chat/a` to `/chat/b` and persisted chat back to `/` fully reset state.
+
+## Runtime Keys
+
+Draft routes include the draft id in the base key:
+
+```ts
+getBaseChatRuntimeKey({
+  draftChatId,
+  pathname,
+  route,
+});
+```
+
+Persisted routes normally use `path:${pathname}`. While a transition is active, `getChatRuntimeKey` returns the original draft key for both the starting path and exact destination path. This is the part that preserves the store across the App Router navigation without lying to Next.js about the URL.
+
+## Parallel Responses
+
+The same transition carries all parallel response metadata:
+
+- the first request is sent immediately by `useStartProvisionalChat`
+- pending assistant placeholders are added for every request spec
+- after `data-chatConfirmed`, `ChatSync` calls `runParallelRequestSpecs` for secondary models
+- failed secondary requests are converted from pending placeholders into empty assistant messages with `activeStreamId: null`
+
+`/api/chat/prepare` exists so secondary requests can safely share the already-created chat and user message.
+
+## Resets
+
+The reset rules stay explicit:
+
+- `/` draft -> `/chat/:id` for the same transition: runtime key is preserved
+- `/project/:projectId` draft -> `/project/:projectId/chat/:chatId`: runtime key is preserved
+- `/chat/a` -> `/chat/b`: runtime key changes, full reset
+- `/chat/a` -> `/`: a new draft id is generated, full reset
+- branch switch inside one chat: chat id is stable, `threadEpoch` remounts `ChatSync`
+
+## Related
+
+- [URL Routing](/reference/routing) for the supported route shapes
+- [Parallel Responses](/features/parallel-responses) for multi-model response behavior
+- [Resumable Streams](/cookbook/resumable-streams) for reconnecting to active streams after refresh

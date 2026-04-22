@@ -10,18 +10,19 @@ import { MainChatPanel } from "@/components/chat/main-chat-panel";
 import { SecondaryChatPanel } from "@/components/chat/secondary-chat-panel";
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import type { ChatRouteSource } from "@/lib/chat-route";
+import type { UIChat } from "@/lib/types/ui-chat";
 
 export function Chat({
+  chat,
   id,
   isReadonly,
   projectId,
-  persistedQueriesEnabled,
   routeSource,
 }: {
+  chat?: UIChat | null;
   id: string;
   isReadonly: boolean;
   projectId?: string;
-  persistedQueriesEnabled: boolean;
   routeSource: ChatRouteSource;
 }) {
   const isSecondaryPanelVisible = useArtifactSelector(
@@ -32,10 +33,10 @@ export function Chat({
     <ChatLayout isSecondaryPanelVisible={isSecondaryPanelVisible}>
       <ChatLayoutMain>
         <MainChatPanel
+          chat={chat}
           chatId={id}
           className="flex h-full min-w-0 flex-1 flex-col"
           isReadonly={isReadonly}
-          persistedQueriesEnabled={persistedQueriesEnabled}
           projectId={projectId}
           routeSource={routeSource}
         />
