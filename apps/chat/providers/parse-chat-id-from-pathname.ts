@@ -38,9 +38,9 @@ export type ParsedChatIdFromPathname =
       projectId: null;
     };
 
-const SHARE_ROUTE_PATTERN = /^\/share\/(.+)$/;
-const PROJECT_ROUTE_PATTERN = /^\/project\/([^/]+)(?:\/chat\/(.+))?$/;
-const CHAT_ROUTE_PATTERN = /^\/chat\/(.+)$/;
+const SHARE_ROUTE_PATTERN = /^\/share\/([^/]+)$/;
+const PROJECT_ROUTE_PATTERN = /^\/project\/([^/]+)(?:\/chat\/([^/]+))?$/;
+const CHAT_ROUTE_PATTERN = /^\/chat\/([^/]+)$/;
 
 /**
  * Parse a Next.js pathname into the chat route shape.

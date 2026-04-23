@@ -73,4 +73,31 @@ describe("parseChatIdFromPathname", () => {
       projectId: null,
     });
   });
+
+  it("returns passthrough for chat routes with extra segments", () => {
+    expect(parseChatIdFromPathname("/chat/a/b")).toEqual({
+      type: "passthrough",
+      id: null,
+      source: null,
+      projectId: null,
+    });
+  });
+
+  it("returns passthrough for share routes with extra segments", () => {
+    expect(parseChatIdFromPathname("/share/a/b")).toEqual({
+      type: "passthrough",
+      id: null,
+      source: null,
+      projectId: null,
+    });
+  });
+
+  it("returns passthrough for project chat routes with extra segments", () => {
+    expect(parseChatIdFromPathname("/project/p/chat/a/b")).toEqual({
+      type: "passthrough",
+      id: null,
+      source: null,
+      projectId: null,
+    });
+  });
 });

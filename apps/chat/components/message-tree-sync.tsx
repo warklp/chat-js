@@ -16,7 +16,7 @@ export function MessageTreeSync({
   const setAllMessages = useSetAllMessages();
 
   useEffect(() => {
-    if (messages) {
+    if (messages !== undefined && messages !== null) {
       setAllMessages(messages);
     }
   }, [messages, setAllMessages]);

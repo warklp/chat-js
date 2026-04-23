@@ -248,11 +248,14 @@ export function ChatSync({
           });
           toast.error("Failed to complete all parallel responses");
         }
-
-        return invalidatePersistedChatQueries();
       })
       .catch(() => {
         toast.error("Failed to complete all parallel responses");
+      })
+      .finally(() => {
+        invalidatePersistedChatQueries().catch(() => {
+          toast.error("Failed to refresh chat history");
+        });
       });
   }, [
     addMessageToTree,
