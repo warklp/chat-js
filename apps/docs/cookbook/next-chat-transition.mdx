@@ -14,7 +14,7 @@ The first-message flow has competing requirements:
 3. Normal navigation between existing chats must still reset the runtime
 4. The App Router tree must stay in sync with browser history
 
-Using `window.history.pushState` updates the URL but bypasses Next.js routing. Mounting a separate chat runtime in every page keeps routing honest, but the first-message navigation remounts the store and loses optimistic state.
+Using `router.push` asks the App Router to load the destination route before the first stream has settled. Mounting a separate chat runtime in every page keeps routing honest, but the first-message navigation remounts the store and loses optimistic state.
 
 ## The Solution
 
@@ -50,7 +50,7 @@ During the transition, `/` and `/chat/:id` share the same runtime key. After the
 1. `ChatRouteHost` parses `/` or `/project/:projectId` as a draft route.
 2. It gets a draft id from `useDraftChatId` and renders `ChatSystem`.
 3. `MultimodalInput` or `SuggestedActions` calls `buildDraftChatSubmission`.
-4. `useStartProvisionalChat` stores an `InitialChatTransition`, sends the primary request, adds the user and pending assistant messages, and calls `router.push`.
+4. `useStartProvisionalChat` stores an `InitialChatTransition`, sends the primary request, adds the user and pending assistant messages, and updates the URL with `window.history.pushState`.
 5. The destination route re-renders through `ChatRouteHost`, but `getChatRuntimeKey` returns the same transition key, so the chat runtime stays mounted.
 6. `/api/chat` persists the chat, user message, and assistant placeholder idempotently, then streams `data-chatConfirmed`.
 7. `ChatSync` marks the transition confirmed, invalidates persisted chat queries, and runs secondary parallel requests through `/api/chat/prepare` plus `/api/chat`.
@@ -69,7 +69,7 @@ getBaseChatRuntimeKey({
 });
 ```
 
-Persisted routes normally use `path:${pathname}`. While a transition is active, `getChatRuntimeKey` returns the original draft key for both the starting path and exact destination path. This is the part that preserves the store across the App Router navigation without lying to Next.js about the URL.
+Persisted routes normally use `path:${pathname}`. While a transition is active, `getChatRuntimeKey` returns the original draft key for both the starting path and exact destination path. This preserves the store while `pushState` updates the URL and keeps `usePathname` in sync.
 
 ## Parallel Responses
 

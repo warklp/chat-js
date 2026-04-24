@@ -2,7 +2,7 @@
 
 import { useChatActions } from "@ai-sdk-tools/store";
 import type { Route } from "next";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
@@ -43,7 +43,6 @@ function isInitialRoute(
 }
 
 export function useStartProvisionalChat(chatId: string) {
-  const router = useRouter();
   const pathname = usePathname() ?? "/";
   const currentRoute = useCurrentChatRoute();
   const changeModel = useModelChange();
@@ -115,7 +114,7 @@ export function useStartProvisionalChat(chatId: string) {
         requestSpecs,
       });
 
-      router.push(href);
+      window.history.pushState(null, "", href);
       onStarted?.();
 
       return true;
@@ -126,7 +125,6 @@ export function useStartProvisionalChat(chatId: string) {
       chatId,
       currentRoute,
       pathname,
-      router,
       sendMessage,
       session?.user,
       startInitialTransition,
