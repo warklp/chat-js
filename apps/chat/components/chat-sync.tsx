@@ -179,7 +179,7 @@ export function ChatSync({
       toast.error(message, description ? { description } : undefined);
     },
   });
-  const { status } = chatHelpers;
+  const { status, stop } = chatHelpers;
 
   useEffect(() => {
     if (!transition) {
@@ -286,9 +286,12 @@ export function ChatSync({
   // partial finish. The server owns persisted stream finalization.
   useEffect(
     () => () => {
+      stop?.();
+      releaseReconnectStream(claimedReconnectStreamIdRef.current);
+      claimedReconnectStreamIdRef.current = null;
       setDataStream([]);
     },
-    [setDataStream]
+    [setDataStream, stop]
   );
 
   useCompleteDataPart();

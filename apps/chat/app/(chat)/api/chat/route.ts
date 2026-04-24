@@ -482,6 +482,20 @@ async function createChatStream({
   return stream;
 }
 
+function emptyChatStreamResponse() {
+  const stream = createUIMessageStream<ChatMessage>({
+    execute: () => undefined,
+  });
+
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
 async function executeChatRequest({
   chatId,
   userMessage,
@@ -543,7 +557,8 @@ async function executeChatRequest({
     });
 
     if (!insertedMessage) {
-      return new Response(null, { status: 204 });
+      clearTimeout(timeoutId);
+      return emptyChatStreamResponse();
     }
 
     await updateMessageActiveStreamId({
