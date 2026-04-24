@@ -522,7 +522,7 @@ async function executeChatRequest({
   if (!isAnonymous) {
     // The first transition request can replay before chatConfirmed arrives, so
     // placeholder creation must be idempotent.
-    await saveMessageIfNotExists({
+    const insertedMessage = await saveMessageIfNotExists({
       id: messageId,
       chatId,
       message: {
@@ -541,6 +541,10 @@ async function executeChatRequest({
         },
       },
     });
+
+    if (!insertedMessage) {
+      return new Response(null, { status: 204 });
+    }
 
     await updateMessageActiveStreamId({
       id: messageId,

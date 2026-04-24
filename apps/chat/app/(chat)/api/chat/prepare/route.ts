@@ -28,7 +28,7 @@ async function requirePrepareUser(chatId: string) {
   if (!userId) {
     log.warn({ chatId }, "POST /api/chat/prepare unauthenticated");
     return {
-      error: new Response("Multiple models require authentication", {
+      error: new Response("Authentication required", {
         status: 401,
       }),
     };

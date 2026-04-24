@@ -12,6 +12,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { ChatSystem } from "@/components/chat-system";
@@ -475,6 +476,11 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
   const [transition, setTransition] = useState<InitialChatTransition | null>(
     null
   );
+  const transitionRef = useRef<InitialChatTransition | null>(null);
+
+  useEffect(() => {
+    transitionRef.current = transition;
+  }, [transition]);
 
   useEffect(() => {
     if (!transition) {
@@ -483,27 +489,38 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
 
     if (pathname !== transition.fromPath && !transition.draftReset) {
       resetDraftChatId(transition.projectId);
-      setTransition((current) =>
-        current?.chatId === transition.chatId
-          ? { ...current, draftReset: true }
-          : current
-      );
+      setTransition((current) => {
+        const next =
+          current?.chatId === transition.chatId
+            ? { ...current, draftReset: true }
+            : current;
+        transitionRef.current = next;
+        return next;
+      });
       return;
     }
 
     if (isTransitionRouteMismatch({ pathname, transition })) {
+      transitionRef.current = null;
       setTransition(null);
     }
   }, [pathname, transition]);
 
   const startInitialTransition = useCallback(
     (input: StartInitialChatTransitionInput) => {
-      setTransition({
+      if (transitionRef.current) {
+        return false;
+      }
+
+      const nextTransition: InitialChatTransition = {
         ...input,
         draftReset: false,
         fromPath: pathname,
         phase: "submitted",
-      });
+      };
+
+      transitionRef.current = nextTransition;
+      setTransition(nextTransition);
 
       return true;
     },
@@ -512,15 +529,22 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
 
   const markTransitionPhase = useCallback(
     (chatId: string, phase: InitialChatTransition["phase"]) => {
-      setTransition((current) =>
-        current?.chatId === chatId ? { ...current, phase } : current
-      );
+      setTransition((current) => {
+        const next =
+          current?.chatId === chatId ? { ...current, phase } : current;
+        transitionRef.current = next;
+        return next;
+      });
     },
     []
   );
 
   const settleTransition = useCallback((chatId: string) => {
-    setTransition((current) => (current?.chatId === chatId ? null : current));
+    setTransition((current) => {
+      const next = current?.chatId === chatId ? null : current;
+      transitionRef.current = next;
+      return next;
+    });
   }, []);
 
   const hosted =
