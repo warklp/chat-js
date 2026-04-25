@@ -479,10 +479,6 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
   const transitionRef = useRef<InitialChatTransition | null>(null);
 
   useEffect(() => {
-    transitionRef.current = transition;
-  }, [transition]);
-
-  useEffect(() => {
     if (!transition) {
       return;
     }
