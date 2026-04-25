@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   notFound,
   redirect,
@@ -311,7 +311,6 @@ function HostedChatRoute({
 }) {
   const { data: session, isPending: isSessionPending } = useSession();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const { getModelById } = useChatModels();
   const projectHomeId = getProjectHomeId(route);
@@ -323,8 +322,7 @@ function HostedChatRoute({
     transition,
   });
   const persistedChatId = persistedRoute?.id ?? "";
-  const shouldLoadPersistedMessages =
-    !!persistedRoute && activeTransition?.phase !== "submitted";
+  const shouldLoadPersistedMessages = !!persistedRoute;
 
   const projectQuery = useQuery({
     ...trpc.project.getById.queryOptions({ id: projectHomeId ?? "" }),
@@ -344,34 +342,6 @@ function HostedChatRoute({
     enabled:
       shouldLoadPersistedMessages && (messagesQueryOptions.enabled ?? true),
   });
-
-  useEffect(() => {
-    if (!(shouldLoadPersistedMessages && persistedChatId)) {
-      return;
-    }
-
-    const refreshPersistedRoute = () => {
-      Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: trpc.chat.getChatById.queryKey({
-            chatId: persistedChatId,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: trpc.chat.getChatMessages.queryKey({
-            chatId: persistedChatId,
-          }),
-        }),
-      ]).catch(() => undefined);
-    };
-
-    refreshPersistedRoute();
-    window.addEventListener("pageshow", refreshPersistedRoute);
-
-    return () => {
-      window.removeEventListener("pageshow", refreshPersistedRoute);
-    };
-  }, [persistedChatId, queryClient, shouldLoadPersistedMessages, trpc]);
 
   const chatQueryReady =
     !shouldLoadPersistedMessages ||
