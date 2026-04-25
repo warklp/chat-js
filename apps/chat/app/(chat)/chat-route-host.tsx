@@ -47,10 +47,6 @@ interface ChatRouteHostProps {
   children: ReactNode;
 }
 
-function useRoutePathname() {
-  return usePathname() ?? "/";
-}
-
 function ChatLoadingShell() {
   return <div className="h-dvh w-full bg-background" />;
 }
@@ -455,7 +451,7 @@ function HostedChatRoute({
 }
 
 export function ChatRouteHost({ children }: ChatRouteHostProps) {
-  const pathname = useRoutePathname();
+  const pathname = usePathname();
   const route = useMemo(() => parseChatIdFromPathname(pathname), [pathname]);
   const [transition, setTransition] = useState<InitialChatTransition | null>(
     null
