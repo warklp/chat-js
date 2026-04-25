@@ -122,18 +122,6 @@ function getProjectIdForChatSystem({
   return persistedRoute?.projectId ?? undefined;
 }
 
-function getActiveChatTransition({
-  activeTransition,
-  id,
-  transition,
-}: {
-  activeTransition: InitialChatTransition | null;
-  id: string | null;
-  transition: InitialChatTransition | null;
-}) {
-  return activeTransition ?? (transition?.chatId === id ? transition : null);
-}
-
 function shouldShowSessionLoading({
   isSessionPending,
   route,
@@ -461,11 +449,7 @@ function HostedChatRoute({
       routeSource={route.source}
       runtimeKey={runtimeKey}
       syncedMessages={syncedMessages}
-      transition={getActiveChatTransition({
-        activeTransition,
-        id,
-        transition,
-      })}
+      transition={activeTransition}
     />
   );
 }
