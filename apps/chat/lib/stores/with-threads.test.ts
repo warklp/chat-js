@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import type { StoreState as BaseChatStoreState } from "@ai-sdk-tools/store";
 import { describe, it } from "vitest";
 import { createStore } from "zustand/vanilla";
+import type { StoreState as BaseChatStoreState } from "@/lib/stores/base";
 import type { ChatMessage } from "../ai/types";
 import { type ThreadAugmentedState, withThreads } from "./with-threads";
 

@@ -1,8 +1,8 @@
 "use client";
-import { useChatId, useMessageById } from "@ai-sdk-tools/store";
 import { memo, useState } from "react";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChatId, useMessageById } from "@/lib/stores/base";
 import { cn, getAttachmentsFromMessage } from "@/lib/utils";
 import { AttachmentList } from "./attachment-list";
 import { ImageModal } from "./image-modal";

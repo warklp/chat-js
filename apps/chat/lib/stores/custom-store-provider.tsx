@@ -1,14 +1,14 @@
 "use client";
 
 import type { UIMessage } from "@ai-sdk/react";
+import { type PropsWithChildren, useContext, useRef } from "react";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
+import { createStore } from "zustand/vanilla";
 import {
   Provider as ChatProvider,
   ChatStoreContext,
   createChatStoreCreator,
-} from "@ai-sdk-tools/store";
-import { type PropsWithChildren, useContext, useRef } from "react";
-import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { createStore } from "zustand/vanilla";
+} from "@/lib/stores/base";
 
 import {
   type PartsAugmentedState,
