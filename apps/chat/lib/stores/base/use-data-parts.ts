@@ -19,9 +19,9 @@ export interface DataPart<T = unknown> {
  * Result of useDataParts hook
  */
 export interface UseDataPartsReturn {
-  /** Array of all data parts */
+  /** Latest data part for each type */
   all: DataPart<unknown>[];
-  /** All data parts grouped by type (without 'data-' prefix) */
+  /** Latest data part grouped by type (without 'data-' prefix) */
   byType: Record<string, DataPart<unknown>>;
 }
 
@@ -34,7 +34,7 @@ export interface UseDataPartOptions<T = unknown> {
 }
 
 /**
- * Hook to extract and access all data parts from messages.
+ * Hook to extract and access data parts from messages.
  * Returns the latest value for each data part type.
  *
  * @example
@@ -71,7 +71,7 @@ export function useDataParts(): UseDataPartsReturn {
         !existing ||
         (dataPart.timestamp &&
           existing.timestamp &&
-          dataPart.timestamp > existing.timestamp)
+          dataPart.timestamp >= existing.timestamp)
       ) {
         byType[key] = dataPart;
       }
@@ -91,7 +91,7 @@ export function useDataParts(): UseDataPartsReturn {
  * @template T - The type of the data part's data property
  * @param type - The data part type without 'data-' prefix (e.g., 'agent-status', 'rate-limit')
  * @param options - Optional configuration including onData callback
- * @returns Tuple of [data, clearFunction] - data is the latest value, clearFunction removes the data part
+ * @returns Tuple of [data, clearFunction] - data is the latest value, clearFunction removes transient live data only
  *
  * @example
  * ```tsx
@@ -151,7 +151,7 @@ export function useDataPart<T = unknown>(
         (!latest ||
           (dataPart.timestamp &&
             latest.timestamp &&
-            dataPart.timestamp > latest.timestamp))
+            dataPart.timestamp >= latest.timestamp))
       ) {
         latest = dataPart as DataPart<T>;
       }

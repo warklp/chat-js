@@ -118,7 +118,7 @@ function startFreezeDetector({
   }
 }
 
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   startFreezeDetector({ thresholdMs: 80 });
 }
 
@@ -150,15 +150,7 @@ function enhancedThrottle<T extends (...args: any[]) => void>(
       }
       previous = now;
 
-      // Use requestIdleCallback if available for better performance
-      if (
-        typeof window !== "undefined" &&
-        (window as any).requestIdleCallback
-      ) {
-        (window as any).requestIdleCallback(execute, { timeout: 50 });
-      } else {
-        execute();
-      }
+      execute();
     } else if (!timeout) {
       timeout = setTimeout(() => {
         previous = Date.now();
@@ -293,8 +285,7 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
             try {
               cb();
             } catch (err) {
-              // eslint-disable-next-line no-console
-              console.warn("[chat-store-base] throttled effect error", err);
+              debug.warn("[chat-store-base] throttled effect error", err);
             }
           });
         });
@@ -451,8 +442,10 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
         batchUpdates(() => {
           const currentState = get();
           set((state) => {
-            const index = state._messageIndex.getIndexById(id);
-            if (index === undefined) {
+            const index = state.messages.findIndex(
+              (currentMessage) => currentMessage.id === id
+            );
+            if (index === -1) {
               return state;
             }
 
@@ -576,12 +569,11 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
         const state = get();
         const cached = state._memoizedSelectors.get(key);
 
-        // Fast dependency comparison using length + JSON for complex objects
+        // Reference-equality dep check, matching React dependency semantics.
         if (
           cached &&
           cached.deps.length === deps.length &&
-          (deps.length === 0 ||
-            JSON.stringify(cached.deps) === JSON.stringify(deps))
+          cached.deps.every((dep, index) => Object.is(dep, deps[index]))
         ) {
           return cached.result;
         }
@@ -762,13 +754,7 @@ export const useMessageById = <TMessage extends UIMessage = UIMessage>(
 ) => {
   return useChatStore(
     useCallback(
-      (state: StoreState<TMessage>) => {
-        const message = state.getMessageById(messageId);
-        if (!message) {
-          throw new Error(`Message not found for id: ${messageId}`);
-        }
-        return message;
-      },
+      (state: StoreState<TMessage>) => state.getMessageById(messageId),
       [messageId]
     )
   );
@@ -880,7 +866,7 @@ export const useSelector = <TMessage extends UIMessage = UIMessage, T = any>(
           () => selector(state.getThrottledMessages()),
           [state.getMessageCount(), ...deps]
         ),
-      [key, selector, deps]
+      [key, selector, ...deps]
     )
   );
 };

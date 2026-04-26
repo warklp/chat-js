@@ -53,6 +53,10 @@ class DebugLogger {
   setLevel(level: LogLevel): void {
     this.level = level;
   }
+
+  setPrefix(prefix: string): void {
+    this.prefix = prefix;
+  }
 }
 
 // Create default logger instance
@@ -65,6 +69,9 @@ export function configureDebug(options: DebugOptions): void {
   }
   if (options.level !== undefined) {
     debug.setLevel(options.level);
+  }
+  if (options.prefix !== undefined) {
+    debug.setPrefix(options.prefix);
   }
 }
 
