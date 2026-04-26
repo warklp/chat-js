@@ -5,6 +5,7 @@ import { HeaderActions } from "@/components/header-actions";
 import { HeaderBreadcrumb } from "@/components/header-breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Session } from "@/lib/auth";
+import type { ChatRouteSource } from "@/lib/chat-route";
 import { cn } from "@/lib/utils";
 import { ShareButton } from "./share-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -13,14 +14,18 @@ function PureChatHeader({
   chatId,
   isReadonly,
   hasMessages,
+  persistedQueriesEnabled,
   projectId,
+  routeSource,
   user,
   className,
 }: {
   chatId: string;
   isReadonly: boolean;
   hasMessages: boolean;
+  persistedQueriesEnabled: boolean;
   projectId?: string;
+  routeSource: ChatRouteSource;
   user?: Session["user"];
   className?: string;
 }) {
@@ -39,7 +44,9 @@ function PureChatHeader({
             className="ml-2"
             hasMessages={hasMessages}
             isReadonly={isReadonly}
+            persistedQueriesEnabled={persistedQueriesEnabled}
             projectId={projectId}
+            routeSource={routeSource}
             user={user}
           />
         </div>

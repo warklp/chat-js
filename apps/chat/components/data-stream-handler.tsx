@@ -13,7 +13,7 @@ import {
   sheetArtifact,
 } from "@/lib/artifacts/sheet/client";
 import { textArtifact } from "@/lib/artifacts/text/client";
-import { useChatId } from "@/providers/chat-id-provider";
+import { clearChatBootstrap } from "@/lib/chat-bootstrap";
 import { useChatInput } from "@/providers/chat-input-provider";
 import { useSession } from "@/providers/session-provider";
 import { useDataStream } from "./data-stream-provider";
@@ -101,7 +101,6 @@ export function DataStreamHandler({ id }: { id: string }) {
   const lastProcessedIndex = useRef(-1);
   const { data: session } = useSession();
   const { setSelectedTool } = useChatInput();
-  const { confirmChatId } = useChatId();
   const isAuthenticated = !!session;
 
   useEffect(() => {
@@ -118,7 +117,7 @@ export function DataStreamHandler({ id }: { id: string }) {
         isAuthenticated &&
         id === delta.data.chatId
       ) {
-        confirmChatId(delta.data.chatId);
+        clearChatBootstrap(delta.data.chatId);
       }
 
       handleResearchUpdate({ delta, setSelectedTool });
@@ -137,7 +136,6 @@ export function DataStreamHandler({ id }: { id: string }) {
     artifact,
     isAuthenticated,
     setSelectedTool,
-    confirmChatId,
     id,
   ]);
 

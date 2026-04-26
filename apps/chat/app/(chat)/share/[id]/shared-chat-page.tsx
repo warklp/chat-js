@@ -70,6 +70,7 @@ export function SharedChatPage({ id }: { id: string }) {
         id={chat.id}
         initialMessages={initialThreadMessages}
         isReadonly={true}
+        routeSource="share"
       />
     </WithSkeleton>
   );

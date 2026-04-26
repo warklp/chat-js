@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 import { intro, outro } from "@clack/prompts";
 import { Command } from "commander";
 import { z } from "zod";
@@ -10,9 +10,11 @@ import {
 	type EnvVarEntry,
 } from "../helpers/env-checklist";
 import {
+	promptAssistantTools,
 	promptAuth,
+	promptCoreFeatures,
+	promptDocumentTypes,
 	promptElectron,
-	promptFeatures,
 	promptGateway,
 	promptInstall,
 	promptProjectName,
@@ -22,12 +24,40 @@ import {
 	scaffoldFromGit,
 	scaffoldFromTemplate,
 } from "../helpers/scaffold";
+import { fetchRegistryIndex } from "../registry/fetch";
+import { resolveToolsPath } from "../utils/get-config";
 import { inferPackageManager } from "../utils/get-package-manager";
 import { handleError } from "../utils/handle-error";
 import { highlighter } from "../utils/highlighter";
+import { installRegistryTools } from "../utils/install-registry-tools";
 import { logger } from "../utils/logger";
 import { runCommand } from "../utils/run-command";
 import { spinner } from "../utils/spinner";
+
+function resolveCreateTarget(targetArg: string | undefined): {
+	projectName: string;
+	targetDir: string;
+	displayPath: string;
+} {
+	if (!targetArg) {
+		const projectName = "my-chat-app";
+		return {
+			projectName,
+			targetDir: resolve(process.cwd(), projectName),
+			displayPath: projectName,
+		};
+	}
+
+	const targetDir = resolve(process.cwd(), targetArg);
+	const projectName = basename(targetDir);
+	const relativePath = relative(process.cwd(), targetDir);
+
+	return {
+		projectName,
+		targetDir,
+		displayPath: relativePath || ".",
+	};
+}
 
 function printEnvChecklist(entries: EnvVarEntry[]): void {
 	logger.info("Required for your configuration:");
@@ -61,6 +91,7 @@ const createOptionsSchema = z.object({
 	install: z.boolean(),
 	electron: z.boolean().optional(),
 	fromGit: z.string().optional(),
+	registry: z.string().optional(),
 	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
 });
 
@@ -72,6 +103,10 @@ export const create = new Command()
 	.option("--no-install", "skip dependency installation")
 	.option("--electron", "include the Electron desktop app")
 	.option("--no-electron", "do not include the Electron desktop app")
+	.option(
+		"-r, --registry <url>",
+		"registry URL or local path template (e.g. ./packages/registry/items/{name}.json)",
+	)
 	.option(
 		"--package-manager <manager>",
 		"package manager for install + next steps (bun, npm, pnpm, yarn)",
@@ -93,37 +128,58 @@ export const create = new Command()
 				intro("Create ChatJS App");
 			}
 
-			// 1. Project name
-			const projectName = await promptProjectName(options.target, options.yes);
-			const targetDir = resolve(process.cwd(), projectName);
+			const initialTarget = resolveCreateTarget(options.target);
+			const projectName = await promptProjectName(
+				initialTarget.projectName,
+				options.yes,
+			);
+			const targetDir = options.target
+				? initialTarget.targetDir
+				: resolve(process.cwd(), projectName);
+			const displayPath = options.target
+				? initialTarget.displayPath
+				: projectName;
 
-			// 2. Validate target
 			await ensureTargetEmpty(targetDir);
 
-			// Derive app details from project name
 			const appName = projectName
 				.split("-")
-				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 				.join(" ");
 			const appPrefix = projectName;
 			const appUrl = "http://localhost:3000";
 
-			// 3. Gateway selection
 			const gateway = await promptGateway(options.yes);
-
-			// 4. Features
-			const features = await promptFeatures(options.yes);
-
-			// 5. Auth providers
-			const auth = await promptAuth(options.yes);
-
-			// 6. Electron
-			const withElectron = await promptElectron(
+			const coreFeatures = await promptCoreFeatures(options.yes);
+			const documentTypes = await promptDocumentTypes(
 				options.yes,
-				options.electron,
+				coreFeatures.documents,
 			);
 
-			// 7. Scaffold project
+			let registryItems: Awaited<ReturnType<typeof fetchRegistryIndex>> = [];
+			if (!options.yes) {
+				const registrySpinner = spinner("Loading installable tools...");
+				registrySpinner.start();
+				try {
+					registryItems = await fetchRegistryIndex(options.registry);
+					registrySpinner.succeed("Installable tools loaded.");
+				} catch (error) {
+					registrySpinner.fail("Could not load installable tools.");
+					logger.warn(
+						error instanceof Error
+							? error.message
+							: "Continuing with built-in tools only.",
+					);
+				}
+			}
+
+			const assistantTools = await promptAssistantTools(
+				registryItems,
+				options.yes,
+			);
+			const auth = await promptAuth(options.yes);
+			const withElectron = await promptElectron(options.yes, options.electron);
+
 			logger.break();
 			const scaffoldSpinner = spinner("Scaffolding project...").start();
 			try {
@@ -144,13 +200,14 @@ export const create = new Command()
 				throw error;
 			}
 
-			// 8. Write configuration
 			const configSpinner = spinner("Writing configuration...").start();
 			try {
 				const packageJsonPath = join(targetDir, "package.json");
 				const packageJson = JSON.parse(
 					await readFile(packageJsonPath, "utf8"),
-				) as { name?: string };
+				) as {
+					name?: string;
+				};
 				packageJson.name = projectName;
 				await writeFile(
 					packageJsonPath,
@@ -163,7 +220,9 @@ export const create = new Command()
 					appUrl,
 					withElectron,
 					gateway,
-					features,
+					coreFeatures,
+					documentTypes,
+					builtInTools: assistantTools.builtInTools,
 					auth,
 				});
 				await writeFile(join(targetDir, "chat.config.ts"), configSource);
@@ -173,10 +232,23 @@ export const create = new Command()
 				throw error;
 			}
 
-			// 8. Install dependencies
 			const installNow = !options.install
 				? false
 				: await promptInstall(packageManager, options.yes);
+
+			if (assistantTools.installableTools.length > 0) {
+				const toolsDir = resolveToolsPath("@/tools/chatjs", targetDir);
+				await installRegistryTools({
+					tools: assistantTools.installableTools,
+					cwd: targetDir,
+					toolsDir,
+					toolsAlias: "@/tools/chatjs",
+					registryUrl: options.registry,
+					installDependenciesNow: false,
+					packageManager,
+				});
+			}
+
 			if (installNow) {
 				const installSpinner = spinner(
 					`Installing dependencies with ${highlighter.info(packageManager)}...`,
@@ -190,15 +262,19 @@ export const create = new Command()
 				}
 			}
 
-			// 9. Success output
-			const envEntries = collectEnvChecklist({ gateway, features, auth });
+			const envEntries = collectEnvChecklist({
+				gateway,
+				coreFeatures,
+				builtInTools: assistantTools.builtInTools,
+				auth,
+			});
 
 			outro("Your ChatJS app is ready!");
 
 			logger.info("Next steps:");
 			logger.break();
 			logger.log(
-				`  ${highlighter.dim("1.")} cd ${highlighter.info(projectName)}`,
+				`  ${highlighter.dim("1.")} cd ${highlighter.info(displayPath)}`,
 			);
 			logger.log(
 				`  ${highlighter.dim("2.")} Copy ${highlighter.info(".env.example")} to ${highlighter.info(".env.local")} and fill in the values below`,

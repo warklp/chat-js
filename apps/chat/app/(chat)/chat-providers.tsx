@@ -1,7 +1,6 @@
 "use client";
 
 import { AnonymousSessionInit } from "@/components/anonymous-session-init";
-import { ChatIdProvider } from "@/providers/chat-id-provider";
 
 interface ChatProvidersProps {
   children: React.ReactNode;
@@ -9,9 +8,9 @@ interface ChatProvidersProps {
 
 export function ChatProviders({ children }: ChatProvidersProps) {
   return (
-    <ChatIdProvider>
+    <>
       <AnonymousSessionInit />
       {children}
-    </ChatIdProvider>
+    </>
   );
 }

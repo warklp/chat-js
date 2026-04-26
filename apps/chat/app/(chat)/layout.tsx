@@ -91,7 +91,6 @@ export default async function ChatLayout({
                 <ChatModelsProvider models={chatModels}>
                   <DefaultModelProvider defaultModel={defaultModel}>
                     <KeyboardShortcuts />
-
                     {children}
                   </DefaultModelProvider>
                 </ChatModelsProvider>

@@ -1,6 +1,6 @@
 {
-	"name": "@chatjs/electron",
-	"version": "0.3.0",
+	"name": "@chat-js/electron",
+	"version": "0.3.2",
 	"private": true,
 	"description": "ChatJS desktop application",
 	"repository": {

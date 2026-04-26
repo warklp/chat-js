@@ -31,6 +31,14 @@ export interface ModelDefaultsFor<G extends GatewayType> {
     urlRetrieval: { enabled: boolean };
     codeExecution: { enabled: boolean };
     mcp: { enabled: boolean };
+    documents: {
+      enabled: boolean;
+      types: {
+        text: boolean;
+        code: boolean;
+        sheet: boolean;
+      };
+    };
     followupSuggestions: { enabled: boolean; default: GatewayModelIdMap[G] };
     text: { polish: GatewayModelIdMap[G] };
     sheet: { format: GatewayModelIdMap[G]; analyze: GatewayModelIdMap[G] };
@@ -82,6 +90,10 @@ const vercelDefaults = {
     urlRetrieval: { enabled: false },
     codeExecution: { enabled: false },
     mcp: { enabled: false },
+    documents: {
+      enabled: true,
+      types: { text: true, code: true, sheet: true },
+    },
     followupSuggestions: {
       enabled: false,
       default: "google/gemini-2.5-flash-lite",
@@ -130,6 +142,10 @@ const openrouterDefaults = {
     urlRetrieval: { enabled: false },
     codeExecution: { enabled: false },
     mcp: { enabled: false },
+    documents: {
+      enabled: true,
+      types: { text: true, code: true, sheet: true },
+    },
     followupSuggestions: {
       enabled: false,
       default: "google/gemini-2.5-flash-lite",
@@ -172,6 +188,10 @@ const openaiDefaults = {
     urlRetrieval: { enabled: false },
     codeExecution: { enabled: false },
     mcp: { enabled: false },
+    documents: {
+      enabled: true,
+      types: { text: true, code: true, sheet: true },
+    },
     followupSuggestions: { enabled: false, default: "gpt-5-nano" },
     text: { polish: "gpt-5-mini" },
     sheet: { format: "gpt-5-mini", analyze: "gpt-5-mini" },
@@ -211,6 +231,10 @@ const openaiCompatibleDefaults = {
     urlRetrieval: { enabled: false },
     codeExecution: { enabled: false },
     mcp: { enabled: false },
+    documents: {
+      enabled: true,
+      types: { text: true, code: true, sheet: true },
+    },
     followupSuggestions: { enabled: false, default: "gpt-5-nano" },
     text: { polish: "gpt-5-mini" },
     sheet: { format: "gpt-5-mini", analyze: "gpt-5-mini" },

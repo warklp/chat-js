@@ -1,49 +1,39 @@
 "use client";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { notFound, redirect } from "next/navigation";
-import { ChatSystem } from "@/components/chat-system";
-import {
-  useGetChatByIdQueryOptions,
-  useGetChatMessagesQueryOptions,
-} from "@/hooks/chat-sync-hooks";
-import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
-import { useChatId } from "@/providers/chat-id-provider";
+import { notFound, redirect, useParams } from "next/navigation";
+import { ChatRouteSystem } from "@/components/chat-route-system";
+import { useResolvedChatBootstrap } from "@/lib/use-resolved-chat-bootstrap";
 import { useSession } from "@/providers/session-provider";
 
-function ChatPageContent({ chatId }: { chatId: string }) {
-  const getChatByIdQueryOptions = useGetChatByIdQueryOptions(chatId);
-  const { data: chat } = useSuspenseQuery(getChatByIdQueryOptions);
-  const getMessagesByChatIdQueryOptions = useGetChatMessagesQueryOptions();
-  const { data: messages } = useSuspenseQuery(getMessagesByChatIdQueryOptions);
+type ChatPageParams = {
+  id?: string;
+};
 
-  const { initialMessages, initialTool } = useChatSystemInitialState(messages);
+export function ChatPage() {
+  const { id: chatId } = useParams<ChatPageParams>();
+  const { bootstrapEntry, clearResolvedBootstrap, hasLiveBootstrapEntry } =
+    useResolvedChatBootstrap(chatId ?? null);
+  const { data: session, isPending } = useSession();
 
-  if (!chat) {
+  // Anonymous users can't access persisted chat pages
+  if (isPending && !session?.user) {
+    return null;
+  }
+
+  if (!session?.user) {
+    redirect("/");
+  }
+
+  if (!chatId) {
     return notFound();
   }
 
   return (
-    <ChatSystem
-      id={chat.id}
-      initialMessages={initialMessages}
-      initialTool={initialTool}
-      isReadonly={false}
+    <ChatRouteSystem
+      bootstrapEntry={bootstrapEntry}
+      chatId={chatId}
+      hasLiveBootstrapEntry={hasLiveBootstrapEntry}
+      onBootstrapSettled={clearResolvedBootstrap}
+      routeSource="chat"
     />
   );
-}
-
-export function ChatPage() {
-  const { id, isPersisted } = useChatId();
-  const { data: session, isPending } = useSession();
-
-  // Anonymous users can't access persisted chat pages
-  if (isPersisted && !isPending && !session?.user) {
-    redirect("/");
-  }
-
-  if (!isPersisted) {
-    return notFound();
-  }
-
-  return <ChatPageContent chatId={id} />;
 }

@@ -5,6 +5,9 @@ import type {
   GatewayType,
   GatewayVideoModelIdMap,
 } from "@/lib/ai/gateways/registry";
+
+export type { GatewayType } from "@/lib/ai/gateways/registry";
+
 import { GATEWAY_MODEL_DEFAULTS } from "./ai/gateway-model-defaults";
 import type { ToolName } from "./ai/types";
 
@@ -81,16 +84,28 @@ function createAiSchema<G extends GatewayType>(g: G) {
     tools: z
       .object({
         webSearch: z.object({
-          enabled: z.boolean(),
+          enabled: z
+            .boolean()
+            .describe("Requires TAVILY_API_KEY or FIRECRAWL_API_KEY"),
         }),
         urlRetrieval: z.object({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires FIRECRAWL_API_KEY"),
         }),
         codeExecution: z.object({
-          enabled: z.boolean(),
+          enabled: z
+            .boolean()
+            .describe("Requires Vercel sandbox credentials outside Vercel"),
         }),
         mcp: z.object({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires MCP_ENCRYPTION_KEY"),
+        }),
+        documents: z.object({
+          enabled: z.boolean().describe("Document create/edit/review support"),
+          types: z.object({
+            text: z.boolean(),
+            code: z.boolean(),
+            sheet: z.boolean(),
+          }),
         }),
         followupSuggestions: z.object({
           enabled: z.boolean(),
@@ -108,11 +123,13 @@ function createAiSchema<G extends GatewayType>(g: G) {
         }),
         image: z.discriminatedUnion("enabled", [
           z.object({
-            enabled: z.literal(true),
+            enabled: z.literal(true).describe("Requires BLOB_READ_WRITE_TOKEN"),
             default: gatewayImageModelId<G>(),
           }),
           z.object({
-            enabled: z.literal(false),
+            enabled: z
+              .literal(false)
+              .describe("Requires BLOB_READ_WRITE_TOKEN"),
             default: gatewayImageModelId<G>().optional(),
           }),
         ]),
@@ -127,7 +144,7 @@ function createAiSchema<G extends GatewayType>(g: G) {
           }),
         ]),
         deepResearch: deepResearchToolConfigSchema.extend({
-          enabled: z.boolean(),
+          enabled: z.boolean().describe("Requires web search access"),
           defaultModel: gatewayModelId<G>(),
           finalReportModel: gatewayModelId<G>(),
         }),
@@ -175,94 +192,170 @@ export const pricingConfigSchema = z.object({
     .optional(),
 });
 
-export const anonymousConfigSchema = z
-  .object({
-    credits: z.number().describe("Message credits for anonymous users"),
-    availableTools: z
-      .array(toolName())
-      .describe("Tools available to anonymous users"),
-    rateLimit: z
-      .object({
-        requestsPerMinute: z.number(),
-        requestsPerMonth: z.number(),
-      })
-      .describe("Rate limits"),
-  })
-  .default({
-    credits: 10,
-    availableTools: [],
-    rateLimit: {
-      requestsPerMinute: 5,
-      requestsPerMonth: 10,
-    },
-  });
+export const anonymousConfigObjectSchema = z.object({
+  credits: z.number().describe("Message credits for anonymous users"),
+  availableTools: z
+    .array(toolName())
+    .describe("Tools available to anonymous users"),
+  rateLimit: z
+    .object({
+      requestsPerMinute: z.number(),
+      requestsPerMonth: z.number(),
+    })
+    .describe("Rate limits"),
+});
 
-export const attachmentsConfigSchema = z
-  .object({
-    maxBytes: z.number().describe("Max file size in bytes after compression"),
-    maxDimension: z.number().describe("Max image dimension"),
-    acceptedTypes: z
-      .object({
-        "image/png": z.array(z.string()),
-        "image/jpeg": z.array(z.string()),
-        "application/pdf": z.array(z.string()),
-      })
-      .describe("Accepted MIME types with their file extensions"),
-  })
-  .default({
-    maxBytes: 1024 * 1024,
-    maxDimension: 2048,
-    acceptedTypes: {
-      "image/png": [".png"],
-      "image/jpeg": [".jpg", ".jpeg"],
-      "application/pdf": [".pdf"],
-    },
-  });
+export const ANONYMOUS_DEFAULTS: z.input<typeof anonymousConfigObjectSchema> = {
+  credits: 10,
+  availableTools: [],
+  rateLimit: {
+    requestsPerMinute: 5,
+    requestsPerMonth: 10,
+  },
+};
 
-export const featuresConfigSchema = z
-  .object({
-    attachments: z
-      .boolean()
-      .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
-    parallelResponses: z
-      .boolean()
-      .default(true)
-      .describe("Send one message to multiple models simultaneously"),
-  })
-  .default({
-    attachments: false,
-    parallelResponses: true,
-  });
+export const anonymousConfigSchema =
+  anonymousConfigObjectSchema.default(ANONYMOUS_DEFAULTS);
 
-export const authenticationConfigSchema = z
-  .object({
-    google: z
-      .boolean()
-      .describe("Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET)"),
-    github: z
-      .boolean()
-      .describe("GitHub OAuth (requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET)"),
-    vercel: z
-      .boolean()
-      .describe(
-        "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)"
-      ),
-  })
-  .default({
-    google: false,
-    github: true,
-    vercel: false,
-  });
+export const attachmentsConfigObjectSchema = z.object({
+  maxBytes: z.number().describe("Max file size in bytes after compression"),
+  maxDimension: z.number().describe("Max image dimension"),
+  acceptedTypes: z
+    .object({
+      "image/png": z.array(z.string()),
+      "image/jpeg": z.array(z.string()),
+      "application/pdf": z.array(z.string()),
+    })
+    .describe("Accepted MIME types with their file extensions"),
+});
 
-export const desktopAppConfigSchema = z
-  .object({
-    enabled: z
-      .boolean()
-      .describe("Enable Electron desktop auth/runtime integration"),
-  })
-  .default({
-    enabled: false,
-  });
+export const ATTACHMENTS_DEFAULTS = {
+  maxBytes: 1024 * 1024,
+  maxDimension: 2048,
+  acceptedTypes: {
+    "image/png": [".png"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "application/pdf": [".pdf"],
+  },
+};
+
+export const attachmentsConfigSchema =
+  attachmentsConfigObjectSchema.default(ATTACHMENTS_DEFAULTS);
+
+export const featuresConfigObjectSchema = z.object({
+  attachments: z
+    .boolean()
+    .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
+  parallelResponses: z
+    .boolean()
+    .default(true)
+    .describe("Send one message to multiple models simultaneously"),
+});
+
+export const FEATURES_DEFAULTS = {
+  attachments: false,
+  parallelResponses: true,
+};
+
+export const featuresConfigSchema =
+  featuresConfigObjectSchema.default(FEATURES_DEFAULTS);
+
+export const authenticationConfigObjectSchema = z.object({
+  google: z
+    .boolean()
+    .describe("Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET)"),
+  github: z
+    .boolean()
+    .describe("GitHub OAuth (requires AUTH_GITHUB_ID + AUTH_GITHUB_SECRET)"),
+  vercel: z
+    .boolean()
+    .describe(
+      "Vercel OAuth (requires VERCEL_APP_CLIENT_ID + VERCEL_APP_CLIENT_SECRET)"
+    ),
+});
+
+export const AUTHENTICATION_DEFAULTS = {
+  google: false,
+  github: true,
+  vercel: false,
+};
+
+export const authenticationConfigSchema =
+  authenticationConfigObjectSchema.default(AUTHENTICATION_DEFAULTS);
+export const pathsConfigObjectSchema = z.object({
+  tools: z
+    .string()
+    .default("@/tools/chatjs")
+    .describe(
+      "Import alias for the installable tools registry index and tool files"
+    ),
+});
+
+export const PATHS_DEFAULTS = {
+  tools: "@/tools/chatjs",
+};
+
+export const pathsConfigSchema =
+  pathsConfigObjectSchema.default(PATHS_DEFAULTS);
+
+export const desktopAppConfigObjectSchema = z.object({
+  enabled: z
+    .boolean()
+    .describe("Enable Electron desktop auth/runtime integration"),
+});
+
+export const DESKTOP_APP_DEFAULTS = {
+  enabled: false,
+};
+
+export const desktopAppConfigSchema =
+  desktopAppConfigObjectSchema.default(DESKTOP_APP_DEFAULTS);
+
+export const configDescriptionSchema = z.object({
+  appPrefix: z.string().default("chatjs"),
+  appName: z.string().default("My AI Chat"),
+  appTitle: z
+    .string()
+    .optional()
+    .describe("Browser tab title (defaults to appName)"),
+  appDescription: z.string().default("AI chat powered by ChatJS"),
+  appUrl: z.url().default("https://your-domain.com"),
+  organization: z.object({
+    name: z.string(),
+    contact: z.object({
+      privacyEmail: z.string().email(),
+      legalEmail: z.string().email(),
+    }),
+  }),
+  services: z.object({
+    hosting: z.string(),
+    aiProviders: z.array(z.string()),
+    paymentProcessors: z.array(z.string()),
+  }),
+  features: featuresConfigObjectSchema,
+  pricing: pricingConfigSchema.optional(),
+  legal: z.object({
+    minimumAge: z.number(),
+    governingLaw: z.string(),
+    refundPolicy: z.string(),
+  }),
+  policies: z.object({
+    privacy: z.object({
+      title: z.string(),
+      lastUpdated: z.string().optional(),
+    }),
+    terms: z.object({
+      title: z.string(),
+      lastUpdated: z.string().optional(),
+    }),
+  }),
+  authentication: authenticationConfigObjectSchema,
+  desktopApp: desktopAppConfigObjectSchema,
+  ai: gatewaySchemaMap.vercel,
+  anonymous: anonymousConfigObjectSchema,
+  attachments: attachmentsConfigObjectSchema,
+  paths: pathsConfigObjectSchema,
+});
 
 export const configSchema = z.object({
   appPrefix: z.string().default("chatjs"),
@@ -343,6 +436,8 @@ export const configSchema = z.object({
   anonymous: anonymousConfigSchema,
 
   attachments: attachmentsConfigSchema,
+
+  paths: pathsConfigSchema,
 });
 
 // Output types (after defaults applied)
@@ -352,6 +447,7 @@ export type AiConfig = z.infer<typeof aiConfigSchema>;
 export type AnonymousConfig = z.infer<typeof anonymousConfigSchema>;
 export type AttachmentsConfig = z.infer<typeof attachmentsConfigSchema>;
 export type FeaturesConfig = z.infer<typeof featuresConfigSchema>;
+export type PathsConfig = z.infer<typeof pathsConfigSchema>;
 export type AuthenticationConfig = z.infer<typeof authenticationConfigSchema>;
 export type DesktopAppConfig = z.infer<typeof desktopAppConfigSchema>;
 
@@ -391,6 +487,9 @@ interface AiToolsInputFor<G extends GatewayType> {
   code?: Partial<{ [P in keyof AiToolsShape["code"]]: GatewayModelIdMap[G] }>;
   codeExecution?: Partial<AiToolsShape["codeExecution"]>;
   deepResearch?: DeepResearchToolInputFor<G>;
+  documents?: Partial<Omit<AiToolsShape["documents"], "types">> & {
+    types?: AiToolsShape["documents"]["types"];
+  };
   followupSuggestions?: FollowupSuggestionsToolInputFor<G>;
   image?: ImageToolInputFor<G>;
   mcp?: Partial<AiToolsShape["mcp"]>;

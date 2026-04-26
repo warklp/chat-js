@@ -14,9 +14,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import type { SearchResultItem } from "@/lib/ai/tools/research-updates-schema";
 import { getFaviconUrl } from "@/lib/url-utils";
 import { cn } from "@/lib/utils";
+import type { SearchResultItem } from "@/tools/platform/research-updates-schema";
 import { Favicon } from "./favicon";
 import { FaviconGroup } from "./favicon-group";
 

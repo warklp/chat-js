@@ -14,8 +14,12 @@ This is distinct from [Web Search](/features/web-search): URL Retrieval fetches 
 Enable URL Retrieval in `chat.config.ts`:
 
 ```ts
-features: {
-  urlRetrieval: true, // Requires FIRECRAWL_API_KEY
+ai: {
+  tools: {
+    urlRetrieval: {
+      enabled: true, // Requires FIRECRAWL_API_KEY
+    },
+  },
 }
 ```
 
@@ -73,14 +77,14 @@ The tool returns a structured result:
 
 | Setting          | Value                          |
 | ---------------- | ------------------------------ |
-| Config key       | `features.urlRetrieval`        |
+| Config key       | `ai.tools.urlRetrieval.enabled` |
 | Required env var | `FIRECRAWL_API_KEY`            |
 | Tool name        | `retrieveUrl`                  |
-| Tool file        | `apps/chat/lib/ai/tools/retrieve-url.ts` |
+| Tool file        | `apps/chat/tools/chatjs/retrieve-url/tool.ts` |
 
 ### Customization
 
-The tool description controls when the AI decides to invoke it. Edit `apps/chat/lib/ai/tools/retrieve-url.ts` to adjust:
+The tool description controls when the AI decides to invoke it. Edit `apps/chat/tools/chatjs/retrieve-url/tool.ts` to adjust:
 
 ```ts
 description: `Fetch structured information from a single URL via Firecrawl.

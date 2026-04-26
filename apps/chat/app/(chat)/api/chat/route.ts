@@ -27,10 +27,10 @@ import {
 import { systemPrompt } from "@/lib/ai/prompts";
 import { getStreamErrorMessage } from "@/lib/ai/stream-errors";
 import { calculateMessagesTokens } from "@/lib/ai/token-utils";
-import { allTools } from "@/lib/ai/tools/tools-definitions";
 import {
   type ChatMessage,
   getPrimarySelectedModelId,
+  isSelectedModelValue,
   type ToolName,
 } from "@/lib/ai/types";
 import {
@@ -50,7 +50,6 @@ import {
   getProjectById,
   getUserById,
   saveChatIfNotExists,
-  saveMessage,
   saveMessageIfNotExists,
   updateMessage,
   updateMessageActiveStreamId,
@@ -275,39 +274,6 @@ async function handleUserValidationAndCredits({
   return { isNewChat: validationResult.isNewChat };
 }
 
-/**
- * Determines which built-in tools are allowed based on model capabilities.
- * MCP tools are handled separately in core-chat-agent.
- */
-function determineAllowedTools({
-  isAnonymous,
-  modelDefinition,
-  explicitlyRequestedTools,
-}: {
-  isAnonymous: boolean;
-  modelDefinition: AppModelDefinition;
-  explicitlyRequestedTools: ToolName[] | null;
-}): ToolName[] {
-  // Start with all tools or anonymous-limited tools
-  const allowedTools: ToolName[] = isAnonymous
-    ? [...ANONYMOUS_LIMITS.AVAILABLE_TOOLS]
-    : [...allTools];
-
-  // Disable all tools for models with unspecified features
-  if (!modelDefinition?.input) {
-    return [];
-  }
-
-  // If specific tools were requested, filter them against allowed tools
-  if (explicitlyRequestedTools && explicitlyRequestedTools.length > 0) {
-    return explicitlyRequestedTools.filter((tool) =>
-      allowedTools.includes(tool)
-    );
-  }
-
-  return allowedTools;
-}
-
 async function getSystemPrompt({
   isAnonymous,
   chatId,
@@ -339,7 +305,6 @@ async function createChatStream({
   isPrimaryParallel,
   explicitlyRequestedTools,
   userId,
-  allowedTools,
   abortController,
   isAnonymous,
   isNewChat,
@@ -358,7 +323,6 @@ async function createChatStream({
   isPrimaryParallel: boolean | null;
   explicitlyRequestedTools: ToolName[] | null;
   userId: string | null;
-  allowedTools: ToolName[];
   abortController: AbortController;
   isAnonymous: boolean;
   isNewChat: boolean;
@@ -393,7 +357,7 @@ async function createChatStream({
         selectedModelId,
         explicitlyRequestedTools,
         userId,
-        budgetAllowedTools: allowedTools,
+        isAnonymous,
         abortSignal: abortController.signal,
         messageId,
         dataStream,
@@ -517,7 +481,6 @@ async function executeChatRequest({
   userId,
   isAnonymous,
   isNewChat,
-  allowedTools,
   abortController,
   timeoutId,
   mcpConnectors,
@@ -534,7 +497,6 @@ async function executeChatRequest({
   userId: string | null;
   isAnonymous: boolean;
   isNewChat: boolean;
-  allowedTools: ToolName[];
   abortController: AbortController;
   timeoutId: NodeJS.Timeout;
   mcpConnectors: McpConnector[];
@@ -544,8 +506,9 @@ async function executeChatRequest({
   const streamId = generateUUID();
 
   if (!isAnonymous) {
-    // Save placeholder assistant message immediately (needed for document creation)
-    await saveMessage({
+    // The bootstrap request can be replayed before chatConfirmed arrives, so
+    // creating the placeholder must be idempotent.
+    await saveMessageIfNotExists({
       id: messageId,
       chatId,
       message: {
@@ -563,6 +526,11 @@ async function executeChatRequest({
           activeStreamId: streamId,
         },
       },
+    });
+
+    await updateMessageActiveStreamId({
+      id: messageId,
+      activeStreamId: streamId,
     });
   }
 
@@ -589,7 +557,6 @@ async function executeChatRequest({
     isPrimaryParallel,
     explicitlyRequestedTools,
     userId,
-    allowedTools,
     abortController,
     isAnonymous,
     isNewChat,
@@ -708,27 +675,16 @@ async function prepareRequestContext({
   chatId,
   isAnonymous,
   anonymousPreviousMessages,
-  modelDefinition,
-  explicitlyRequestedTools,
 }: {
   userMessage: ChatMessage;
   chatId: string;
   isAnonymous: boolean;
   anonymousPreviousMessages: ChatMessage[];
-  modelDefinition: AppModelDefinition;
-  explicitlyRequestedTools: ToolName[] | null;
 }): Promise<{
   previousMessages: ChatMessage[];
-  allowedTools: ToolName[];
   error: Response | null;
 }> {
   const log = createModuleLogger("api:chat:prepare");
-
-  const allowedTools = determineAllowedTools({
-    isAnonymous,
-    modelDefinition,
-    explicitlyRequestedTools,
-  });
 
   // Validate input token limit (50k tokens for user message)
   const totalTokens = calculateMessagesTokens(
@@ -743,7 +699,6 @@ async function prepareRequestContext({
     );
     return {
       previousMessages: [],
-      allowedTools: [],
       error: error.toResponse(),
     };
   }
@@ -756,9 +711,8 @@ async function prepareRequestContext({
       );
 
   const previousMessages = messageThreadToParent.slice(-5);
-  log.debug({ allowedTools }, "allowed tools");
 
-  return { previousMessages, allowedTools, error: null };
+  return { previousMessages, error: null };
 }
 
 async function finalizeMessageAndCredits({
@@ -834,9 +788,247 @@ async function finalizeMessageAndCredits({
   }
 }
 
+type ChatPostBody = {
+  assistantMessageId?: string;
+  id: string;
+  isPrimaryParallel?: boolean | null;
+  message: ChatMessage;
+  parallelGroupId?: string | null;
+  parallelIndex?: number | null;
+  prevMessages: ChatMessage[];
+  projectId?: string;
+  selectedModelId?: AppModelId;
+};
+
+type ChatPostBodyResult =
+  | { success: false; error: Response }
+  | { success: true; body: ChatPostBody };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseMessageDate(value: unknown): Date | null {
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeChatMessage(value: unknown): ChatMessage | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const metadata = value.metadata;
+
+  if (
+    typeof value.id !== "string" ||
+    !Array.isArray(value.parts) ||
+    typeof value.role !== "string" ||
+    !isRecord(metadata) ||
+    !isSelectedModelValue(metadata.selectedModel)
+  ) {
+    return null;
+  }
+
+  const createdAt = parseMessageDate(metadata.createdAt);
+  if (!createdAt) {
+    return null;
+  }
+
+  const parentMessageId = metadata.parentMessageId;
+  const activeStreamId = metadata.activeStreamId;
+
+  const hasValidParentMessageId =
+    parentMessageId === null || typeof parentMessageId === "string";
+  const hasValidActiveStreamId =
+    activeStreamId === null || typeof activeStreamId === "string";
+
+  if (!(hasValidParentMessageId && hasValidActiveStreamId)) {
+    return null;
+  }
+
+  return {
+    ...(value as ChatMessage),
+    metadata: {
+      ...(metadata as ChatMessage["metadata"]),
+      createdAt,
+      parentMessageId,
+      activeStreamId,
+      selectedModel: metadata.selectedModel,
+    },
+  };
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function optionalNullableString(value: unknown): string | null | undefined {
+  if (value === null || typeof value === "string") {
+    return value;
+  }
+  return undefined;
+}
+
+function optionalNullableInteger(value: unknown): number | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  return typeof value === "number" && Number.isInteger(value)
+    ? value
+    : undefined;
+}
+
+function optionalNullableBoolean(value: unknown): boolean | null | undefined {
+  if (value === null || typeof value === "boolean") {
+    return value;
+  }
+  return undefined;
+}
+
+async function readChatPostBody(
+  request: NextRequest
+): Promise<ChatPostBodyResult> {
+  let rawBody: unknown;
+
+  try {
+    rawBody = await request.json();
+  } catch {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  if (!isRecord(rawBody)) {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  const userMessage = normalizeChatMessage(rawBody.message);
+  const anonymousPreviousMessages = Array.isArray(rawBody.prevMessages)
+    ? rawBody.prevMessages.map(normalizeChatMessage)
+    : null;
+
+  if (
+    typeof rawBody.id !== "string" ||
+    !userMessage ||
+    userMessage.role !== "user" ||
+    !anonymousPreviousMessages ||
+    anonymousPreviousMessages.some((message) => !message)
+  ) {
+    return {
+      success: false,
+      error: new ChatSDKError("bad_request:api").toResponse(),
+    };
+  }
+
+  return {
+    success: true,
+    body: {
+      assistantMessageId: optionalString(rawBody.assistantMessageId),
+      id: rawBody.id,
+      isPrimaryParallel: optionalNullableBoolean(rawBody.isPrimaryParallel),
+      message: userMessage,
+      parallelGroupId: optionalNullableString(rawBody.parallelGroupId),
+      parallelIndex: optionalNullableInteger(rawBody.parallelIndex),
+      prevMessages: anonymousPreviousMessages as ChatMessage[],
+      projectId: optionalString(rawBody.projectId),
+      selectedModelId: optionalString(rawBody.selectedModelId) as
+        | AppModelId
+        | undefined,
+    },
+  };
+}
+
+async function prepareChatPersistenceAndCredits({
+  chatId,
+  projectId,
+  userId,
+  userMessage,
+}: {
+  chatId: string;
+  projectId?: string;
+  userId: string | null;
+  userMessage: ChatMessage;
+}): Promise<{ error: Response } | { isNewChat: boolean }> {
+  if (userId) {
+    return await handleUserValidationAndCredits({
+      chatId,
+      userId,
+      userMessage,
+      projectId,
+    });
+  }
+
+  return { isNewChat: false };
+}
+
+async function consumeAnonymousCreditBeforeStream(
+  anonymousSession: AnonymousSession | null
+) {
+  if (!anonymousSession) {
+    return;
+  }
+
+  // Cookies must be updated before streaming starts, but only after request
+  // context validation has succeeded.
+  await setAnonymousSession({
+    ...anonymousSession,
+    remainingCredits: anonymousSession.remainingCredits - 1,
+  });
+}
+
+async function prepareChatExecutionInputs({
+  anonymousPreviousMessages,
+  chatId,
+  isAnonymous,
+  userId,
+  userMessage,
+}: {
+  anonymousPreviousMessages: ChatMessage[];
+  chatId: string;
+  isAnonymous: boolean;
+  userId: string | null;
+  userMessage: ChatMessage;
+}): Promise<
+  | { error: Response }
+  | { mcpConnectors: McpConnector[]; previousMessages: ChatMessage[] }
+> {
+  const [contextResult, mcpConnectors] = await Promise.all([
+    prepareRequestContext({
+      userMessage,
+      chatId,
+      isAnonymous,
+      anonymousPreviousMessages,
+    }),
+    config.ai.tools.mcp.enabled && userId && !isAnonymous
+      ? getMcpConnectorsByUserId({ userId })
+      : Promise.resolve([]),
+  ]);
+
+  if (contextResult.error) {
+    return { error: contextResult.error };
+  }
+
+  return {
+    previousMessages: contextResult.previousMessages,
+    mcpConnectors,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const log = createModuleLogger("api:chat");
   try {
+    const bodyResult = await readChatPostBody(request);
+
+    if (!bodyResult.success) {
+      log.warn("No user message found");
+      return bodyResult.error;
+    }
+
     const {
       id: chatId,
       message: userMessage,
@@ -847,22 +1039,21 @@ export async function POST(request: NextRequest) {
       parallelGroupId,
       parallelIndex,
       isPrimaryParallel,
-    }: {
-      id: string;
-      message: ChatMessage;
-      prevMessages: ChatMessage[];
-      projectId?: string;
-      assistantMessageId?: string;
-      selectedModelId?: AppModelId;
-      parallelGroupId?: string | null;
-      parallelIndex?: number | null;
-      isPrimaryParallel?: boolean | null;
-    } = await request.json();
+    } = bodyResult.body;
 
-    if (!userMessage) {
-      log.warn("No user message found");
-      return new ChatSDKError("bad_request:api").toResponse();
-    }
+    log.info(
+      {
+        chatId,
+        userMessageId: userMessage.id,
+        projectId: projectId ?? null,
+        assistantMessageId: assistantMessageId ?? null,
+        requestSelectedModelId: requestSelectedModelId ?? null,
+        parallelGroupId: parallelGroupId ?? null,
+        parallelIndex: parallelIndex ?? null,
+        isPrimaryParallel: isPrimaryParallel ?? null,
+      },
+      "POST /api/chat received"
+    );
 
     const selectedModelId = resolveSelectedModelId({
       requestSelectedModelId,
@@ -874,6 +1065,15 @@ export async function POST(request: NextRequest) {
       return new ChatSDKError("bad_request:api").toResponse();
     }
 
+    log.info(
+      {
+        chatId,
+        selectedModelId,
+        selectedTool: userMessage.metadata.selectedTool ?? null,
+      },
+      "POST /api/chat resolved selection"
+    );
+
     const sessionSetup = await validateAndSetupSession({
       request,
       selectedModelId,
@@ -883,54 +1083,35 @@ export async function POST(request: NextRequest) {
       return sessionSetup.error;
     }
 
-    const { userId, isAnonymous, anonymousSession, modelDefinition } =
-      sessionSetup;
+    const { userId, isAnonymous, anonymousSession } = sessionSetup;
+    const persistenceResult = await prepareChatPersistenceAndCredits({
+      chatId,
+      projectId,
+      userId,
+      userMessage,
+    });
 
-    const selectedTool = userMessage.metadata.selectedTool ?? null;
-    let isNewChat = false;
-
-    // Handle authenticated user validation and credit check
-    if (userId) {
-      const result = await handleUserValidationAndCredits({
-        chatId,
-        userId,
-        userMessage,
-        projectId,
-      });
-      if ("error" in result) {
-        return result.error;
-      }
-      isNewChat = result.isNewChat;
-    } else if (anonymousSession) {
-      // Pre-deduct credits for anonymous users (cookies must be set before streaming)
-      await setAnonymousSession({
-        ...anonymousSession,
-        remainingCredits: anonymousSession.remainingCredits - 1,
-      });
+    if ("error" in persistenceResult) {
+      return persistenceResult.error;
     }
 
-    const explicitlyRequestedTools =
-      determineExplicitlyRequestedTools(selectedTool);
+    const executionInputs = await prepareChatExecutionInputs({
+      anonymousPreviousMessages,
+      chatId,
+      isAnonymous,
+      userId,
+      userMessage,
+    });
 
-    const [contextResult, mcpConnectors] = await Promise.all([
-      prepareRequestContext({
-        userMessage,
-        chatId,
-        isAnonymous,
-        anonymousPreviousMessages,
-        modelDefinition,
-        explicitlyRequestedTools,
-      }),
-      config.ai.tools.mcp.enabled && userId && !isAnonymous
-        ? getMcpConnectorsByUserId({ userId })
-        : Promise.resolve([]),
-    ]);
-
-    if (contextResult.error) {
-      return contextResult.error;
+    if ("error" in executionInputs) {
+      return executionInputs.error;
     }
 
-    const { previousMessages, allowedTools } = contextResult;
+    await consumeAnonymousCreditBeforeStream(anonymousSession);
+
+    const explicitlyRequestedTools = determineExplicitlyRequestedTools(
+      userMessage.metadata.selectedTool ?? null
+    );
 
     // Create AbortController with timeout
     const abortController = new AbortController();
@@ -941,7 +1122,7 @@ export async function POST(request: NextRequest) {
     return await executeChatRequest({
       chatId,
       userMessage,
-      previousMessages,
+      previousMessages: executionInputs.previousMessages,
       selectedModelId,
       assistantMessageId,
       parallelGroupId:
@@ -951,11 +1132,10 @@ export async function POST(request: NextRequest) {
       explicitlyRequestedTools,
       userId,
       isAnonymous,
-      isNewChat,
-      allowedTools,
+      isNewChat: persistenceResult.isNewChat,
       abortController,
       timeoutId,
-      mcpConnectors,
+      mcpConnectors: executionInputs.mcpConnectors,
     });
   } catch (error) {
     log.error(

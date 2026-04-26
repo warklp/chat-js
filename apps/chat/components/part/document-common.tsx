@@ -1,12 +1,12 @@
 import { File, Loader2, Pencil } from "lucide-react";
 import { memo } from "react";
 import { useArtifact } from "@/hooks/use-artifact";
+import type { ChatMessage } from "@/lib/ai/types";
+import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
 import type {
   CreateDocumentToolType,
   EditDocumentToolType,
-} from "@/lib/ai/tools/documents/types";
-import type { ChatMessage } from "@/lib/ai/types";
-import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
+} from "@/tools/platform/documents/types";
 
 export type CreateDocumentTool = Extract<
   ChatMessage["parts"][number],

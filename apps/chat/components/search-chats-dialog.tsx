@@ -2,6 +2,7 @@
 
 import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
 import { MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import {
@@ -158,6 +159,7 @@ export function SearchChatsDialog({
   onOpenChange,
   onSelectChat,
 }: SearchChatsDialogProps) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
 
@@ -166,9 +168,9 @@ export function SearchChatsDialog({
       onOpenChange(false);
       onSelectChat();
       setQuery("");
-      window.history.pushState(null, "", `/chat/${chatId}`);
+      router.push(`/chat/${chatId}`);
     },
-    [onOpenChange, onSelectChat]
+    [onOpenChange, onSelectChat, router]
   );
 
   const handleOpenChange = useCallback(
