@@ -112,7 +112,7 @@ const modelMessages = await convertToModelMessages(messages, {
 ```tsx title="components/followup-suggestions.tsx"
 "use client";
 
-import { useChatStoreApi } from "@ai-sdk-tools/store";
+import { useChatStoreApi } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import {
   useMessagePartByPartIdx,

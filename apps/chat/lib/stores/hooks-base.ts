@@ -1,9 +1,9 @@
-// This file has hooks that are enabled by the @ai-sdk-tools/store
+// This file has hooks that are enabled by the local base chat store.
 
-import { type StoreState, useChatStoreApi } from "@ai-sdk-tools/store";
 import equal from "fast-deep-equal";
 import { shallow } from "zustand/shallow";
 import { useStoreWithEqualityFn } from "zustand/traditional";
+import { type StoreState, useChatStoreApi } from "@/lib/stores/base";
 import type { ChatMessage } from "../ai/types";
 
 function useBaseChatStore<T = StoreState<ChatMessage>>(

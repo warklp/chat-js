@@ -1,6 +1,5 @@
 "use client";
 
-import { useChat, useChatActions } from "@ai-sdk-tools/store";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -10,6 +9,7 @@ import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChat, useChatActions } from "@/lib/stores/base";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,

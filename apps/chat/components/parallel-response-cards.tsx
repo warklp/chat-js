@@ -1,6 +1,5 @@
 "use client";
 
-import { useMessageById } from "@ai-sdk-tools/store";
 import { LoaderCircle } from "lucide-react";
 import { memo, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import {
   expandSelectedModelValue,
   getPrimarySelectedModelId,
 } from "@/lib/ai/types";
+import { useMessageById } from "@/lib/stores/base";
 import { useParallelGroupInfo } from "@/lib/stores/hooks-threads";
 import { cn } from "@/lib/utils";
 import { useChatInput } from "@/providers/chat-input-provider";

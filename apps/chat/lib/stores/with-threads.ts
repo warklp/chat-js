@@ -1,12 +1,12 @@
 "use client";
 
-// Middleware that extends @ai-sdk-tools/store with thread epoch tracking
+// Middleware that extends the local base chat store with thread epoch tracking
 // and complete message tree management for branching/sibling navigation.
 // The store owns allMessages (the full tree); React Query feeds data into it.
 
-import type { StoreState as BaseChatStoreState } from "@ai-sdk-tools/store";
 import type { UIMessage } from "ai";
 import type { StateCreator } from "zustand";
+import type { StoreState as BaseChatStoreState } from "@/lib/stores/base";
 import type { MessageNode } from "@/lib/thread-utils";
 import {
   buildChildrenMap,

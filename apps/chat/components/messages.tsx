@@ -1,10 +1,10 @@
-import { useChatId, useChatStatus } from "@ai-sdk-tools/store";
 import { memo } from "react";
 import {
   Conversation,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { ConversationContent } from "@/components/ai-elements/extra/conversation-content-scroll-area";
+import { useChatId, useChatStatus } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import { cn } from "@/lib/utils";
 import { Greeting } from "./greeting";

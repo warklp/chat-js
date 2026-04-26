@@ -1,11 +1,11 @@
 "use client";
 
-import { useChatReset } from "@ai-sdk-tools/store";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useDataStream } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChatReset } from "@/lib/stores/base";
 import {
   useResetThreadEpoch,
   useSetAllMessages,

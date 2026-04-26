@@ -1,6 +1,5 @@
 "use client";
 
-import { useChatActions } from "@ai-sdk-tools/store";
 import {
   Code2Icon,
   GraduationCapIcon,
@@ -14,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChatActions } from "@/lib/stores/base";
 import { cn } from "@/lib/utils";
 
 interface SuggestedActionsProps {

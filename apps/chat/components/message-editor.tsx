@@ -1,8 +1,8 @@
 "use client";
-import { useChatStatus } from "@ai-sdk-tools/store";
 import { type Dispatch, type SetStateAction, useCallback } from "react";
 import type { ModelId } from "@/lib/ai/app-models";
 import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
+import { useChatStatus } from "@/lib/stores/base";
 import {
   getAttachmentsFromMessage,
   getTextContentFromMessage,

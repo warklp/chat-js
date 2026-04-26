@@ -39,7 +39,6 @@
     "fetch:models": "bun scripts/fetch-models.ts && bun format"
   },
   "dependencies": {
-    "@ai-sdk-tools/store": "1.2.0",
     "@ai-sdk/anthropic": "^3.0.67",
     "@ai-sdk/devtools": "^0.0.15",
     "@ai-sdk/gateway": "^3.0.92",

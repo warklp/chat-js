@@ -1,6 +1,5 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { useChatActions, useChatStoreApi } from "@ai-sdk-tools/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CameraIcon, FileIcon, ImageIcon, PlusIcon } from "lucide-react";
 import type React from "react";
@@ -37,6 +36,7 @@ import {
 } from "@/lib/ai/types";
 import { config } from "@/lib/config";
 import { processFilesForUpload } from "@/lib/files/upload-prep";
+import { useChatActions, useChatStoreApi } from "@/lib/stores/base";
 import { useLastMessageId } from "@/lib/stores/hooks-base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
