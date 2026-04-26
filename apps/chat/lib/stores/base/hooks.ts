@@ -324,6 +324,7 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
             return;
           }
 
+          currentState._messageIndex.update(messages);
           set({
             messages,
             _memoizedSelectors: new Map(), // Clear memoized selectors
@@ -359,6 +360,7 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
       setNewChat: (id, messages) => {
         markLastAction("chat:setNewChat");
         batchUpdates(() => {
+          get()._messageIndex.update(messages);
           set({
             messages,
             status: "ready",
@@ -374,10 +376,14 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
         markLastAction("chat:pushMessage");
         batchUpdates(() => {
           const currentState = get();
-          set((state) => ({
-            messages: [...state.messages, message],
-            _memoizedSelectors: new Map(),
-          }));
+          set((state) => {
+            const messages = [...state.messages, message];
+            state._messageIndex.update(messages);
+            return {
+              messages,
+              _memoizedSelectors: new Map(),
+            };
+          });
 
           // During streaming, update immediately for smooth text rendering
           if (currentState.status === "streaming") {
@@ -399,10 +405,14 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
       popMessage: () => {
         markLastAction("chat:popMessage");
         batchUpdates(() => {
-          set((state) => ({
-            messages: state.messages.slice(0, -1),
-            _memoizedSelectors: new Map(),
-          }));
+          set((state) => {
+            const messages = state.messages.slice(0, -1);
+            state._messageIndex.update(messages);
+            return {
+              messages,
+              _memoizedSelectors: new Map(),
+            };
+          });
           throttledMessagesUpdater?.();
         });
       },
@@ -414,6 +424,7 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
           set((state) => {
             const newMessages = [...state.messages];
             newMessages[index] = structuredClone(message);
+            state._messageIndex.update(newMessages);
             return {
               messages: newMessages,
               _memoizedSelectors: new Map(),
@@ -442,15 +453,14 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
         batchUpdates(() => {
           const currentState = get();
           set((state) => {
-            const index = state.messages.findIndex(
-              (currentMessage) => currentMessage.id === id
-            );
-            if (index === -1) {
+            const index = state._messageIndex.getIndexById(id);
+            if (index === undefined) {
               return state;
             }
 
             const newMessages = [...state.messages];
             newMessages[index] = structuredClone(message);
+            state._messageIndex.update(newMessages);
             return {
               messages: newMessages,
               _memoizedSelectors: new Map(),
@@ -477,6 +487,9 @@ export function createChatStoreCreator<TMessage extends UIMessage>(
       _syncState: (newState) => {
         markLastAction("chat:_syncState");
         batchUpdates(() => {
+          if (newState.messages) {
+            get()._messageIndex.update(newState.messages);
+          }
           set(
             {
               ...newState,

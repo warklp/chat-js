@@ -3,7 +3,7 @@
 "use client";
 
 import type { UIMessage } from "@ai-sdk/react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useChatMessages, useChatStore } from "./hooks";
 
 /**
@@ -136,6 +136,7 @@ export function useDataPart<T = unknown>(
   const removeTransientDataPart = useChatStore(
     (state) => state.removeTransientDataPart
   );
+  const prevDataRef = useRef<T | null>(null);
 
   const result = useMemo(() => {
     const dataParts = extractDataPartsFromMessages(messages);
@@ -171,14 +172,16 @@ export function useDataPart<T = unknown>(
     return latest;
   }, [messages, type, transientDataParts]);
 
-  // Call onData callback when data changes
+  // Call onData callback when the underlying data changes
   useEffect(() => {
-    if (result && onData) {
+    const nextData = result ? result.data : null;
+    if (result && onData && !Object.is(prevDataRef.current, nextData)) {
       onData(result);
     }
+    prevDataRef.current = nextData;
   }, [result, onData]);
 
-  // Memoize clear function to maintain referential equality
+  // Memoize clear function to maintain referential equality. Persisted message parts are immutable here.
   const clear = useCallback(() => {
     const fullType = type.startsWith("data-") ? type : `data-${type}`;
     removeTransientDataPart(fullType);
