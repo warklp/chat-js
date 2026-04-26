@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   getChatRuntimeKey,
   type InitialChatTransition,
+  isTransitionRouteMismatch,
   shouldUseTransitionRuntimeKey,
 } from "./chat-runtime-transition";
 
 const transition = {
   chatId: "chat-1",
-  draftReset: false,
   fromPath: "/",
+  hasReachedToPath: false,
   message: {} as InitialChatTransition["message"],
   phase: "submitted",
   projectId: null,
@@ -19,7 +20,7 @@ const transition = {
 } satisfies InitialChatTransition;
 
 describe("chat runtime transition keys", () => {
-  it("uses the transition runtime key on the starting path before draft reset", () => {
+  it("uses the transition runtime key on the starting path", () => {
     expect(shouldUseTransitionRuntimeKey({ pathname: "/", transition })).toBe(
       true
     );
@@ -29,7 +30,7 @@ describe("chat runtime transition keys", () => {
     expect(
       shouldUseTransitionRuntimeKey({
         pathname: "/chat/chat-1",
-        transition: { ...transition, draftReset: true },
+        transition,
       })
     ).toBe(true);
   });
@@ -43,11 +44,11 @@ describe("chat runtime transition keys", () => {
     ).toBe(false);
   });
 
-  it("does not preserve the starting path after the draft has reset", () => {
+  it("does not preserve the starting path after reaching the destination", () => {
     expect(
       shouldUseTransitionRuntimeKey({
         pathname: "/",
-        transition: { ...transition, draftReset: true },
+        transition: { ...transition, hasReachedToPath: true },
       })
     ).toBe(false);
   });
@@ -60,5 +61,32 @@ describe("chat runtime transition keys", () => {
         transition: null,
       })
     ).toBe("path:/chat/chat-1");
+  });
+
+  it("does not clear the transition before the router reaches the destination", () => {
+    expect(
+      isTransitionRouteMismatch({
+        pathname: "/",
+        transition,
+      })
+    ).toBe(false);
+  });
+
+  it("clears the transition on unrelated paths", () => {
+    expect(
+      isTransitionRouteMismatch({
+        pathname: "/settings",
+        transition,
+      })
+    ).toBe(true);
+  });
+
+  it("clears the transition when returning to the starting path after reaching the destination", () => {
+    expect(
+      isTransitionRouteMismatch({
+        pathname: "/",
+        transition: { ...transition, hasReachedToPath: true },
+      })
+    ).toBe(true);
   });
 });

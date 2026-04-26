@@ -7,6 +7,7 @@ import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
 import { getBaseChatRuntimeKey } from "@/lib/chat-runtime-transition";
+import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
@@ -83,6 +84,7 @@ export function useStartProvisionalChat(chatId: string) {
 
       const didStartTransition = startInitialTransition({
         chatId,
+        fromPath: pathname,
         message,
         projectId: currentRoute.projectId,
         requestSpecs,
@@ -115,6 +117,7 @@ export function useStartProvisionalChat(chatId: string) {
       });
 
       window.history.pushState(null, "", href);
+      setTimeout(() => resetDraftChatId(currentRoute.projectId), 0);
       onStarted?.();
 
       return true;

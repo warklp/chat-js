@@ -6,8 +6,8 @@ export type InitialChatTransitionPhase = "submitted" | "confirmed";
 
 export interface InitialChatTransition {
   chatId: string;
-  draftReset: boolean;
   fromPath: string;
+  hasReachedToPath: boolean;
   message: ChatMessage;
   phase: InitialChatTransitionPhase;
   projectId: string | null;
@@ -40,15 +40,11 @@ export function shouldUseTransitionRuntimeKey({
   pathname: string;
   transition: InitialChatTransition | null;
 }) {
-  if (!transition) {
-    return false;
-  }
-
-  if (pathname === transition.toPath) {
-    return true;
-  }
-
-  return !transition.draftReset && pathname === transition.fromPath;
+  return !!(
+    transition &&
+    (pathname === transition.toPath ||
+      (!transition.hasReachedToPath && pathname === transition.fromPath))
+  );
 }
 
 export function getChatRuntimeKey({
@@ -76,7 +72,7 @@ export function isTransitionRouteMismatch({
     return false;
   }
 
-  if (!transition.draftReset && pathname === transition.fromPath) {
+  if (!transition.hasReachedToPath && pathname === transition.fromPath) {
     return false;
   }
 

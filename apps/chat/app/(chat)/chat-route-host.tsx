@@ -29,7 +29,7 @@ import {
   type InitialChatTransition,
   isTransitionRouteMismatch,
 } from "@/lib/chat-runtime-transition";
-import { resetDraftChatId, useDraftChatId } from "@/lib/draft-chat";
+import { useDraftChatId } from "@/lib/draft-chat";
 import { createPendingAssistantMessage } from "@/lib/parallel-chat-requests";
 import { useChatModels } from "@/providers/chat-models-provider";
 import {
@@ -463,12 +463,11 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
       return;
     }
 
-    if (pathname !== transition.fromPath && !transition.draftReset) {
-      resetDraftChatId(transition.projectId);
+    if (pathname === transition.toPath && !transition.hasReachedToPath) {
       setTransition((current) => {
         const next =
           current?.chatId === transition.chatId
-            ? { ...current, draftReset: true }
+            ? { ...current, hasReachedToPath: true }
             : current;
         transitionRef.current = next;
         return next;
@@ -490,8 +489,7 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
 
       const nextTransition: InitialChatTransition = {
         ...input,
-        draftReset: false,
-        fromPath: pathname,
+        hasReachedToPath: false,
         phase: "submitted",
       };
 
@@ -500,7 +498,7 @@ export function ChatRouteHost({ children }: ChatRouteHostProps) {
 
       return true;
     },
-    [pathname]
+    []
   );
 
   const markTransitionPhase = useCallback(

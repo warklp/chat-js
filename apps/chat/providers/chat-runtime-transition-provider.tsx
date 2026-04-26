@@ -10,6 +10,7 @@ import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 
 export interface StartInitialChatTransitionInput {
   chatId: string;
+  fromPath: string;
   message: ChatMessage;
   projectId: string | null;
   requestSpecs: ParallelRequestSpec[];
