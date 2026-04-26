@@ -1,6 +1,5 @@
 "use client";
 
-import { useChatActions } from "@ai-sdk-tools/store";
 import {
   Code2Icon,
   GraduationCapIcon,
@@ -17,6 +16,7 @@ import type { ChatMessage } from "@/lib/ai/types";
 import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
 import { createParallelRequestBody } from "@/lib/parallel-chat-requests";
 import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
+import { useChatActions } from "@/lib/stores/base";
 import { cn } from "@/lib/utils";
 
 interface SuggestedActionsProps {

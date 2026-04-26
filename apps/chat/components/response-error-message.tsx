@@ -1,6 +1,6 @@
-import { useChatActions, useChatStoreApi } from "@ai-sdk-tools/store";
 import { RefreshCcwIcon } from "lucide-react";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChatActions, useChatStoreApi } from "@/lib/stores/base";
 import { Button } from "./ui/button";
 
 export function ResponseErrorMessage() {

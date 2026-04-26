@@ -1,6 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk-tools/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +22,7 @@ import {
   addPendingAssistantMessages,
   markParallelRequestSpecsFailed,
 } from "@/lib/parallel-chat-requests";
+import { useChat } from "@/lib/stores/base";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,

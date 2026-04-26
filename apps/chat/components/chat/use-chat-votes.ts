@@ -1,8 +1,8 @@
 "use client";
 
-import { useChatId } from "@ai-sdk-tools/store";
 import { useQuery } from "@tanstack/react-query";
 import { useChatBootstrap } from "@/lib/chat-bootstrap";
+import { useChatId } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";

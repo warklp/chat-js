@@ -1,8 +1,3 @@
-import {
-  useChatActions,
-  useChatStatus,
-  useChatStoreApi,
-} from "@ai-sdk-tools/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistance } from "date-fns";
 import type { Dispatch, SetStateAction } from "react";
@@ -22,6 +17,11 @@ import {
 } from "@/lib/artifacts/sheet/client";
 import { textArtifact } from "@/lib/artifacts/text/client";
 import type { Document } from "@/lib/db/schema";
+import {
+  useChatActions,
+  useChatStatus,
+  useChatStoreApi,
+} from "@/lib/stores/base";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import {
