@@ -1,9 +1,9 @@
-import { useMessageById } from "@ai-sdk-tools/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
 import type { Vote } from "@/lib/db/schema";
+import { useMessageById } from "@/lib/stores/base";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
 import { MessageAction as Action } from "./ai-elements/message";

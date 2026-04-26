@@ -1,10 +1,10 @@
 "use client";
 
-// This file is a middleware that can extend @ai-sdk-tools/store with message parts functionality
+// This file is a middleware that can extend @/lib/stores/base with message parts functionality
 
-import type { StoreState as BaseChatStoreState } from "@ai-sdk-tools/store";
 import type { UIMessage } from "ai";
 import type { StateCreator } from "zustand";
+import type { StoreState as BaseChatStoreState } from "@/lib/stores/base";
 
 // Helper types to safely derive the message part and part.type types from UI_MESSAGE
 type UIMessageParts<UI_MSG> = UI_MSG extends { parts: infer P } ? P : never;

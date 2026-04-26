@@ -1,6 +1,5 @@
 "use client";
 
-import { useChatActions } from "@ai-sdk-tools/store";
 import {
   Code2Icon,
   GraduationCapIcon,
@@ -20,6 +19,7 @@ import {
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
 import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
+import { useChatActions } from "@/lib/stores/base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { cn } from "@/lib/utils";
 

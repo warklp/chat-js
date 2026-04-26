@@ -1,8 +1,8 @@
-import { useChatActions } from "@ai-sdk-tools/store";
 import { useCallback } from "react";
 import { useDataStream } from "@/components/data-stream-provider";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useChatActions } from "@/lib/stores/base";
 import { useSwitchToMessage } from "@/lib/stores/hooks-threads";
 
 export function useNavigateToMessage() {

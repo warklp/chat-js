@@ -1,10 +1,10 @@
 "use client";
 
-import { useChatStoreApi } from "@ai-sdk-tools/store";
 import { PlusIcon } from "lucide-react";
 import { useCallback } from "react";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
+import { useChatStoreApi } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import {
   useMessagePartByPartIdx,

@@ -1,6 +1,5 @@
 "use client";
 
-import { useChatActions } from "@ai-sdk-tools/store";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useCallback } from "react";
@@ -13,6 +12,7 @@ import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
+import { useChatActions } from "@/lib/stores/base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useChatRuntimeTransition } from "@/providers/chat-runtime-transition-provider";
 import { useModelChange } from "@/providers/default-model-provider";
