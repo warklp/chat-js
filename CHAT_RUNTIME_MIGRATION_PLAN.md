@@ -102,20 +102,28 @@ lives in the runtime layer.
 
 ### Phase 3: Migrate Chat Actions
 
-Route-local actions must resolve the intended runtime explicitly:
+Status: pending, reframed.
 
-- send message
-- suggested actions
-- follow-up suggestions
-- retry/regenerate
+Actions inside the chat React tree should keep using the same API they used
+before: `useChatActions()` / `useChat()`. `ChatSystem` is responsible for
+mounting the tree under the correct store and controller, so in-tree actions
+resolve correctly without accepting a runtime id.
+
+Runtime-specific APIs should be used for actions outside the visible chat tree:
+sidebar controls, background runtime controls, or future multi-chat management.
+
+Remaining work:
+
+- verify route-backed and runtime-backed `useChatActions().sendMessage` behave identically
+- retry/regenerate: pure retry derivation covered; browser verification still needed
 - edit message
 - sibling navigation
 - artifact actions
 - tool result submission
 - stop/resume
 
-The rule should be: actions target a `chatId`/runtime, not whatever controller is
-currently mounted in the visible route.
+The rule should be: chat-tree actions use the current chat context; outside-tree
+actions target a `chatId`/runtime explicitly.
 
 ### Phase 4: Query Gating Audit
 
