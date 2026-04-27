@@ -4,6 +4,7 @@ import type { Route } from "next";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
+import { useChatRuntimeApi } from "@/lib/chat-runtime-api";
 import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
@@ -12,7 +13,6 @@ import {
 } from "@/lib/parallel-chat-requests";
 import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
-import { useChatRuntimeRegistry } from "@/providers/chat-runtime-registry-provider";
 import { useModelChange } from "@/providers/default-model-provider";
 import { useSession } from "@/providers/session-provider";
 
@@ -47,7 +47,7 @@ export function useStartProvisionalChat(chatId: string) {
   const { data: session } = useSession();
   const store = useCustomChatStoreApi<ChatMessage>();
   const addMessageToTree = useAddMessageToTree();
-  const { startProvisionalRuntime } = useChatRuntimeRegistry();
+  const { startProvisionalRuntime } = useChatRuntimeApi();
 
   return useCallback(
     ({

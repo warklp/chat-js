@@ -50,6 +50,7 @@ runtime is confirmed.
 | --- | --- |
 | `parseChatIdFromPathname` | Classifies `/`, `/chat/:id`, `/project/:projectId`, `/project/:projectId/chat/:chatId`, `/share/:id`, and passthrough routes |
 | `ChatRuntimeRegistryProvider` | Owns live runtime entries and provisional/confirmed persistence state |
+| `useChatRuntimeApi` | Provides the public runtime boundary for lookup, provisional startup, confirmation, and runtime-targeted sends |
 | `MountedChatRuntimes` | Keeps runtime controllers mounted outside route transitions |
 | `useDraftChatId` / `resetDraftChatId` | Generates per-home and per-project draft ids and advances them after promotion |
 | `useStartProvisionalChat` | Creates the provisional runtime, adds optimistic messages, and updates browser history |

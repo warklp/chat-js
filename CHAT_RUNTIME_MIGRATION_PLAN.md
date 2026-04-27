@@ -87,16 +87,15 @@ post-confirmation invalidation, and secondary parallel request execution.
 
 ### Phase 2: Runtime API Boundary
 
+Status: complete.
+
 Add a small public runtime API so components stop reaching directly into store
 internals:
 
 - `getRuntime(chatId)`
-- `getOrCreateDraftRuntime(projectId)`
 - `startProvisionalRuntime(input)`
 - `sendMessage(chatId, message, options)`
-- `markConfirmed(chatId)`
-- `disposeRuntime(chatId)`
-- `useRuntimeStore(chatId)`
+- `confirmRuntime(chatId)`
 
 The store remains a generic local state primitive. Runtime-specific behavior
 lives in the runtime layer.
@@ -179,7 +178,6 @@ Add focused tests for:
 
 ## Recommended Next Step
 
-Start Phase 2 by adding a narrow runtime API boundary around the registry. The
-first useful slice is a `sendMessage(chatId, message, options)` entry point so
-chat actions can target runtimes explicitly instead of depending on whichever
-controller is mounted in the visible route.
+Start Phase 3 by migrating chat actions to target a runtime explicitly. The
+first useful slice is follow-up suggestions because they currently reach into
+the current store directly to call `sendMessage`.

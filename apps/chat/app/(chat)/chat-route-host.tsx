@@ -15,9 +15,9 @@ import {
 } from "@/hooks/chat-sync-hooks";
 import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
 import type { AppModelId } from "@/lib/ai/app-models";
+import { useChatRuntime } from "@/lib/chat-runtime-api";
 import { useDraftChatId } from "@/lib/draft-chat";
 import { useChatModels } from "@/providers/chat-models-provider";
-import { useChatRuntimeByChatId } from "@/providers/chat-runtime-registry-provider";
 import {
   type ParsedChatIdFromPathname,
   parseChatIdFromPathname,
@@ -220,7 +220,7 @@ function HostedChatRoute({
   const projectHomeId = getProjectHomeId(route);
   const draftChatId = useDraftChatId(projectHomeId);
   const persistedRoute = getPersistedRoute(route);
-  const liveRuntime = useChatRuntimeByChatId(persistedRoute?.id);
+  const liveRuntime = useChatRuntime(persistedRoute?.id);
   const hasLiveRuntime = !!liveRuntime;
   const persistedChatId = persistedRoute?.id ?? "";
   const hasConfirmedPersistedRoute =

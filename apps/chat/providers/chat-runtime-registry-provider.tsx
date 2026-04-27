@@ -46,7 +46,7 @@ export interface ChatRuntimeEntry {
   submittedMessage: ChatMessage;
 }
 
-interface StartProvisionalRuntimeInput {
+export interface StartProvisionalRuntimeInput {
   chatId: string;
   pendingSubmission: PendingChatSubmission;
   projectId: string | null;
@@ -78,9 +78,9 @@ export function ChatRuntimeRegistryProvider({
   const getRuntimeByChatId = useCallback(
     (chatId: string | null | undefined) =>
       chatId
-        ? (entries.find((entry) => entry.chatId === chatId) ?? null)
+        ? (entriesRef.current.find((entry) => entry.chatId === chatId) ?? null)
         : null,
-    [entries]
+    []
   );
 
   const startProvisionalRuntime = useCallback(
@@ -180,11 +180,6 @@ export function useChatRuntimeRegistry() {
     );
   }
   return context;
-}
-
-export function useChatRuntimeByChatId(chatId: string | null | undefined) {
-  const { getRuntimeByChatId } = useChatRuntimeRegistry();
-  return getRuntimeByChatId(chatId);
 }
 
 function MountedChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
