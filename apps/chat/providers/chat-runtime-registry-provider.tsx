@@ -13,10 +13,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
-import {
-  DataStreamProvider,
-  useDataStream,
-} from "@/components/data-stream-provider";
+import { DataStreamProvider } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
@@ -184,7 +181,8 @@ export function useChatRuntimeByChatId(chatId: string | null | undefined) {
 }
 
 function PersistentChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
-  const { markPendingSubmissionStarted } = useChatRuntimeRegistry();
+  const { markPendingSubmissionStarted, markRuntimeConfirmed } =
+    useChatRuntimeRegistry();
 
   return (
     <DataStreamProvider>
@@ -192,6 +190,7 @@ function PersistentChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
         <RuntimeConfirmationController runtime={runtime} />
         <ChatSync
           id={runtime.chatId}
+          onChatConfirmed={() => markRuntimeConfirmed(runtime.runtimeId)}
           onPendingSubmissionStarted={() =>
             markPendingSubmissionStarted(runtime.runtimeId)
           }
@@ -208,18 +207,15 @@ function RuntimeConfirmationController({
 }: {
   runtime: ChatRuntimeEntry;
 }) {
-  const { dataStream } = useDataStream();
   const addMessageToTree = useAddMessageToTree();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const { markRuntimeConfirmed } = useChatRuntimeRegistry();
   const hasHandledConfirmationRef = useRef(
     runtime.persistenceStatus === "confirmed"
   );
 
   useEffect(() => {
-    if (runtime.persistenceStatus === "confirmed") {
-      hasHandledConfirmationRef.current = true;
+    if (runtime.persistenceStatus !== "confirmed") {
       return;
     }
 
@@ -227,18 +223,7 @@ function RuntimeConfirmationController({
       return;
     }
 
-    const isChatConfirmed = (dataStream ?? []).some(
-      (delta) =>
-        delta.type === "data-chatConfirmed" &&
-        delta.data.chatId === runtime.chatId
-    );
-
-    if (!isChatConfirmed) {
-      return;
-    }
-
     hasHandledConfirmationRef.current = true;
-    markRuntimeConfirmed(runtime.runtimeId);
 
     const invalidatePersistedChatQueries = async () => {
       await Promise.all([
@@ -292,14 +277,7 @@ function RuntimeConfirmationController({
           toast.error("Failed to refresh chat history");
         });
       });
-  }, [
-    addMessageToTree,
-    dataStream,
-    markRuntimeConfirmed,
-    queryClient,
-    runtime,
-    trpc,
-  ]);
+  }, [addMessageToTree, queryClient, runtime, trpc]);
 
   return null;
 }

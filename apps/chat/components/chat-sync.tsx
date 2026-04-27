@@ -68,11 +68,13 @@ function releaseReconnectStream(activeStreamId: string | null | undefined) {
 
 export function ChatSync({
   id,
+  onChatConfirmed,
   onPendingSubmissionStarted,
   pendingSubmission,
   projectId,
 }: {
   id: string;
+  onChatConfirmed?: () => void;
   onPendingSubmissionStarted?: () => void;
   pendingSubmission?: PendingChatSyncSubmission | null;
   projectId?: string;
@@ -89,6 +91,7 @@ export function ChatSync({
   const pendingSubmissionTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const hasReportedConfirmationRef = useRef(false);
   const claimedReconnectStreamIdRef = useRef<string | null>(null);
 
   const lastMessage = threadInitialMessages.at(-1);
@@ -153,6 +156,14 @@ export function ChatSync({
     }),
     onData: (dataPart) => {
       setAutoResume(true);
+      if (
+        !hasReportedConfirmationRef.current &&
+        dataPart.type === "data-chatConfirmed" &&
+        dataPart.data.chatId === id
+      ) {
+        hasReportedConfirmationRef.current = true;
+        onChatConfirmed?.();
+      }
       setDataStream((ds) =>
         ds ? [...ds, dataPart as (typeof ds)[number]] : []
       );

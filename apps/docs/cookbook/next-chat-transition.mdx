@@ -1,96 +1,113 @@
 ---
-title: Next.js Chat Transition
-description: Keep the first-message chat runtime alive while App Router moves from a draft route to a persisted chat route
+title: Provisional Chat Runtime
+description: Keep first-message chat execution alive while App Router moves from a draft route to a persisted chat route
 ---
 
-This pattern lets a user send the first message on `/` or `/project/:projectId`, navigate with the Next.js App Router to the persisted chat URL, and keep the same writable chat runtime alive during that transition.
+This cookbook used to describe the route-transition provider. That provider has
+been removed from the active architecture. The current first-message flow is
+owned by persistent chat runtimes instead of a temporary route transition.
+
+For the full migration plan, see `CHAT_RUNTIME_MIGRATION_PLAN.md` at the repo
+root.
 
 ## The Problem
 
 The first-message flow has competing requirements:
 
 1. A new chat needs a real URL like `/chat/:id` or `/project/:projectId/chat/:chatId`
-2. The submitted message and pending assistant placeholders must survive the route change
-3. Normal navigation between existing chats must still reset the runtime
-4. The App Router tree must stay in sync with browser history
+2. The submitted message and pending assistant placeholders must survive route changes
+3. Normal navigation between unrelated chats must not leak state
+4. Backend queries for persisted chat data must not run before the provisional chat is confirmed
+5. Streams should continue even when the route tree changes
 
-Using `router.push` asks the App Router to load the destination route before the first stream has settled. Mounting a separate chat runtime in every page keeps routing honest, but the first-message navigation remounts the store and loses optimistic state.
+Using a route-local controller makes the App Router navigation own too much of
+the chat lifecycle. A route remount can stop the stream, lose optimistic state,
+or fetch persisted chat data before the server has confirmed the row.
 
-## The Solution
+## Current Solution
 
-`ChatRouteHost` owns the writable chat route subtree under the chat layout. It renders the same `ChatSystem` for draft and persisted chat routes, and it passes a transition object through `ChatRuntimeTransitionProvider` while the first request is moving from draft route to persisted route.
+`ChatRuntimeRegistryProvider` owns live chat runtime entries. A provisional chat
+starts by registering a runtime with:
 
-The transition has three important pieces:
+- the generated chat id
+- an owned chat store
+- the submitted user message
+- pending primary submission data
+- parallel request specs
+- `persistenceStatus: "provisional"`
 
-- a client-generated draft chat id from `useDraftChatId`
-- a stable `runtimeKey` from `getBaseChatRuntimeKey`
-- the submitted user message plus `ParallelRequestSpec` values from `buildDraftChatSubmission`
+`PersistentChatRuntimes` renders controllers outside the route tree, so
+streaming continues while navigation changes which chat is visible.
 
-During the transition, `/` and `/chat/:id` share the same runtime key. After the server confirms the chat and the stream settles, the transition is cleared and future route changes use normal path-based keys.
+`ChatRouteHost` is now a view resolver. It decides whether the visible route is
+backed by a live runtime store or by persisted query data. Persisted chat and
+message queries are enabled only when there is no live runtime or when the live
+runtime is confirmed.
 
 ## Parts Involved
 
 | Part | Responsibility |
 | --- | --- |
 | `parseChatIdFromPathname` | Classifies `/`, `/chat/:id`, `/project/:projectId`, `/project/:projectId/chat/:chatId`, `/share/:id`, and passthrough routes |
-| `ChatRouteHost` | Hosts writable chat routes, loads persisted chat/message data, owns transition state, and decides when to render fallback children |
-| `ChatRuntimeTransitionProvider` | Exposes `startInitialTransition`, `markTransitionPhase`, `settleTransition`, and the active transition |
+| `ChatRuntimeRegistryProvider` | Owns live runtime entries and provisional/confirmed persistence state |
+| `PersistentChatRuntimes` | Keeps runtime controllers mounted outside route transitions |
 | `useDraftChatId` / `resetDraftChatId` | Generates per-home and per-project draft ids and advances them after promotion |
-| `buildDraftChatSubmission` | Creates the user message and request specs, including parallel response metadata |
-| `useStartProvisionalChat` | Starts the transition, sends the primary request, adds optimistic messages, and calls `router.push` |
-| `ChatSystem` | Keys the artifact, data stream, and message store by `runtimeKey` instead of only by chat id |
-| `MessageTreeSync` | Copies already-loaded server messages into the message tree; route fetching lives in `ChatRouteHost` |
-| `ChatSync` | Handles `data-chatConfirmed`, invalidates persisted queries, runs secondary parallel requests, and settles the transition |
-| `DataStreamHandler` | Processes stream deltas for artifacts, research updates, and selected tool reset |
-| `/api/chat` | Idempotently saves the user message and assistant placeholder, streams the primary response, and emits `data-chatConfirmed` |
-| `/api/chat/prepare` | Creates the chat and saves the user message before secondary parallel requests run |
+| `useStartProvisionalChat` | Creates the provisional runtime, adds optimistic messages, and updates browser history |
+| `ChatRouteHost` | Chooses live runtime data or persisted query data for the visible route |
+| `ChatSystem` | Renders the chat tree against either a route-owned store or an external runtime store |
+| `ChatSync` | Owns the transport for a mounted controller and reports `data-chatConfirmed` |
+| `RuntimeConfirmationController` | Invalidates persisted queries and runs secondary parallel requests after confirmation |
+| `/api/chat` | Idempotently creates the chat/user/assistant records, streams the primary response, and emits `data-chatConfirmed` |
+| `/api/chat/prepare` | Prepares secondary parallel requests against an already-created chat |
 
 ## Flow
 
-1. `ChatRouteHost` parses `/` or `/project/:projectId` as a draft route.
-2. It gets a draft id from `useDraftChatId` and renders `ChatSystem`.
-3. `MultimodalInput` or `SuggestedActions` calls `buildDraftChatSubmission`.
-4. `useStartProvisionalChat` stores an `InitialChatTransition`, sends the primary request, adds the user and pending assistant messages, and updates the URL with `window.history.pushState`.
-5. The destination route re-renders through `ChatRouteHost`, but `getChatRuntimeKey` returns the same transition key, so the chat runtime stays mounted.
-6. `/api/chat` persists the chat, user message, and assistant placeholder idempotently, then streams `data-chatConfirmed`.
-7. `ChatSync` marks the transition confirmed, invalidates persisted chat queries, and runs secondary parallel requests through `/api/chat/prepare` plus `/api/chat`.
-8. When the primary stream reaches `ready` or `error`, `ChatSync` settles the transition.
-9. Later navigation uses normal route keys again, so `/chat/a` to `/chat/b` and persisted chat back to `/` fully reset state.
+1. `ChatRouteHost` renders `/` or `/project/:projectId` with a draft id.
+2. `MultimodalInput` or `SuggestedActions` calls `buildDraftChatSubmission`.
+3. `useStartProvisionalChat` registers a provisional runtime, adds the user and pending assistant messages, and calls `window.history.pushState`.
+4. The destination route re-renders through `ChatRouteHost`.
+5. If a live runtime exists for the destination chat id, `ChatRouteHost` uses its store and suppresses route-owned `ChatSync`.
+6. The persistent runtime's `ChatSync` sends the primary request and receives stream data.
+7. On `data-chatConfirmed`, `ChatSync` marks the runtime confirmed.
+8. `RuntimeConfirmationController` invalidates persisted chat queries and runs secondary parallel requests.
+9. Later route navigation only swaps the visible runtime or persisted data source; it does not own stream lifetime.
 
 ## Runtime Keys
 
 Draft routes include the draft id in the base key:
 
 ```ts
-getBaseChatRuntimeKey({
-  draftChatId,
-  pathname,
-  route,
-});
+path:${pathname}:draft:${draftChatId}
 ```
 
-Persisted routes normally use `path:${pathname}`. While a transition is active, `getChatRuntimeKey` returns the original draft key for both the starting path and exact destination path. This preserves the store while `pushState` updates the URL and keeps `usePathname` in sync.
+Persisted routes use:
+
+```ts
+path:${pathname}
+```
+
+When a live runtime backs the route, the visible `ChatSystem` uses the runtime id
+instead. That keeps the visible tree attached to the runtime-owned store without
+reintroducing a separate transition key model.
+
+## Query Gating
+
+Persisted chat queries should only run when one of these is true:
+
+- there is no live runtime for the route chat id
+- the live runtime has `persistenceStatus: "confirmed"`
+
+This prevents provisional routes from calling `chat.getChatById` or
+`chat.getChatMessages` before the server has confirmed the chat.
 
 ## Parallel Responses
 
-The same transition carries all parallel response metadata:
+The runtime entry carries all parallel response metadata:
 
-- the first request is sent immediately by `useStartProvisionalChat`
-- pending assistant placeholders are added for every request spec
-- after `data-chatConfirmed`, `ChatSync` calls `runParallelRequestSpecs` for secondary models
+- the first request is sent by the persistent runtime controller
+- pending assistant placeholders are added when the provisional runtime starts
+- after confirmation, secondary request specs run from `RuntimeConfirmationController`
 - failed secondary requests are converted from pending placeholders into empty assistant messages with `activeStreamId: null`
-
-`/api/chat/prepare` exists so secondary requests can safely share the already-created chat and user message.
-
-## Resets
-
-The reset rules stay explicit:
-
-- `/` draft -> `/chat/:id` for the same transition: runtime key is preserved
-- `/project/:projectId` draft -> `/project/:projectId/chat/:chatId`: runtime key is preserved
-- `/chat/a` -> `/chat/b`: runtime key changes, full reset
-- `/chat/a` -> `/`: a new draft id is generated, full reset
-- branch switch inside one chat: chat id is stable, `threadEpoch` remounts `ChatSync`
 
 ## Related
 

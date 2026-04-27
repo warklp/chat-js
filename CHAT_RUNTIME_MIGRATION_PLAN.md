@@ -71,7 +71,7 @@ The current branch has only the minimum needed for the prototype:
 
 ### Phase 1: Runtime Owns Provisional Lifecycle
 
-Status: in progress.
+Status: complete.
 
 Move route-transition responsibilities into the runtime registry:
 
@@ -82,7 +82,9 @@ Move route-transition responsibilities into the runtime registry:
 - Invalidate persisted queries after confirmation.
 - Run secondary parallel request specs from the runtime controller.
 
-This removes the duplicate route-transition mental model.
+This removes the duplicate route-transition mental model. The runtime registry
+now owns provisional creation, pending submission startup, confirmation,
+post-confirmation invalidation, and secondary parallel request execution.
 
 ### Phase 2: Runtime API Boundary
 
@@ -178,7 +180,7 @@ Add focused tests for:
 
 ## Recommended Next Step
 
-Replace the active `ChatRuntimeTransitionProvider` path with runtime-registry
-state. The registry should own confirmation and post-confirmation work, while
-`ChatRouteHost` should only decide which runtime or persisted data backs the
-visible route.
+Start Phase 2 by adding a narrow runtime API boundary around the registry. The
+first useful slice is a `sendMessage(chatId, message, options)` entry point so
+chat actions can target runtimes explicitly instead of depending on whichever
+controller is mounted in the visible route.

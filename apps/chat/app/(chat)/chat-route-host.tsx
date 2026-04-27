@@ -15,7 +15,6 @@ import {
 } from "@/hooks/chat-sync-hooks";
 import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
 import type { AppModelId } from "@/lib/ai/app-models";
-import { getBaseChatRuntimeKey } from "@/lib/chat-runtime-transition";
 import { useDraftChatId } from "@/lib/draft-chat";
 import { useChatModels } from "@/providers/chat-models-provider";
 import { useChatRuntimeByChatId } from "@/providers/chat-runtime-registry-provider";
@@ -50,6 +49,22 @@ function getPersistedRoute(route: HostedParsedChatRoute) {
 
 function getProjectHomeId(route: HostedParsedChatRoute) {
   return route.type === "projectHome" ? route.projectId : null;
+}
+
+function getRouteRuntimeKey({
+  draftChatId,
+  pathname,
+  route,
+}: {
+  draftChatId?: string | null;
+  pathname: string;
+  route: HostedParsedChatRoute;
+}) {
+  if (draftChatId && (route.type === "home" || route.type === "projectHome")) {
+    return `path:${pathname}:draft:${draftChatId}`;
+  }
+
+  return `path:${pathname}`;
 }
 
 function getProjectIdForChatSystem({
@@ -263,7 +278,7 @@ function HostedChatRoute({
   const value = searchParams.get("modelId");
   const overrideModelId = getOverrideModelId({ getModelById, route, value });
   const id = persistedRoute?.id ?? draftChatId;
-  const baseRuntimeKey = getBaseChatRuntimeKey({
+  const baseRuntimeKey = getRouteRuntimeKey({
     draftChatId: persistedRoute ? null : draftChatId,
     pathname,
     route,

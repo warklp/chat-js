@@ -534,7 +534,7 @@ async function executeChatRequest({
   const streamId = generateUUID();
 
   if (!isAnonymous) {
-    // The first transition request can replay before chatConfirmed arrives, so
+    // The first provisional request can replay before chatConfirmed arrives, so
     // placeholder creation must be idempotent.
     const insertedMessage = await saveMessageIfNotExists({
       id: messageId,
