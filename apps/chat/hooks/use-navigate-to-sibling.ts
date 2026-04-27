@@ -28,7 +28,9 @@ export function useNavigateToSibling() {
         newThread &&
         artifact.isVisible &&
         artifact.messageId &&
-        !newThread.some((m) => m.id === artifact.messageId)
+        !newThread.some(
+          (message: ChatMessage) => message.id === artifact.messageId
+        )
       ) {
         closeArtifact();
       }

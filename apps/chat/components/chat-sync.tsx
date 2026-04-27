@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -10,20 +9,19 @@ import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
-import type { InitialChatTransition } from "@/lib/chat-runtime-transition";
-import {
-  markParallelRequestSpecsFailed,
-  runParallelRequestSpecs,
-} from "@/lib/parallel-chat-requests";
+import type { UseChatHelpers } from "@/lib/stores/base";
 import { useChat } from "@/lib/stores/base";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,
 } from "@/lib/stores/hooks-threads";
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
-import { useChatRuntimeTransition } from "@/providers/chat-runtime-transition-provider";
 import { useSession } from "@/providers/session-provider";
-import { useTRPC } from "@/trpc/react";
+
+export interface PendingChatSyncSubmission {
+  message: ChatMessage;
+  options?: Parameters<UseChatHelpers<ChatMessage>["sendMessage"]>[1];
+}
 
 function getResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return activeStreamId && !activeStreamId.startsWith("pending:")
@@ -70,26 +68,27 @@ function releaseReconnectStream(activeStreamId: string | null | undefined) {
 
 export function ChatSync({
   id,
+  onPendingSubmissionStarted,
+  pendingSubmission,
   projectId,
-  transition,
 }: {
   id: string;
+  onPendingSubmissionStarted?: () => void;
+  pendingSubmission?: PendingChatSyncSubmission | null;
   projectId?: string;
-  transition?: InitialChatTransition | null;
 }) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
-  const { dataStream, setDataStream } = useDataStream();
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
+  const { setDataStream } = useDataStream();
   const [autoResume, setAutoResume] = useState(true);
-  const { markTransitionPhase, settleTransition } = useChatRuntimeTransition();
 
   const isAuthenticated = !!session?.user;
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
-  const hasHandledTransitionConfirmationRef = useRef(false);
-  const hasSettledTransitionRef = useRef(false);
+  const hasStartedPendingSubmissionRef = useRef(false);
+  const pendingSubmissionTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const claimedReconnectStreamIdRef = useRef<string | null>(null);
 
   const lastMessage = threadInitialMessages.at(-1);
@@ -170,11 +169,6 @@ export function ChatSync({
         setAutoResume(false);
       }
 
-      if (transition && !hasSettledTransitionRef.current) {
-        hasSettledTransitionRef.current = true;
-        settleTransition(transition.chatId);
-      }
-
       const { message, description } = getStreamErrorToastContent(error);
       toast.error(message, description ? { description } : undefined);
     },
@@ -182,105 +176,42 @@ export function ChatSync({
   const { status, stop } = chatHelpers;
 
   useEffect(() => {
-    if (!transition) {
-      hasHandledTransitionConfirmationRef.current = false;
-      hasSettledTransitionRef.current = false;
-      return;
-    }
-
-    if (hasHandledTransitionConfirmationRef.current) {
-      return;
-    }
-
-    const isChatConfirmed = (dataStream ?? []).some(
-      (delta) =>
-        delta.type === "data-chatConfirmed" &&
-        delta.data.chatId === transition.chatId
-    );
-
-    if (!isChatConfirmed) {
-      return;
-    }
-
-    hasHandledTransitionConfirmationRef.current = true;
-    markTransitionPhase(transition.chatId, "confirmed");
-
-    const invalidatePersistedChatQueries = async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: trpc.chat.getChatMessages.queryKey({
-            chatId: transition.chatId,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: trpc.chat.getChatById.queryKey({
-            chatId: transition.chatId,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: trpc.chat.getAllChats.queryKey(),
-          exact: false,
-        }),
-      ]);
-    };
-
-    const secondaryRequestSpecs = transition.requestSpecs.slice(1);
-
-    if (secondaryRequestSpecs.length === 0) {
-      invalidatePersistedChatQueries().catch(() => {
-        toast.error("Failed to refresh chat history");
-      });
-      return;
-    }
-
-    runParallelRequestSpecs({
-      chatId: transition.chatId,
-      message: transition.message,
-      projectId: transition.projectId,
-      requestSpecs: secondaryRequestSpecs,
-    })
-      .then((failedRequestSpecs) => {
-        if (failedRequestSpecs.length > 0) {
-          markParallelRequestSpecsFailed({
-            addMessageToTree,
-            message: transition.message,
-            requestSpecs: failedRequestSpecs,
-          });
-          toast.error("Failed to complete all parallel responses");
-        }
-      })
-      .catch(() => {
-        toast.error("Failed to complete all parallel responses");
-      })
-      .finally(() => {
-        invalidatePersistedChatQueries().catch(() => {
-          toast.error("Failed to refresh chat history");
-        });
-      });
-  }, [
-    addMessageToTree,
-    dataStream,
-    markTransitionPhase,
-    queryClient,
-    transition,
-    trpc,
-  ]);
-
-  useEffect(() => {
     if (
       !(
-        transition &&
-        transition.phase === "confirmed" &&
-        (status === "ready" || status === "error") &&
-        !hasSettledTransitionRef.current
+        pendingSubmission &&
+        !hasStartedPendingSubmissionRef.current &&
+        !pendingSubmissionTimeoutRef.current
       )
     ) {
       return;
     }
 
-    hasSettledTransitionRef.current = true;
-    settleTransition(transition.chatId);
-  }, [settleTransition, status, transition]);
+    if (!(status === "ready" || status === "error")) {
+      return;
+    }
+
+    pendingSubmissionTimeoutRef.current = setTimeout(() => {
+      pendingSubmissionTimeoutRef.current = null;
+      hasStartedPendingSubmissionRef.current = true;
+      onPendingSubmissionStarted?.();
+      chatHelpers.sendMessage(
+        pendingSubmission.message,
+        pendingSubmission.options
+      );
+    });
+
+    return () => {
+      if (pendingSubmissionTimeoutRef.current) {
+        clearTimeout(pendingSubmissionTimeoutRef.current);
+        pendingSubmissionTimeoutRef.current = null;
+      }
+    };
+  }, [
+    chatHelpers.sendMessage,
+    onPendingSubmissionStarted,
+    pendingSubmission,
+    status,
+  ]);
 
   // Keep route changes from turning an in-flight stream into a client-side
   // partial finish. The server owns persisted stream finalization.

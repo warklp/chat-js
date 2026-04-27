@@ -21,7 +21,7 @@ export type CustomChatStoreState<UI_MESSAGE extends UIMessage = UIMessage> =
   PartsAugmentedState<UI_MESSAGE> & ThreadAugmentedState<UI_MESSAGE>;
 
 const ENABLE_TRACING_ON_DEV = false;
-function createChatStore<TMessage extends UIMessage = UIMessage>(
+export function createCustomChatStore<TMessage extends UIMessage = UIMessage>(
   initialMessages: TMessage[] = []
 ) {
   return createStore<CustomChatStoreState<TMessage>>()(
@@ -40,7 +40,7 @@ function createChatStore<TMessage extends UIMessage = UIMessage>(
 }
 
 export type CustomChatStoreApi<TMessage extends UIMessage = UIMessage> =
-  ReturnType<typeof createChatStore<TMessage>>;
+  ReturnType<typeof createCustomChatStore<TMessage>>;
 
 export function useCustomChatStoreApi<
   TMessage extends UIMessage = UIMessage,
@@ -57,14 +57,17 @@ type ChatProviderProps = Parameters<typeof ChatProvider>[0];
 export function CustomStoreProvider<TMessage extends UIMessage = UIMessage>({
   initialMessages = [],
   children,
+  store,
 }: PropsWithChildren<{
   initialMessages?: TMessage[];
+  store?: CustomChatStoreApi<TMessage>;
 }> &
   Omit<ChatProviderProps, "initialMessages" | "store">) {
   const storeRef = useRef<CustomChatStoreApi<TMessage> | null>(null);
 
   if (storeRef.current === null) {
-    storeRef.current = createChatStore<TMessage>(initialMessages);
+    storeRef.current =
+      store ?? createCustomChatStore<TMessage>(initialMessages);
   }
 
   return (

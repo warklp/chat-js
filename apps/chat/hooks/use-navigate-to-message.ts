@@ -22,7 +22,9 @@ export function useNavigateToMessage() {
         newThread &&
         artifact.isVisible &&
         artifact.messageId &&
-        !newThread.some((message) => message.id === artifact.messageId)
+        !newThread.some(
+          (message: ChatMessage) => message.id === artifact.messageId
+        )
       ) {
         closeArtifact();
       }

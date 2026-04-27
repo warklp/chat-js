@@ -10,8 +10,10 @@ import { ArtifactProvider } from "@/hooks/use-artifact";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
 import type { ChatRouteSource } from "@/lib/chat-route";
-import type { InitialChatTransition } from "@/lib/chat-runtime-transition";
-import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
+import {
+  type CustomChatStoreApi,
+  CustomStoreProvider,
+} from "@/lib/stores/custom-store-provider";
 import { useThreadEpoch } from "@/lib/stores/hooks-threads";
 import type { UIChat } from "@/lib/types/ui-chat";
 import { ChatInputProvider } from "@/providers/chat-input-provider";
@@ -19,12 +21,10 @@ import { ChatInputProvider } from "@/providers/chat-input-provider";
 function ChatThreadSync({
   id,
   projectId,
-  transition,
   withHandler,
 }: {
   id: string;
   projectId?: string;
-  transition?: InitialChatTransition | null;
   withHandler: boolean;
 }) {
   const threadEpoch = useThreadEpoch();
@@ -35,7 +35,6 @@ function ChatThreadSync({
         id={id}
         key={`chat-sync:${id}:${threadEpoch}`}
         projectId={projectId}
-        transition={transition}
       />
       {withHandler ? (
         <DataStreamHandler key={`stream:${id}:${threadEpoch}`} />
@@ -46,6 +45,7 @@ function ChatThreadSync({
 
 export const ChatSystem = memo(function PureChatSystem({
   chat,
+  controller = "route",
   id,
   initialMessages,
   isReadonly,
@@ -55,9 +55,10 @@ export const ChatSystem = memo(function PureChatSystem({
   routeSource = projectId ? "project" : "chat",
   runtimeKey,
   syncedMessages,
-  transition,
+  store,
 }: {
   chat?: UIChat | null;
+  controller?: "external" | "route";
   id: string;
   initialMessages: ChatMessage[];
   isReadonly: boolean;
@@ -67,7 +68,7 @@ export const ChatSystem = memo(function PureChatSystem({
   routeSource?: ChatRouteSource;
   runtimeKey: string;
   syncedMessages?: ChatMessage[] | null;
-  transition?: InitialChatTransition | null;
+  store?: CustomChatStoreApi<ChatMessage>;
 }) {
   return (
     <ArtifactProvider key={runtimeKey}>
@@ -75,16 +76,18 @@ export const ChatSystem = memo(function PureChatSystem({
         <CustomStoreProvider<ChatMessage>
           initialMessages={initialMessages}
           key={runtimeKey}
+          store={store}
         >
           <MessageTreeSync messages={syncedMessages} />
           {isReadonly ? (
             <>
-              <ChatThreadSync
-                id={id}
-                projectId={projectId}
-                transition={transition}
-                withHandler={false}
-              />
+              {controller === "route" ? (
+                <ChatThreadSync
+                  id={id}
+                  projectId={projectId}
+                  withHandler={false}
+                />
+              ) : null}
               <Chat
                 chat={chat}
                 id={id}
@@ -101,12 +104,13 @@ export const ChatSystem = memo(function PureChatSystem({
               localStorageEnabled={true}
               overrideModelId={overrideModelId}
             >
-              <ChatThreadSync
-                id={id}
-                projectId={projectId}
-                transition={transition}
-                withHandler={true}
-              />
+              {controller === "route" ? (
+                <ChatThreadSync
+                  id={id}
+                  projectId={projectId}
+                  withHandler={true}
+                />
+              ) : null}
               <Chat
                 chat={chat}
                 id={id}
