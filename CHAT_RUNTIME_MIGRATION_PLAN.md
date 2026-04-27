@@ -20,7 +20,7 @@ The prototype has proven the key design:
 
 - `ChatRuntimeRegistryProvider` owns live chat runtime entries.
 - Each runtime owns a chat store instance.
-- `PersistentChatRuntimes` keeps runtime controllers mounted outside the route tree.
+- `MountedChatRuntimes` keeps runtime controllers mounted outside the route tree.
 - `ChatRouteHost` can render a visible route from a live runtime store.
 - Provisional route queries are disabled until the runtime is confirmed.
 
@@ -51,7 +51,6 @@ Each runtime should eventually track:
 - `chatId`
 - `runtimeId`
 - `projectId`
-- `source`
 - `store`
 - `pendingSubmission`
 - `submittedMessage`

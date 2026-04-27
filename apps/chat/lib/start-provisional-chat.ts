@@ -1,7 +1,6 @@
 "use client";
 
 import type { Route } from "next";
-import { usePathname } from "next/navigation";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
@@ -43,7 +42,6 @@ function isInitialRoute(
 }
 
 export function useStartProvisionalChat(chatId: string) {
-  const pathname = usePathname() ?? "/";
   const currentRoute = useCurrentChatRoute();
   const changeModel = useModelChange();
   const { data: session } = useSession();
@@ -78,7 +76,6 @@ export function useStartProvisionalChat(chatId: string) {
       const primaryRequest = requestSpecs[0] ?? null;
       const didStartRuntime = startProvisionalRuntime({
         chatId,
-        fromPath: pathname,
         pendingSubmission: {
           message,
           options: primaryRequest
@@ -87,9 +84,7 @@ export function useStartProvisionalChat(chatId: string) {
         },
         projectId: currentRoute.projectId,
         requestSpecs,
-        source: currentRoute.source,
         store,
-        toPath: href,
       });
 
       if (!didStartRuntime) {
@@ -119,7 +114,6 @@ export function useStartProvisionalChat(chatId: string) {
       changeModel,
       chatId,
       currentRoute,
-      pathname,
       session?.user,
       startProvisionalRuntime,
       store,

@@ -37,27 +37,21 @@ export interface PendingChatSubmission {
 
 export interface ChatRuntimeEntry {
   chatId: string;
-  fromPath: string;
   pendingSubmission: PendingChatSubmission | null;
   persistenceStatus: "confirmed" | "provisional";
   projectId: string | null;
   requestSpecs: ParallelRequestSpec[];
   runtimeId: ChatRuntimeId;
-  source: "home" | "project";
   store: CustomChatStoreApi<ChatMessage>;
   submittedMessage: ChatMessage;
-  toPath: string;
 }
 
 interface StartProvisionalRuntimeInput {
   chatId: string;
-  fromPath: string;
   pendingSubmission: PendingChatSubmission;
   projectId: string | null;
   requestSpecs: ParallelRequestSpec[];
-  source: "home" | "project";
   store: CustomChatStoreApi<ChatMessage>;
-  toPath: string;
 }
 
 interface ChatRuntimeRegistryContextValue {
@@ -97,16 +91,13 @@ export function ChatRuntimeRegistryProvider({
 
       const entry: ChatRuntimeEntry = {
         chatId: input.chatId,
-        fromPath: input.fromPath,
         pendingSubmission: input.pendingSubmission,
         persistenceStatus: "provisional",
         projectId: input.projectId,
         requestSpecs: input.requestSpecs,
         runtimeId: `chat:${input.chatId}`,
-        source: input.source,
         store: input.store,
         submittedMessage: input.pendingSubmission.message,
-        toPath: input.toPath,
       };
 
       const nextEntries = [...entriesRef.current, entry];
@@ -120,6 +111,14 @@ export function ChatRuntimeRegistryProvider({
 
   const markPendingSubmissionStarted = useCallback(
     (runtimeId: ChatRuntimeId) => {
+      const runtime = entriesRef.current.find(
+        (entry) => entry.runtimeId === runtimeId
+      );
+
+      if (!runtime?.pendingSubmission) {
+        return;
+      }
+
       const nextEntries = entriesRef.current.map((entry) =>
         entry.runtimeId === runtimeId
           ? { ...entry, pendingSubmission: null }
@@ -132,6 +131,14 @@ export function ChatRuntimeRegistryProvider({
   );
 
   const markRuntimeConfirmed = useCallback((runtimeId: ChatRuntimeId) => {
+    const runtime = entriesRef.current.find(
+      (entry) => entry.runtimeId === runtimeId
+    );
+
+    if (!runtime || runtime.persistenceStatus === "confirmed") {
+      return;
+    }
+
     const nextEntries = entriesRef.current.map((entry) =>
       entry.runtimeId === runtimeId
         ? { ...entry, persistenceStatus: "confirmed" as const }
@@ -180,7 +187,7 @@ export function useChatRuntimeByChatId(chatId: string | null | undefined) {
   return getRuntimeByChatId(chatId);
 }
 
-function PersistentChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
+function MountedChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
   const { markPendingSubmissionStarted, markRuntimeConfirmed } =
     useChatRuntimeRegistry();
 
@@ -282,13 +289,13 @@ function RuntimeConfirmationController({
   return null;
 }
 
-export function PersistentChatRuntimes() {
+export function MountedChatRuntimes() {
   const { entries } = useChatRuntimeRegistry();
 
   return (
     <>
       {entries.map((runtime) => (
-        <PersistentChatRuntime key={runtime.runtimeId} runtime={runtime} />
+        <MountedChatRuntime key={runtime.runtimeId} runtime={runtime} />
       ))}
     </>
   );

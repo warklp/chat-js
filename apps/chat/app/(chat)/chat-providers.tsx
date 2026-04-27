@@ -3,7 +3,7 @@
 import { AnonymousSessionInit } from "@/components/anonymous-session-init";
 import {
   ChatRuntimeRegistryProvider,
-  PersistentChatRuntimes,
+  MountedChatRuntimes,
 } from "@/providers/chat-runtime-registry-provider";
 
 interface ChatProvidersProps {
@@ -15,7 +15,7 @@ export function ChatProviders({ children }: ChatProvidersProps) {
     <>
       <AnonymousSessionInit />
       <ChatRuntimeRegistryProvider>
-        <PersistentChatRuntimes />
+        <MountedChatRuntimes />
         {children}
       </ChatRuntimeRegistryProvider>
     </>
