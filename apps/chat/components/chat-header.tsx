@@ -52,7 +52,7 @@ function PureChatHeader({
           />
         </div>
 
-        {!isReadonly && hasMessages && (
+        {!isReadonly && hasMessages && chat && (
           <ShareButton chatId={chatId} className="hidden md:flex" />
         )}
         {isReadonly && (

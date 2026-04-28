@@ -96,3 +96,8 @@ export function useChatRuntimeApi(): ChatRuntimeApi {
 export function useChatRuntime(chatId: string | null | undefined) {
   return useChatRuntimeApi().getRuntime(chatId);
 }
+
+export function useIsChatPersisted(chatId: string | null | undefined) {
+  const runtime = useChatRuntime(chatId);
+  return !runtime || runtime.persistenceStatus === "confirmed";
+}

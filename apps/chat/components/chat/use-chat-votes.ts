@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useIsChatPersisted } from "@/lib/chat-runtime-api";
 import { useChatId } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import { useSession } from "@/providers/session-provider";
@@ -13,11 +14,16 @@ export function useChatVotes(
   const trpc = useTRPC();
   const { data: session } = useSession();
   const isLoading = chatId !== useChatId();
+  const isChatPersisted = useIsChatPersisted(chatId);
   const messageIds = useMessageIds() as string[];
 
   return useQuery({
     ...trpc.vote.getVotes.queryOptions({ chatId }),
     enabled:
-      messageIds.length >= 2 && !isReadonly && !!session?.user && !isLoading,
+      isChatPersisted &&
+      messageIds.length >= 2 &&
+      !isReadonly &&
+      !!session?.user &&
+      !isLoading,
   });
 }

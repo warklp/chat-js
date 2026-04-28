@@ -127,15 +127,17 @@ actions target a `chatId`/runtime explicitly.
 
 ### Phase 4: Query Gating Audit
 
+Status: complete.
+
 Audit every query that assumes `/chat/:id` means the chat exists in the
 database:
 
-- `chat.getChatById`
-- `chat.getChatMessages`
-- `vote.getVotes`
-- breadcrumb/project metadata
-- feedback state
-- message navigation helpers
+- `chat.getChatById`: route host gated; share header entry hidden until persisted chat data exists
+- `chat.getChatMessages`: route host gated
+- `vote.getVotes`: gated behind confirmed live runtime or no live runtime
+- breadcrumb/project metadata: audited; project fetches depend on persisted/private chat data, public share data, or a project-home route
+- feedback state: vote actions hidden until persisted; retry/model actions stay store-local
+- message navigation helpers: audited; sibling/parallel navigation is store-local
 - sidebar refreshes caused by chat invalidation
 
 Queries that need persistence should require either no live runtime or a
