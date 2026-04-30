@@ -8,15 +8,15 @@
  * Responsibilities owned here:
  * - one runtime per chat id
  * - runtime registry/provider state
- * - provisional/confirmed runtime lifecycle
  * - pending submission handoff to the runtime controller
  * - store instance lifetime for background + visible chat trees
  *
  * Responsibilities intentionally kept outside this boundary:
  * - route parsing and route policy
+ * - chat persistence/confirmation state
  * - persisted query loading and cache invalidation
  * - concrete chat store implementation details
- * - app-specific store slices such as data stream/artifact state
+ * - app-specific store slices such as data stream/artifact/persistence state
  * - the chat UI
  * - the concrete streaming controller transport (`ChatSync` today)
  */
@@ -30,7 +30,6 @@ export {
   type ChatRuntimeApi,
   useChatRuntime,
   useChatRuntimeApi,
-  useIsChatPersisted,
 } from "./runtime-api";
 
 /**
@@ -42,10 +41,10 @@ export {
   type ChatRuntimeEntry,
   type ChatRuntimeId,
   ChatRuntimeRegistryProvider,
-  type EnsureProvisionalRuntimeInput,
+  type EnsureRuntimeInput,
   MountedChatRuntimes,
   type PendingChatSubmission,
-  type StartConfirmedRuntimeInput,
-  type SubmitProvisionalRuntimeInput,
+  type SubmitRuntimeInput,
   useChatRuntimeRegistry,
+  useMountedChatRuntime,
 } from "./runtime-registry-provider";

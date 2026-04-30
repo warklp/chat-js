@@ -11,6 +11,7 @@ import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
+import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useModelChange } from "@/providers/default-model-provider";
 import { useSession } from "@/providers/session-provider";
@@ -45,7 +46,8 @@ export function useStartProvisionalChat(chatId: string) {
   const changeModel = useModelChange();
   const { data: session } = useSession();
   const addMessageToTree = useAddMessageToTree();
-  const { submitProvisionalRuntime } = useChatRuntimeApi();
+  const { setPendingChatConfirmation } = useChatPersistenceActions();
+  const { submitRuntime } = useChatRuntimeApi();
 
   return useCallback(
     ({
@@ -72,7 +74,7 @@ export function useStartProvisionalChat(chatId: string) {
       }
 
       const primaryRequest = requestSpecs[0] ?? null;
-      const didStartRuntime = submitProvisionalRuntime({
+      const didStartRuntime = submitRuntime({
         chatId,
         pendingSubmission: {
           message,
@@ -81,12 +83,17 @@ export function useStartProvisionalChat(chatId: string) {
             : undefined,
         },
         projectId: currentRoute.projectId,
-        requestSpecs,
       });
 
       if (!didStartRuntime) {
         return false;
       }
+
+      setPendingChatConfirmation({
+        message,
+        projectId: currentRoute.projectId,
+        requestSpecs,
+      });
 
       if (primaryRequest) {
         changeModel(primaryRequest.modelId);
@@ -112,7 +119,8 @@ export function useStartProvisionalChat(chatId: string) {
       chatId,
       currentRoute,
       session?.user,
-      submitProvisionalRuntime,
+      setPendingChatConfirmation,
+      submitRuntime,
     ]
   );
 }

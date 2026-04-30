@@ -21,6 +21,7 @@ import {
   useChatRuntimeApi,
 } from "@/lib/chat-runtime";
 import { useDraftChatId } from "@/lib/draft-chat";
+import { useRuntimeIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
 import { useChatModels } from "@/providers/chat-models-provider";
 import {
   type ParsedChatIdFromPathname,
@@ -263,18 +264,24 @@ function resolveRouteRuntime({
       return null;
     }
 
-    return runtimeApi.ensureConfirmedRuntime({
+    const runtime = runtimeApi.ensureRuntime({
       chatId,
       initialMessages,
       projectId: persistedRoute.projectId ?? persistedChat.projectId ?? null,
     });
+
+    if (!runtime.store.getState().isChatPersisted) {
+      runtime.store.getState().setChatPersisted(true);
+    }
+
+    return runtime;
   }
 
   if (!canCreateRouteRuntime({ persistedRoute, project, route })) {
     return null;
   }
 
-  return runtimeApi.ensureProvisionalRuntime({
+  return runtimeApi.ensureRuntime({
     chatId,
     projectId: getRouteProjectId(route),
   });
@@ -297,11 +304,10 @@ function HostedChatRoute({
   const persistedRoute = getPersistedRoute(route);
   const runtimeChatId = persistedRoute?.id ?? draftChatId;
   const existingRuntime = useChatRuntime(runtimeChatId);
+  const isExistingRuntimePersisted = useRuntimeIsChatPersisted(existingRuntime);
   const persistedChatId = persistedRoute?.id ?? "";
-  const hasConfirmedPersistedRoute =
-    existingRuntime?.persistenceStatus === "confirmed" || !existingRuntime;
   const shouldLoadPersistedMessages =
-    !!persistedRoute && hasConfirmedPersistedRoute;
+    !!persistedRoute && isExistingRuntimePersisted;
 
   const projectQuery = useQuery({
     ...trpc.project.getById.queryOptions({ id: projectHomeId ?? "" }),

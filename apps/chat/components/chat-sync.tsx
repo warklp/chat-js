@@ -10,6 +10,7 @@ import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { UseChatHelpers } from "@/lib/stores/base";
 import { useChat } from "@/lib/stores/base";
+import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useDataStream } from "@/lib/stores/hooks-data-stream";
 import {
   useAddMessageToTree,
@@ -68,19 +69,18 @@ function releaseReconnectStream(activeStreamId: string | null | undefined) {
 
 export function ChatSync({
   id,
-  onChatConfirmed,
   onPendingSubmissionStarted,
   pendingSubmission,
   projectId,
 }: {
   id: string;
-  onChatConfirmed?: () => void;
   onPendingSubmissionStarted?: () => void;
   pendingSubmission?: PendingChatSyncSubmission | null;
   projectId?: string;
 }) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
+  const { setChatPersisted } = useChatPersistenceActions();
   const { setDataStream } = useDataStream();
   const [autoResume, setAutoResume] = useState(true);
 
@@ -162,7 +162,7 @@ export function ChatSync({
         dataPart.data.chatId === id
       ) {
         hasReportedConfirmationRef.current = true;
-        onChatConfirmed?.();
+        setChatPersisted(true);
       }
       setDataStream((ds) =>
         ds ? [...ds, dataPart as (typeof ds)[number]] : []

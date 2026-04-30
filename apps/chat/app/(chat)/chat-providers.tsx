@@ -1,6 +1,7 @@
 "use client";
 
 import { AnonymousSessionInit } from "@/components/anonymous-session-init";
+import { ChatRuntimeController } from "@/components/chat-runtime-controller";
 import {
   ChatRuntimeRegistryProvider,
   MountedChatRuntimes,
@@ -15,7 +16,9 @@ export function ChatProviders({ children }: ChatProvidersProps) {
     <>
       <AnonymousSessionInit />
       <ChatRuntimeRegistryProvider>
-        <MountedChatRuntimes />
+        <MountedChatRuntimes>
+          <ChatRuntimeController />
+        </MountedChatRuntimes>
         {children}
       </ChatRuntimeRegistryProvider>
     </>

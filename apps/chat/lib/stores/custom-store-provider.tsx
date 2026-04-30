@@ -11,6 +11,10 @@ import {
 } from "@/lib/stores/base";
 
 import {
+  type ChatPersistenceAugmentedState,
+  withChatPersistence,
+} from "./with-chat-persistence";
+import {
   type DataStreamAugmentedState,
   withDataStream,
 } from "./with-data-stream";
@@ -22,7 +26,8 @@ import { type ThreadAugmentedState, withThreads } from "./with-threads";
 import { withTracing } from "./with-tracing";
 
 export type CustomChatStoreState<UI_MESSAGE extends UIMessage = UIMessage> =
-  DataStreamAugmentedState<UI_MESSAGE> &
+  ChatPersistenceAugmentedState<UI_MESSAGE> &
+    DataStreamAugmentedState<UI_MESSAGE> &
     PartsAugmentedState<UI_MESSAGE> &
     ThreadAugmentedState<UI_MESSAGE>;
 
@@ -34,10 +39,12 @@ export function createCustomChatStore<TMessage extends UIMessage = UIMessage>(
     devtools(
       subscribeWithSelector(
         withTracing(
-          withDataStream(
-            withThreads(
-              withMessageParts(
-                createChatStoreCreator<TMessage>(initialMessages)
+          withChatPersistence(
+            withDataStream(
+              withThreads(
+                withMessageParts(
+                  createChatStoreCreator<TMessage>(initialMessages)
+                )
               )
             )
           ),
