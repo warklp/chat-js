@@ -4,6 +4,7 @@ import type { Route } from "next";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
+import { useChatRuntimeActions } from "@/lib/chat-runtime";
 import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
@@ -47,6 +48,7 @@ export function useStartProvisionalChat(chatId: string) {
   const { data: session } = useSession();
   const addMessageToTree = useAddMessageToTree();
   const storeApi = useCustomChatStoreApi<ChatMessage>();
+  const { createRuntimeIfMissing } = useChatRuntimeActions();
   const { setPendingChatConfirmation } = useChatPersistenceActions();
 
   return useCallback(
@@ -107,7 +109,13 @@ export function useStartProvisionalChat(chatId: string) {
       });
 
       window.history.pushState(null, "", href);
-      setTimeout(() => resetDraftChatId(currentRoute.projectId), 0);
+      setTimeout(() => {
+        const nextDraftChatId = resetDraftChatId(currentRoute.projectId);
+        createRuntimeIfMissing({
+          chatId: nextDraftChatId,
+          projectId: currentRoute.projectId,
+        });
+      }, 0);
       onStarted?.();
 
       return true;
@@ -116,6 +124,7 @@ export function useStartProvisionalChat(chatId: string) {
       addMessageToTree,
       changeModel,
       chatId,
+      createRuntimeIfMissing,
       currentRoute,
       session?.user,
       setPendingChatConfirmation,

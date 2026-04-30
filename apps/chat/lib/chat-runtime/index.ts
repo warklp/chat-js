@@ -26,9 +26,9 @@
  */
 // biome-ignore lint/performance/noBarrelFile: This file is the documented runtime package boundary.
 export {
-  type ChatRuntimeApi,
+  type ChatRuntimeActions,
   useChatRuntime,
-  useChatRuntimeApi,
+  useChatRuntimeActions,
 } from "./runtime-api";
 
 /**
@@ -40,7 +40,7 @@ export {
   type ChatRuntimeEntry,
   type ChatRuntimeId,
   ChatRuntimeRegistryProvider,
-  type EnsureRuntimeInput,
+  type CreateRuntimeInput,
   MountedChatRuntimes,
   useChatRuntimeRegistry,
   useMountedChatRuntime,

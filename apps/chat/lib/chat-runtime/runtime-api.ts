@@ -3,22 +3,22 @@
 import { useMemo } from "react";
 import {
   type ChatRuntimeEntry,
-  type EnsureRuntimeInput,
+  type CreateRuntimeInput,
   useChatRuntimeRegistry,
 } from "./runtime-registry-provider";
 
-export interface ChatRuntimeApi {
-  ensureRuntime: (input: EnsureRuntimeInput) => ChatRuntimeEntry;
+export interface ChatRuntimeActions {
+  createRuntimeIfMissing: (input: CreateRuntimeInput) => ChatRuntimeEntry;
 }
 
-export function useChatRuntimeApi(): ChatRuntimeApi {
-  const { ensureRuntime } = useChatRuntimeRegistry();
+export function useChatRuntimeActions(): ChatRuntimeActions {
+  const { createRuntimeIfMissing } = useChatRuntimeRegistry();
 
   return useMemo(
     () => ({
-      ensureRuntime,
+      createRuntimeIfMissing,
     }),
-    [ensureRuntime]
+    [createRuntimeIfMissing]
   );
 }
 

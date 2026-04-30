@@ -7,7 +7,7 @@ import {
   usePathname,
   useSearchParams,
 } from "next/navigation";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { ChatSystem } from "@/components/chat-system";
 import {
   useGetChatByIdQueryOptions,
@@ -16,9 +16,9 @@ import {
 import { useChatSystemInitialState } from "@/hooks/use-chat-system-initial-state";
 import type { AppModelId } from "@/lib/ai/app-models";
 import {
-  type ChatRuntimeApi,
+  type CreateRuntimeInput,
   useChatRuntime,
-  useChatRuntimeApi,
+  useChatRuntimeActions,
 } from "@/lib/chat-runtime";
 import { useDraftChatId } from "@/lib/draft-chat";
 import { useRuntimeIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
@@ -232,7 +232,12 @@ function canCreateRouteRuntime({
   return route.type === "home" || (route.type === "projectHome" && !!project);
 }
 
-function resolveRouteRuntime({
+interface RouteRuntimeCreationRequest {
+  input: CreateRuntimeInput;
+  markPersisted: boolean;
+}
+
+function getRouteRuntimeCreationRequest({
   chatId,
   existingRuntime,
   initialMessages,
@@ -241,7 +246,6 @@ function resolveRouteRuntime({
   persistedRoute,
   project,
   route,
-  runtimeApi,
 }: {
   chatId: string | null;
   existingRuntime: ReturnType<typeof useChatRuntime>;
@@ -253,10 +257,9 @@ function resolveRouteRuntime({
   persistedRoute: PersistedChatRoute | null;
   project: unknown;
   route: HostedParsedChatRoute;
-  runtimeApi: ChatRuntimeApi;
-}) {
+}): RouteRuntimeCreationRequest | null {
   if (existingRuntime || !chatId) {
-    return existingRuntime;
+    return null;
   }
 
   if (persistedRoute) {
@@ -264,27 +267,45 @@ function resolveRouteRuntime({
       return null;
     }
 
-    const runtime = runtimeApi.ensureRuntime({
-      chatId,
-      initialMessages,
-      projectId: persistedRoute.projectId ?? persistedChat.projectId ?? null,
-    });
-
-    if (!runtime.store.getState().isChatPersisted) {
-      runtime.store.getState().setChatPersisted(true);
-    }
-
-    return runtime;
+    return {
+      input: {
+        chatId,
+        initialMessages,
+        projectId: persistedRoute.projectId ?? persistedChat.projectId ?? null,
+      },
+      markPersisted: true,
+    };
   }
 
   if (!canCreateRouteRuntime({ persistedRoute, project, route })) {
     return null;
   }
 
-  return runtimeApi.ensureRuntime({
-    chatId,
-    projectId: getRouteProjectId(route),
-  });
+  return {
+    input: {
+      chatId,
+      projectId: getRouteProjectId(route),
+    },
+    markPersisted: false,
+  };
+}
+
+function useEnsureRouteRuntimeAfterCommit(
+  request: RouteRuntimeCreationRequest | null
+) {
+  const { createRuntimeIfMissing } = useChatRuntimeActions();
+
+  useEffect(() => {
+    if (!request) {
+      return;
+    }
+
+    const runtime = createRuntimeIfMissing(request.input);
+
+    if (request.markPersisted && !runtime.store.getState().isChatPersisted) {
+      runtime.store.getState().setChatPersisted(true);
+    }
+  }, [createRuntimeIfMissing, request]);
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Coordinates route data, persisted state, and live runtime fallback.
@@ -350,18 +371,31 @@ function HostedChatRoute({
   });
 
   const persistedInitialState = useChatSystemInitialState(persistedMessages);
-  const runtimeApi = useChatRuntimeApi();
-  const liveRuntime = resolveRouteRuntime({
-    chatId: runtimeChatId,
-    existingRuntime,
-    initialMessages: persistedInitialState.initialMessages,
-    persistedChat,
-    persistedMessages,
-    persistedRoute,
-    project: projectQuery.data,
-    route,
-    runtimeApi,
-  });
+  const runtimeCreationRequest = useMemo(
+    () =>
+      getRouteRuntimeCreationRequest({
+        chatId: runtimeChatId,
+        existingRuntime,
+        initialMessages: persistedInitialState.initialMessages,
+        persistedChat,
+        persistedMessages,
+        persistedRoute,
+        project: projectQuery.data,
+        route,
+      }),
+    [
+      existingRuntime,
+      persistedChat,
+      persistedInitialState.initialMessages,
+      persistedMessages,
+      persistedRoute,
+      projectQuery.data,
+      route,
+      runtimeChatId,
+    ]
+  );
+  useEnsureRouteRuntimeAfterCommit(runtimeCreationRequest);
+  const liveRuntime = existingRuntime;
   const hasLiveRuntime = !!liveRuntime;
   const liveRuntimeMessages = liveRuntime?.store.getState().messages;
   const initialMessages =

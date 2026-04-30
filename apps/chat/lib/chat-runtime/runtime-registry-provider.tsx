@@ -25,14 +25,14 @@ export interface ChatRuntimeEntry {
   store: CustomChatStoreApi<ChatMessage>;
 }
 
-export interface EnsureRuntimeInput {
+export interface CreateRuntimeInput {
   chatId: string;
   initialMessages?: ChatMessage[];
   projectId: string | null;
 }
 
 interface ChatRuntimeRegistryContextValue {
-  ensureRuntime: (input: EnsureRuntimeInput) => ChatRuntimeEntry;
+  createRuntimeIfMissing: (input: CreateRuntimeInput) => ChatRuntimeEntry;
   entries: ChatRuntimeEntry[];
   getRuntimeByChatId: (
     chatId: string | null | undefined
@@ -43,13 +43,42 @@ const ChatRuntimeRegistryContext =
   createContext<ChatRuntimeRegistryContextValue | null>(null);
 const MountedChatRuntimeContext = createContext<ChatRuntimeEntry | null>(null);
 
+function createRuntimeEntry(input: CreateRuntimeInput): ChatRuntimeEntry {
+  return {
+    chatId: input.chatId,
+    projectId: input.projectId,
+    runtimeId: `chat:${input.chatId}`,
+    store: createCustomChatStore(input.initialMessages ?? []),
+  };
+}
+
+function createInitialRuntimeEntries(initialRuntimes: CreateRuntimeInput[]) {
+  const entries: ChatRuntimeEntry[] = [];
+  const seenChatIds = new Set<string>();
+
+  for (const initialRuntime of initialRuntimes) {
+    if (seenChatIds.has(initialRuntime.chatId)) {
+      continue;
+    }
+
+    seenChatIds.add(initialRuntime.chatId);
+    entries.push(createRuntimeEntry(initialRuntime));
+  }
+
+  return entries;
+}
+
 export function ChatRuntimeRegistryProvider({
   children,
+  initialRuntimes = [],
 }: {
   children: ReactNode;
+  initialRuntimes?: CreateRuntimeInput[];
 }) {
-  const [entries, setEntries] = useState<ChatRuntimeEntry[]>([]);
-  const entriesRef = useRef<ChatRuntimeEntry[]>([]);
+  const [entries, setEntries] = useState<ChatRuntimeEntry[]>(() =>
+    createInitialRuntimeEntries(initialRuntimes)
+  );
+  const entriesRef = useRef<ChatRuntimeEntry[]>(entries);
 
   const getRuntimeByChatId = useCallback(
     (chatId: string | null | undefined) =>
@@ -59,43 +88,30 @@ export function ChatRuntimeRegistryProvider({
     []
   );
 
-  const publishEntries = useCallback((nextEntries: ChatRuntimeEntry[]) => {
+  const createRuntimeIfMissing = useCallback((input: CreateRuntimeInput) => {
+    const existingRuntime = entriesRef.current.find(
+      (entry) => entry.chatId === input.chatId
+    );
+
+    if (existingRuntime) {
+      return existingRuntime;
+    }
+
+    const runtime = createRuntimeEntry(input);
+    const nextEntries = [...entriesRef.current, runtime];
+
     entriesRef.current = nextEntries;
-    queueMicrotask(() => {
-      setEntries(entriesRef.current);
-    });
+    setEntries(nextEntries);
+    return runtime;
   }, []);
-
-  const ensureRuntime = useCallback(
-    (input: EnsureRuntimeInput) => {
-      const existingRuntime = entriesRef.current.find(
-        (entry) => entry.chatId === input.chatId
-      );
-
-      if (existingRuntime) {
-        return existingRuntime;
-      }
-
-      const runtime: ChatRuntimeEntry = {
-        chatId: input.chatId,
-        projectId: input.projectId,
-        runtimeId: `chat:${input.chatId}`,
-        store: createCustomChatStore(input.initialMessages ?? []),
-      };
-
-      publishEntries([...entriesRef.current, runtime]);
-      return runtime;
-    },
-    [publishEntries]
-  );
 
   const value = useMemo(
     () => ({
-      ensureRuntime,
+      createRuntimeIfMissing,
       entries,
       getRuntimeByChatId,
     }),
-    [ensureRuntime, entries, getRuntimeByChatId]
+    [createRuntimeIfMissing, entries, getRuntimeByChatId]
   );
 
   return (

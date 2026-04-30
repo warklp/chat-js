@@ -45,15 +45,19 @@ function getDraftChatId(projectId: string | null | undefined, version: number) {
 export function resetDraftChatId(projectId?: string | null) {
   const currentVersion = getDraftVersion(projectId);
   draftIds.delete(getDraftKey(projectId, currentVersion));
+  const nextVersion = currentVersion + 1;
 
   if (projectId) {
-    projectDraftVersions.set(projectId, currentVersion + 1);
+    projectDraftVersions.set(projectId, nextVersion);
+    const nextId = getDraftChatId(projectId, nextVersion);
     emitChange();
-    return;
+    return nextId;
   }
 
-  homeDraftVersion = currentVersion + 1;
+  homeDraftVersion = nextVersion;
+  const nextId = getDraftChatId(projectId, nextVersion);
   emitChange();
+  return nextId;
 }
 
 export function useDraftChatId(projectId?: string | null) {
