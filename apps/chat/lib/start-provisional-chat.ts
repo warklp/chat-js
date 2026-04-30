@@ -4,13 +4,13 @@ import type { Route } from "next";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
-import { useChatRuntimeApi } from "@/lib/chat-runtime";
 import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
+import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useModelChange } from "@/providers/default-model-provider";
@@ -46,8 +46,8 @@ export function useStartProvisionalChat(chatId: string) {
   const changeModel = useModelChange();
   const { data: session } = useSession();
   const addMessageToTree = useAddMessageToTree();
+  const storeApi = useCustomChatStoreApi<ChatMessage>();
   const { setPendingChatConfirmation } = useChatPersistenceActions();
-  const { submitRuntime } = useChatRuntimeApi();
 
   return useCallback(
     ({
@@ -74,18 +74,10 @@ export function useStartProvisionalChat(chatId: string) {
       }
 
       const primaryRequest = requestSpecs[0] ?? null;
-      const didStartRuntime = submitRuntime({
-        chatId,
-        pendingSubmission: {
-          message,
-          options: primaryRequest
-            ? { body: createParallelRequestBody(primaryRequest, true) }
-            : undefined,
-        },
-        projectId: currentRoute.projectId,
-      });
+      const storeState = storeApi.getState();
+      const sendMessage = storeState.sendMessage;
 
-      if (!didStartRuntime) {
+      if (!sendMessage) {
         return false;
       }
 
@@ -98,6 +90,13 @@ export function useStartProvisionalChat(chatId: string) {
       if (primaryRequest) {
         changeModel(primaryRequest.modelId);
       }
+
+      sendMessage(
+        message,
+        primaryRequest
+          ? { body: createParallelRequestBody(primaryRequest, true) }
+          : undefined
+      );
 
       addMessageToTree(message);
 
@@ -120,7 +119,7 @@ export function useStartProvisionalChat(chatId: string) {
       currentRoute,
       session?.user,
       setPendingChatConfirmation,
-      submitRuntime,
+      storeApi,
     ]
   );
 }

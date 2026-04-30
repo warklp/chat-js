@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
 import {
   type ChatRuntimeEntry,
-  useChatRuntimeRegistry,
   useMountedChatRuntime,
 } from "@/lib/chat-runtime";
 import {
@@ -112,17 +111,12 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
 
 export function ChatRuntimeController() {
   const runtime = useMountedChatRuntime();
-  const { markPendingSubmissionStarted } = useChatRuntimeRegistry();
 
   return (
     <>
       <ChatConfirmationEffects runtime={runtime} />
       <ChatSync
         id={runtime.chatId}
-        onPendingSubmissionStarted={() =>
-          markPendingSubmissionStarted(runtime.runtimeId)
-        }
-        pendingSubmission={runtime.pendingSubmission}
         projectId={runtime.projectId ?? undefined}
       />
     </>

@@ -8,7 +8,6 @@ import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
-import type { UseChatHelpers } from "@/lib/stores/base";
 import { useChat } from "@/lib/stores/base";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useDataStream } from "@/lib/stores/hooks-data-stream";
@@ -18,11 +17,6 @@ import {
 } from "@/lib/stores/hooks-threads";
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
-
-export interface PendingChatSyncSubmission {
-  message: ChatMessage;
-  options?: Parameters<UseChatHelpers<ChatMessage>["sendMessage"]>[1];
-}
 
 function getResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return activeStreamId && !activeStreamId.startsWith("pending:")
@@ -69,13 +63,9 @@ function releaseReconnectStream(activeStreamId: string | null | undefined) {
 
 export function ChatSync({
   id,
-  onPendingSubmissionStarted,
-  pendingSubmission,
   projectId,
 }: {
   id: string;
-  onPendingSubmissionStarted?: () => void;
-  pendingSubmission?: PendingChatSyncSubmission | null;
   projectId?: string;
 }) {
   const { data: session } = useSession();
@@ -87,10 +77,6 @@ export function ChatSync({
   const isAuthenticated = !!session?.user;
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
-  const hasStartedPendingSubmissionRef = useRef(false);
-  const pendingSubmissionTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   const hasReportedConfirmationRef = useRef(false);
   const claimedReconnectStreamIdRef = useRef<string | null>(null);
 
@@ -101,7 +87,7 @@ export function ChatSync({
     lastMessage?.metadata?.activeStreamId
   );
 
-  const chatHelpers = useChat<ChatMessage>({
+  const { stop } = useChat<ChatMessage>({
     experimental_throttle: 100,
     id,
     // TODO: this is a special "snapshot" value in the store that is only updated
@@ -184,56 +170,19 @@ export function ChatSync({
       toast.error(message, description ? { description } : undefined);
     },
   });
-  const { status, stop } = chatHelpers;
-
-  useEffect(() => {
-    if (
-      !(
-        pendingSubmission &&
-        !hasStartedPendingSubmissionRef.current &&
-        !pendingSubmissionTimeoutRef.current
-      )
-    ) {
-      return;
-    }
-
-    if (!(status === "ready" || status === "error")) {
-      return;
-    }
-
-    pendingSubmissionTimeoutRef.current = setTimeout(() => {
-      pendingSubmissionTimeoutRef.current = null;
-      hasStartedPendingSubmissionRef.current = true;
-      onPendingSubmissionStarted?.();
-      chatHelpers.sendMessage(
-        pendingSubmission.message,
-        pendingSubmission.options
-      );
-    });
-
-    return () => {
-      if (pendingSubmissionTimeoutRef.current) {
-        clearTimeout(pendingSubmissionTimeoutRef.current);
-        pendingSubmissionTimeoutRef.current = null;
-      }
-    };
-  }, [
-    chatHelpers.sendMessage,
-    onPendingSubmissionStarted,
-    pendingSubmission,
-    status,
-  ]);
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
 
   // Keep route changes from turning an in-flight stream into a client-side
   // partial finish. The server owns persisted stream finalization.
   useEffect(
     () => () => {
-      stop?.();
+      stopRef.current?.();
       releaseReconnectStream(claimedReconnectStreamIdRef.current);
       claimedReconnectStreamIdRef.current = null;
       setDataStream([]);
     },
-    [setDataStream, stop]
+    [setDataStream]
   );
 
   useCompleteDataPart();

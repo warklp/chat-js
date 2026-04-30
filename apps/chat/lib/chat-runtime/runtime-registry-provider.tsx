@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
-import type { UseChatHelpers } from "@/lib/stores/base";
 import {
   type CustomChatStoreApi,
   CustomStoreProvider,
@@ -19,14 +18,8 @@ import {
 
 export type ChatRuntimeId = `chat:${string}`;
 
-export interface PendingChatSubmission {
-  message: ChatMessage;
-  options?: Parameters<UseChatHelpers<ChatMessage>["sendMessage"]>[1];
-}
-
 export interface ChatRuntimeEntry {
   chatId: string;
-  pendingSubmission: PendingChatSubmission | null;
   projectId: string | null;
   runtimeId: ChatRuntimeId;
   store: CustomChatStoreApi<ChatMessage>;
@@ -38,20 +31,12 @@ export interface EnsureRuntimeInput {
   projectId: string | null;
 }
 
-export interface SubmitRuntimeInput {
-  chatId: string;
-  pendingSubmission: PendingChatSubmission;
-  projectId: string | null;
-}
-
 interface ChatRuntimeRegistryContextValue {
   ensureRuntime: (input: EnsureRuntimeInput) => ChatRuntimeEntry;
   entries: ChatRuntimeEntry[];
   getRuntimeByChatId: (
     chatId: string | null | undefined
   ) => ChatRuntimeEntry | null;
-  markPendingSubmissionStarted: (runtimeId: ChatRuntimeId) => void;
-  submitRuntime: (input: SubmitRuntimeInput) => boolean;
 }
 
 const ChatRuntimeRegistryContext =
@@ -93,7 +78,6 @@ export function ChatRuntimeRegistryProvider({
 
       const runtime: ChatRuntimeEntry = {
         chatId: input.chatId,
-        pendingSubmission: null,
         projectId: input.projectId,
         runtimeId: `chat:${input.chatId}`,
         store: createCustomChatStore(input.initialMessages ?? []),
@@ -105,65 +89,13 @@ export function ChatRuntimeRegistryProvider({
     [publishEntries]
   );
 
-  const submitRuntime = useCallback((input: SubmitRuntimeInput) => {
-    const runtime = entriesRef.current.find(
-      (entry) => entry.chatId === input.chatId
-    );
-
-    if (!runtime) {
-      return false;
-    }
-
-    const nextEntries = entriesRef.current.map((entry) =>
-      entry.runtimeId === runtime.runtimeId
-        ? {
-            ...entry,
-            pendingSubmission: input.pendingSubmission,
-            projectId: input.projectId,
-          }
-        : entry
-    );
-    entriesRef.current = nextEntries;
-    setEntries(nextEntries);
-    return true;
-  }, []);
-
-  const markPendingSubmissionStarted = useCallback(
-    (runtimeId: ChatRuntimeId) => {
-      const runtime = entriesRef.current.find(
-        (entry) => entry.runtimeId === runtimeId
-      );
-
-      if (!runtime?.pendingSubmission) {
-        return;
-      }
-
-      const nextEntries = entriesRef.current.map((entry) =>
-        entry.runtimeId === runtimeId
-          ? { ...entry, pendingSubmission: null }
-          : entry
-      );
-      entriesRef.current = nextEntries;
-      setEntries(nextEntries);
-    },
-    []
-  );
-
   const value = useMemo(
     () => ({
       ensureRuntime,
       entries,
       getRuntimeByChatId,
-      markPendingSubmissionStarted,
-      submitRuntime,
     }),
-    [
-      ensureRuntime,
-      entries,
-      getRuntimeByChatId,
-      markPendingSubmissionStarted,
-      submitRuntime,
-    ]
+    [ensureRuntime, entries, getRuntimeByChatId]
   );
 
   return (

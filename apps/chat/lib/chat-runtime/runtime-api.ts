@@ -4,24 +4,21 @@ import { useMemo } from "react";
 import {
   type ChatRuntimeEntry,
   type EnsureRuntimeInput,
-  type SubmitRuntimeInput,
   useChatRuntimeRegistry,
 } from "./runtime-registry-provider";
 
 export interface ChatRuntimeApi {
   ensureRuntime: (input: EnsureRuntimeInput) => ChatRuntimeEntry;
-  submitRuntime: (input: SubmitRuntimeInput) => boolean;
 }
 
 export function useChatRuntimeApi(): ChatRuntimeApi {
-  const { ensureRuntime, submitRuntime } = useChatRuntimeRegistry();
+  const { ensureRuntime } = useChatRuntimeRegistry();
 
   return useMemo(
     () => ({
       ensureRuntime,
-      submitRuntime,
     }),
-    [ensureRuntime, submitRuntime]
+    [ensureRuntime]
   );
 }
 

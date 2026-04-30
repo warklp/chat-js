@@ -109,8 +109,6 @@ Each runtime entry contains:
 - `runtimeId`: stable runtime key, currently `chat:${chatId}`.
 - `store`: the per-chat Zustand store instance.
 - `projectId`: project context, if any.
-- `pendingSubmission`: first user message waiting for the runtime controller to
-  send.
 
 There is intentionally no `persistenceStatus` on the runtime entry.
 
@@ -134,23 +132,20 @@ store and registers a new runtime entry.
 For a new draft chat, `initialMessages` is usually omitted. For a loaded history
 chat, `initialMessages` seeds the store from backend data.
 
-### Submit Runtime
+### Submit Messages
 
-Submitting the first message for a draft chat attaches a pending submission to
-the existing runtime:
+Submitting a message does not go through the runtime registry. The runtime only
+keeps `ChatSync/useChat` mounted; `useChat` registers `sendMessage` on the chat
+store. Submit code calls that store action directly:
 
 ```ts
-runtimeApi.submitRuntime({
-  chatId,
-  pendingSubmission,
-  projectId,
-});
+const sendMessage = store.getState().sendMessage;
+
+sendMessage?.(message, options);
 ```
 
-`MountedChatRuntimes` already has that runtime mounted. The app controller
-passes the pending submission into `ChatSync`; once `ChatSync` starts sending,
-the app calls `markPendingSubmissionStarted(runtimeId)` to clear the pending
-marker.
+This keeps the runtime registry out of chat actions. If `sendMessage` is not
+available, the runtime controller has not finished mounting yet.
 
 ### Mount Runtime Controllers
 
@@ -205,8 +200,6 @@ Exports:
 
 - `ensureRuntime(input)`: returns an existing runtime for `chatId`, or creates a
   runtime seeded with optional `initialMessages`.
-- `submitRuntime(input)`: attaches a pending submission to an existing runtime.
-  Returns `false` if no runtime exists for `chatId`.
 
 This API intentionally does not expose chat actions like `sendMessage`. Actions
 resolve through the current chat store.
@@ -225,8 +218,6 @@ consume the current store through store hooks.
 - `entries`
 - `getRuntimeByChatId`
 - `ensureRuntime`
-- `submitRuntime`
-- `markPendingSubmissionStarted`
 
 Prefer `useChatRuntimeApi()` unless you are implementing runtime internals or
 the app-level runtime controller.
@@ -237,7 +228,6 @@ This package owns:
 
 - one runtime per chat id
 - runtime registry/provider state
-- pending submission handoff to the runtime controller
 - mounted background runtime slots
 - store instance lifetime for background and visible chat trees
 

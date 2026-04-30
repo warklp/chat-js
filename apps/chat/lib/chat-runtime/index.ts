@@ -8,7 +8,6 @@
  * Responsibilities owned here:
  * - one runtime per chat id
  * - runtime registry/provider state
- * - pending submission handoff to the runtime controller
  * - store instance lifetime for background + visible chat trees
  *
  * Responsibilities intentionally kept outside this boundary:
@@ -43,8 +42,6 @@ export {
   ChatRuntimeRegistryProvider,
   type EnsureRuntimeInput,
   MountedChatRuntimes,
-  type PendingChatSubmission,
-  type SubmitRuntimeInput,
   useChatRuntimeRegistry,
   useMountedChatRuntime,
 } from "./runtime-registry-provider";
