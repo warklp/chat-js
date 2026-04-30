@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDataStream } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useChatActions, useChatStoreApi } from "@/lib/stores/base";
+import { useDataStream } from "@/lib/stores/hooks-data-stream";
 
 // Completes the first received data part into a concrete message (e.g. data-appendMessage).
 export function useCompleteDataPart() {

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
-import { useIsChatPersisted } from "@/lib/chat-runtime-api";
+import { useIsChatPersisted } from "@/lib/chat-runtime";
 import type { Vote } from "@/lib/db/schema";
 import { useMessageById } from "@/lib/stores/base";
 import { useSession } from "@/providers/session-provider";

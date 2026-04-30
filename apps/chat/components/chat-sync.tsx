@@ -3,7 +3,6 @@
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useDataStream } from "@/components/data-stream-provider";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { ChatSDKError } from "@/lib/ai/errors";
@@ -11,6 +10,7 @@ import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { UseChatHelpers } from "@/lib/stores/base";
 import { useChat } from "@/lib/stores/base";
+import { useDataStream } from "@/lib/stores/hooks-data-stream";
 import {
   useAddMessageToTree,
   useThreadInitialMessages,

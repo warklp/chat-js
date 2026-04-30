@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useIsChatPersisted } from "@/lib/chat-runtime-api";
+import { useIsChatPersisted } from "@/lib/chat-runtime";
 import { useChatId } from "@/lib/stores/base";
 import { useMessageIds } from "@/lib/stores/hooks-base";
 import { useSession } from "@/providers/session-provider";

@@ -4,7 +4,7 @@ import { AnonymousSessionInit } from "@/components/anonymous-session-init";
 import {
   ChatRuntimeRegistryProvider,
   MountedChatRuntimes,
-} from "@/providers/chat-runtime-registry-provider";
+} from "@/lib/chat-runtime";
 
 interface ChatProvidersProps {
   children: React.ReactNode;

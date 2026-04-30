@@ -13,8 +13,8 @@ import {
   sheetArtifact,
 } from "@/lib/artifacts/sheet/client";
 import { textArtifact } from "@/lib/artifacts/text/client";
+import { useDataStream } from "@/lib/stores/hooks-data-stream";
 import { useChatInput } from "@/providers/chat-input-provider";
-import { useDataStream } from "./data-stream-provider";
 
 function createTypedMetadataSetter<M extends ArtifactMetadata>(
   setMetadata: Dispatch<SetStateAction<ArtifactMetadata>>,

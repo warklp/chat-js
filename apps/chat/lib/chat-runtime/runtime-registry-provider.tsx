@@ -13,7 +13,6 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
-import { DataStreamProvider } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
@@ -24,6 +23,7 @@ import type { UseChatHelpers } from "@/lib/stores/base";
 import {
   type CustomChatStoreApi,
   CustomStoreProvider,
+  createCustomChatStore,
 } from "@/lib/stores/custom-store-provider";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
@@ -43,25 +43,41 @@ export interface ChatRuntimeEntry {
   requestSpecs: ParallelRequestSpec[];
   runtimeId: ChatRuntimeId;
   store: CustomChatStoreApi<ChatMessage>;
-  submittedMessage: ChatMessage;
+  submittedMessage: ChatMessage | null;
 }
 
-export interface StartProvisionalRuntimeInput {
+export interface StartConfirmedRuntimeInput {
+  chatId: string;
+  initialMessages?: ChatMessage[];
+  projectId: string | null;
+}
+
+export interface EnsureProvisionalRuntimeInput {
+  chatId: string;
+  projectId: string | null;
+}
+
+export interface SubmitProvisionalRuntimeInput {
   chatId: string;
   pendingSubmission: PendingChatSubmission;
   projectId: string | null;
   requestSpecs: ParallelRequestSpec[];
-  store: CustomChatStoreApi<ChatMessage>;
 }
 
 interface ChatRuntimeRegistryContextValue {
+  ensureConfirmedRuntime: (
+    input: StartConfirmedRuntimeInput
+  ) => ChatRuntimeEntry;
+  ensureProvisionalRuntime: (
+    input: EnsureProvisionalRuntimeInput
+  ) => ChatRuntimeEntry;
   entries: ChatRuntimeEntry[];
   getRuntimeByChatId: (
     chatId: string | null | undefined
   ) => ChatRuntimeEntry | null;
   markPendingSubmissionStarted: (runtimeId: ChatRuntimeId) => void;
   markRuntimeConfirmed: (runtimeId: ChatRuntimeId) => void;
-  startProvisionalRuntime: (input: StartProvisionalRuntimeInput) => boolean;
+  submitProvisionalRuntime: (input: SubmitProvisionalRuntimeInput) => boolean;
 }
 
 const ChatRuntimeRegistryContext =
@@ -83,27 +99,90 @@ export function ChatRuntimeRegistryProvider({
     []
   );
 
-  const startProvisionalRuntime = useCallback(
-    (input: StartProvisionalRuntimeInput) => {
-      if (entriesRef.current.some((entry) => entry.chatId === input.chatId)) {
+  const publishEntries = useCallback((nextEntries: ChatRuntimeEntry[]) => {
+    entriesRef.current = nextEntries;
+    queueMicrotask(() => {
+      setEntries(entriesRef.current);
+    });
+  }, []);
+
+  const ensureConfirmedRuntime = useCallback(
+    (input: StartConfirmedRuntimeInput) => {
+      const existingRuntime = entriesRef.current.find(
+        (entry) => entry.chatId === input.chatId
+      );
+
+      if (existingRuntime) {
+        return existingRuntime;
+      }
+
+      const runtime: ChatRuntimeEntry = {
+        chatId: input.chatId,
+        pendingSubmission: null,
+        persistenceStatus: "confirmed",
+        projectId: input.projectId,
+        requestSpecs: [],
+        runtimeId: `chat:${input.chatId}`,
+        store: createCustomChatStore(input.initialMessages ?? []),
+        submittedMessage: null,
+      };
+
+      publishEntries([...entriesRef.current, runtime]);
+      return runtime;
+    },
+    [publishEntries]
+  );
+
+  const ensureProvisionalRuntime = useCallback(
+    (input: EnsureProvisionalRuntimeInput) => {
+      const existingRuntime = entriesRef.current.find(
+        (entry) => entry.chatId === input.chatId
+      );
+
+      if (existingRuntime) {
+        return existingRuntime;
+      }
+
+      const runtime: ChatRuntimeEntry = {
+        chatId: input.chatId,
+        pendingSubmission: null,
+        persistenceStatus: "provisional",
+        projectId: input.projectId,
+        requestSpecs: [],
+        runtimeId: `chat:${input.chatId}`,
+        store: createCustomChatStore(),
+        submittedMessage: null,
+      };
+
+      publishEntries([...entriesRef.current, runtime]);
+      return runtime;
+    },
+    [publishEntries]
+  );
+
+  const submitProvisionalRuntime = useCallback(
+    (input: SubmitProvisionalRuntimeInput) => {
+      const runtime = entriesRef.current.find(
+        (entry) => entry.chatId === input.chatId
+      );
+
+      if (!runtime || runtime.persistenceStatus !== "provisional") {
         return false;
       }
 
-      const entry: ChatRuntimeEntry = {
-        chatId: input.chatId,
-        pendingSubmission: input.pendingSubmission,
-        persistenceStatus: "provisional",
-        projectId: input.projectId,
-        requestSpecs: input.requestSpecs,
-        runtimeId: `chat:${input.chatId}`,
-        store: input.store,
-        submittedMessage: input.pendingSubmission.message,
-      };
-
-      const nextEntries = [...entriesRef.current, entry];
+      const nextEntries = entriesRef.current.map((entry) =>
+        entry.runtimeId === runtime.runtimeId
+          ? {
+              ...entry,
+              pendingSubmission: input.pendingSubmission,
+              projectId: input.projectId,
+              requestSpecs: input.requestSpecs,
+              submittedMessage: input.pendingSubmission.message,
+            }
+          : entry
+      );
       entriesRef.current = nextEntries;
       setEntries(nextEntries);
-
       return true;
     },
     []
@@ -150,18 +229,22 @@ export function ChatRuntimeRegistryProvider({
 
   const value = useMemo(
     () => ({
+      ensureConfirmedRuntime,
+      ensureProvisionalRuntime,
       entries,
       getRuntimeByChatId,
       markRuntimeConfirmed,
       markPendingSubmissionStarted,
-      startProvisionalRuntime,
+      submitProvisionalRuntime,
     }),
     [
+      ensureConfirmedRuntime,
+      ensureProvisionalRuntime,
       entries,
       getRuntimeByChatId,
       markRuntimeConfirmed,
       markPendingSubmissionStarted,
-      startProvisionalRuntime,
+      submitProvisionalRuntime,
     ]
   );
 
@@ -187,20 +270,18 @@ function MountedChatRuntime({ runtime }: { runtime: ChatRuntimeEntry }) {
     useChatRuntimeRegistry();
 
   return (
-    <DataStreamProvider>
-      <CustomStoreProvider<ChatMessage> store={runtime.store}>
-        <RuntimeConfirmationController runtime={runtime} />
-        <ChatSync
-          id={runtime.chatId}
-          onChatConfirmed={() => markRuntimeConfirmed(runtime.runtimeId)}
-          onPendingSubmissionStarted={() =>
-            markPendingSubmissionStarted(runtime.runtimeId)
-          }
-          pendingSubmission={runtime.pendingSubmission}
-          projectId={runtime.projectId ?? undefined}
-        />
-      </CustomStoreProvider>
-    </DataStreamProvider>
+    <CustomStoreProvider<ChatMessage> store={runtime.store}>
+      <RuntimeConfirmationController runtime={runtime} />
+      <ChatSync
+        id={runtime.chatId}
+        onChatConfirmed={() => markRuntimeConfirmed(runtime.runtimeId)}
+        onPendingSubmissionStarted={() =>
+          markPendingSubmissionStarted(runtime.runtimeId)
+        }
+        pendingSubmission={runtime.pendingSubmission}
+        projectId={runtime.projectId ?? undefined}
+      />
+    </CustomStoreProvider>
   );
 }
 
@@ -248,7 +329,9 @@ function RuntimeConfirmationController({
 
     const secondaryRequestSpecs = runtime.requestSpecs.slice(1);
 
-    if (secondaryRequestSpecs.length === 0) {
+    const submittedMessage = runtime.submittedMessage;
+
+    if (secondaryRequestSpecs.length === 0 || !submittedMessage) {
       invalidatePersistedChatQueries().catch(() => {
         toast.error("Failed to refresh chat history");
       });
@@ -257,7 +340,7 @@ function RuntimeConfirmationController({
 
     runParallelRequestSpecs({
       chatId: runtime.chatId,
-      message: runtime.submittedMessage,
+      message: submittedMessage,
       projectId: runtime.projectId,
       requestSpecs: secondaryRequestSpecs,
     })
@@ -265,7 +348,7 @@ function RuntimeConfirmationController({
         if (failedRequestSpecs.length > 0) {
           markParallelRequestSpecsFailed({
             addMessageToTree,
-            message: runtime.submittedMessage,
+            message: submittedMessage,
             requestSpecs: failedRequestSpecs,
           });
           toast.error("Failed to complete all parallel responses");
