@@ -61,13 +61,7 @@ function releaseReconnectStream(activeStreamId: string | null | undefined) {
   reconnectClaimTimeouts.delete(streamId);
 }
 
-export function ChatSync({
-  id,
-  projectId,
-}: {
-  id: string;
-  projectId?: string;
-}) {
+export function ChatSync({ id }: { id: string }) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
   const { setChatPersisted } = useChatPersistenceActions();
@@ -112,7 +106,6 @@ export function ChatSync({
             id: requestId,
             message: messages.at(-1),
             prevMessages: isAuthenticated ? [] : messages.slice(0, -1),
-            projectId,
             ...body,
           },
         };

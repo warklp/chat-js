@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { shallow } from "zustand/shallow";
 import { useStoreWithEqualityFn } from "zustand/traditional";
-import type { ChatRuntimeEntry } from "@/lib/chat-runtime";
+import type { ChatMessage } from "@/lib/ai/types";
 import {
+  type CustomChatStoreApi,
   type CustomChatStoreState,
   useCustomChatStoreApi,
 } from "./custom-store-provider";
@@ -42,24 +43,21 @@ export function usePendingChatConfirmation() {
 }
 
 export function useRuntimeIsChatPersisted(
-  runtime: ChatRuntimeEntry | null | undefined
+  store: CustomChatStoreApi<ChatMessage> | null | undefined
 ) {
   const [isPersisted, setIsPersisted] = useState(
-    () => runtime?.store.getState().isChatPersisted ?? true
+    () => store?.getState().isChatPersisted ?? true
   );
 
   useEffect(() => {
-    if (!runtime) {
+    if (!store) {
       setIsPersisted(true);
       return;
     }
 
-    setIsPersisted(runtime.store.getState().isChatPersisted);
-    return runtime.store.subscribe(
-      (state) => state.isChatPersisted,
-      setIsPersisted
-    );
-  }, [runtime]);
+    setIsPersisted(store.getState().isChatPersisted);
+    return store.subscribe((state) => state.isChatPersisted, setIsPersisted);
+  }, [store]);
 
   return isPersisted;
 }

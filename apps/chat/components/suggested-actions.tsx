@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage } from "@/lib/ai/types";
+import { useCurrentChatRoute } from "@/lib/chat-route";
 import { buildDraftChatSubmission } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
@@ -37,6 +38,7 @@ function PureSuggestedActions({
   const { sendMessage } = useChatActions<ChatMessage>();
   const startProvisionalChat = useStartProvisionalChat(chatId);
   const addMessageToTree = useAddMessageToTree();
+  const currentRoute = useCurrentChatRoute();
   const containerRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(
     () =>
@@ -147,7 +149,10 @@ function PureSuggestedActions({
     const primaryRequest = submission.requestSpecs[0];
     if (primaryRequest) {
       sendMessage(submission.message, {
-        body: createParallelRequestBody(primaryRequest, true),
+        body: {
+          ...createParallelRequestBody(primaryRequest, true),
+          projectId: currentRoute.projectId ?? undefined,
+        },
       });
       addMessageToTree(submission.message);
       addPendingAssistantMessages({

@@ -11,6 +11,7 @@ import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
+import { useChatRuntimeStoreActions } from "@/lib/stores/chat-runtime-store-registry";
 import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
@@ -49,6 +50,7 @@ export function useStartProvisionalChat(chatId: string) {
   const addMessageToTree = useAddMessageToTree();
   const storeApi = useCustomChatStoreApi<ChatMessage>();
   const { createRuntimeIfMissing } = useChatRuntimeActions();
+  const { createStoreIfMissing } = useChatRuntimeStoreActions();
   const { setPendingChatConfirmation } = useChatPersistenceActions();
 
   return useCallback(
@@ -93,12 +95,22 @@ export function useStartProvisionalChat(chatId: string) {
         changeModel(primaryRequest.modelId);
       }
 
-      sendMessage(
-        message,
-        primaryRequest
-          ? { body: createParallelRequestBody(primaryRequest, true) }
-          : undefined
-      );
+      let requestOptions: Parameters<typeof sendMessage>[1] | undefined;
+
+      if (primaryRequest) {
+        requestOptions = {
+          body: {
+            ...createParallelRequestBody(primaryRequest, true),
+            projectId: currentRoute.projectId ?? undefined,
+          },
+        };
+      } else if (currentRoute.projectId) {
+        requestOptions = {
+          body: { projectId: currentRoute.projectId },
+        };
+      }
+
+      sendMessage(message, requestOptions);
 
       addMessageToTree(message);
 
@@ -111,9 +123,11 @@ export function useStartProvisionalChat(chatId: string) {
       window.history.pushState(null, "", href);
       setTimeout(() => {
         const nextDraftChatId = resetDraftChatId(currentRoute.projectId);
+        createStoreIfMissing({
+          chatId: nextDraftChatId,
+        });
         createRuntimeIfMissing({
           chatId: nextDraftChatId,
-          projectId: currentRoute.projectId,
         });
       }, 0);
       onStarted?.();
@@ -125,6 +139,7 @@ export function useStartProvisionalChat(chatId: string) {
       changeModel,
       chatId,
       createRuntimeIfMissing,
+      createStoreIfMissing,
       currentRoute,
       session?.user,
       setPendingChatConfirmation,

@@ -2,9 +2,9 @@
 
 `@/lib/chat-runtime` owns multi-chat runtime lifetime.
 
-It keeps one long-lived runtime entry per chat id. Each entry owns a chat store
-instance, and that same store can be provided to background controllers and the
-visible chat tree.
+It keeps one long-lived runtime entry per chat id and renders one mounted slot
+per entry. The package is intentionally ID-only: stores, streaming, project
+context, persistence, and UI are app-level concerns.
 
 Consumers should import from `@/lib/chat-runtime`, not from individual files.
 
@@ -14,48 +14,36 @@ A runtime is:
 
 - a `chatId`
 - a stable `runtimeId`
-- an optional `projectId`
-- a per-chat store instance
 
 The registry owns runtime entries. The app creates runtimes through provider
 initial state, event handlers, or committed effects. `MountedChatRuntimes`
-renders one background slot per registered runtime, providing that runtime's
-store and mounted runtime context to its children.
+renders one background slot per registered runtime and provides mounted runtime
+context to its children.
 
 ```txt
 ChatRuntimeRegistryProvider
-  owns runtime entries
+  owns runtime IDs
 
 MountedChatRuntimes
   runtime(chat A)
-    CustomStoreProvider(store A)
-      MountedChatRuntimeContext(runtime A)
-        children
+    MountedChatRuntimeContext(runtime A)
+      children
 
   runtime(chat B)
-    CustomStoreProvider(store B)
-      MountedChatRuntimeContext(runtime B)
-        children
+    MountedChatRuntimeContext(runtime B)
+      children
 ```
 
-The package does not define what the children do. They can mount streaming,
-sync, persistence, or app-specific controllers, but those responsibilities stay
-outside this package.
+The package does not define what the children do. In this app the mounted child
+is an app runtime slot that provides the app chat store, mounts `ChatSync`, and
+runs app-specific confirmation effects.
 
 ## Lifecycle
 
 Create initial runtimes when the provider mounts:
 
 ```tsx
-<ChatRuntimeRegistryProvider
-  initialRuntimes={[
-    {
-      chatId,
-      initialMessages,
-      projectId,
-    },
-  ]}
->
+<ChatRuntimeRegistryProvider initialRuntimes={[{ chatId }]}>
   <App />
 </ChatRuntimeRegistryProvider>
 ```
@@ -65,11 +53,7 @@ Create or reuse a runtime after mount from an event handler or committed effect:
 ```ts
 const { createRuntimeIfMissing } = useChatRuntimeActions();
 
-const runtime = createRuntimeIfMissing({
-  chatId,
-  initialMessages,
-  projectId,
-});
+const runtime = createRuntimeIfMissing({ chatId });
 ```
 
 Render code should use `useChatRuntime(chatId)` for reads. It should not create
@@ -80,7 +64,7 @@ Render background runtime slots once near the chat root:
 ```tsx
 <ChatRuntimeRegistryProvider initialRuntimes={initialRuntimes}>
   <MountedChatRuntimes>
-    <RuntimeController />
+    {(runtime) => <AppRuntimeSlot runtime={runtime} />}
   </MountedChatRuntimes>
   <AppRoutes />
 </ChatRuntimeRegistryProvider>
@@ -110,12 +94,10 @@ initialization.
 
 ### `MountedChatRuntimes`
 
-Renders children once for each registered runtime.
+Calls its render function once for each registered runtime.
 
-Each child render is wrapped in:
-
-- `CustomStoreProvider` with that runtime's store
-- mounted runtime context for `useMountedChatRuntime`
+Each slot render is wrapped in mounted runtime context for
+`useMountedChatRuntime`.
 
 ### `useMountedChatRuntime()`
 
@@ -160,15 +142,11 @@ type ChatRuntimeId = `chat:${string}`;
 
 interface ChatRuntimeEntry {
   chatId: string;
-  projectId: string | null;
   runtimeId: ChatRuntimeId;
-  store: CustomChatStoreApi<ChatMessage>;
 }
 
 interface CreateRuntimeInput {
   chatId: string;
-  initialMessages?: ChatMessage[];
-  projectId: string | null;
 }
 ```
 
@@ -177,6 +155,8 @@ interface CreateRuntimeInput {
 This package does not own:
 
 - routing
+- project context
+- chat store creation or store providers
 - chat persistence or confirmation state
 - query loading or cache invalidation
 - streaming transport

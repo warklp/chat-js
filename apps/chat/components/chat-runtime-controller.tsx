@@ -4,14 +4,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
-import {
-  type ChatRuntimeEntry,
-  useMountedChatRuntime,
-} from "@/lib/chat-runtime";
+import type { ChatRuntimeEntry } from "@/lib/chat-runtime";
 import {
   markParallelRequestSpecsFailed,
   runParallelRequestSpecs,
 } from "@/lib/parallel-chat-requests";
+import { useChatRuntimeStore } from "@/lib/stores/chat-runtime-store-registry";
+import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
 import {
   useChatPersistenceActions,
   useIsChatPersisted,
@@ -109,16 +108,17 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
   return null;
 }
 
-export function ChatRuntimeController() {
-  const runtime = useMountedChatRuntime();
+export function AppRuntimeSlot({ runtime }: { runtime: ChatRuntimeEntry }) {
+  const store = useChatRuntimeStore(runtime.chatId);
+
+  if (!store) {
+    return null;
+  }
 
   return (
-    <>
+    <CustomStoreProvider store={store}>
       <ChatConfirmationEffects runtime={runtime} />
-      <ChatSync
-        id={runtime.chatId}
-        projectId={runtime.projectId ?? undefined}
-      />
-    </>
+      <ChatSync id={runtime.chatId} />
+    </CustomStoreProvider>
   );
 }

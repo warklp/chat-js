@@ -9,26 +9,16 @@ import {
   useRef,
   useState,
 } from "react";
-import type { ChatMessage } from "@/lib/ai/types";
-import {
-  type CustomChatStoreApi,
-  CustomStoreProvider,
-  createCustomChatStore,
-} from "@/lib/stores/custom-store-provider";
 
 export type ChatRuntimeId = `chat:${string}`;
 
 export interface ChatRuntimeEntry {
   chatId: string;
-  projectId: string | null;
   runtimeId: ChatRuntimeId;
-  store: CustomChatStoreApi<ChatMessage>;
 }
 
 export interface CreateRuntimeInput {
   chatId: string;
-  initialMessages?: ChatMessage[];
-  projectId: string | null;
 }
 
 interface ChatRuntimeRegistryContextValue {
@@ -46,9 +36,7 @@ const MountedChatRuntimeContext = createContext<ChatRuntimeEntry | null>(null);
 function createRuntimeEntry(input: CreateRuntimeInput): ChatRuntimeEntry {
   return {
     chatId: input.chatId,
-    projectId: input.projectId,
     runtimeId: `chat:${input.chatId}`,
-    store: createCustomChatStore(input.initialMessages ?? []),
   };
 }
 
@@ -139,11 +127,9 @@ function MountedChatRuntime({
   runtime: ChatRuntimeEntry;
 }) {
   return (
-    <CustomStoreProvider<ChatMessage> store={runtime.store}>
-      <MountedChatRuntimeContext.Provider value={runtime}>
-        {children}
-      </MountedChatRuntimeContext.Provider>
-    </CustomStoreProvider>
+    <MountedChatRuntimeContext.Provider value={runtime}>
+      {children}
+    </MountedChatRuntimeContext.Provider>
   );
 }
 
@@ -157,14 +143,18 @@ export function useMountedChatRuntime() {
   return runtime;
 }
 
-export function MountedChatRuntimes({ children }: { children: ReactNode }) {
+export function MountedChatRuntimes({
+  children,
+}: {
+  children: (runtime: ChatRuntimeEntry) => ReactNode;
+}) {
   const { entries } = useChatRuntimeRegistry();
 
   return (
     <>
       {entries.map((runtime) => (
         <MountedChatRuntime key={runtime.runtimeId} runtime={runtime}>
-          {children}
+          {children(runtime)}
         </MountedChatRuntime>
       ))}
     </>

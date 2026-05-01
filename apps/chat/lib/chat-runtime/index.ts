@@ -8,13 +8,14 @@
  * Responsibilities owned here:
  * - one runtime per chat id
  * - runtime registry/provider state
- * - store instance lifetime for background + visible chat trees
+ * - mounted background slots for app-provided runtime controllers
  *
  * Responsibilities intentionally kept outside this boundary:
  * - route parsing and route policy
+ * - project context
  * - chat persistence/confirmation state
  * - persisted query loading and cache invalidation
- * - concrete chat store implementation details
+ * - chat store creation and store providers
  * - app-specific store slices such as data stream/artifact/persistence state
  * - the chat UI
  * - the concrete streaming controller transport (`ChatSync` today)
