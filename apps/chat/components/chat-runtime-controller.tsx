@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
-import type { ChatRuntimeEntry } from "@/lib/chat-runtime";
+import type { RuntimeId } from "@/lib/chat-runtime";
 import {
   markParallelRequestSpecsFailed,
   runParallelRequestSpecs,
@@ -108,8 +108,8 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
   return null;
 }
 
-export function AppRuntimeSlot({ runtime }: { runtime: ChatRuntimeEntry }) {
-  const runtimeStoreEntry = useChatRuntimeStoreEntry(runtime.runtimeId);
+export function AppRuntimeSlot({ runtimeId }: { runtimeId: RuntimeId }) {
+  const runtimeStoreEntry = useChatRuntimeStoreEntry(runtimeId);
 
   if (!runtimeStoreEntry) {
     return null;

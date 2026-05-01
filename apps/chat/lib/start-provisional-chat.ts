@@ -4,18 +4,12 @@ import type { Route } from "next";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
-import { useChatRuntimeActions } from "@/lib/chat-runtime";
-import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
-import {
-  createChatRuntimeStoreInput,
-  useChatRuntimeStoreActions,
-} from "@/lib/stores/chat-runtime-store-registry";
 import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
@@ -53,8 +47,6 @@ export function useStartProvisionalChat(chatId: string) {
   const { data: session } = useSession();
   const addMessageToTree = useAddMessageToTree();
   const storeApi = useCustomChatStoreApi<ChatMessage>();
-  const { createRuntimeIfMissing } = useChatRuntimeActions();
-  const { createStoreIfMissing } = useChatRuntimeStoreActions();
   const { setPendingChatConfirmation } = useChatPersistenceActions();
 
   return useCallback(
@@ -126,14 +118,7 @@ export function useStartProvisionalChat(chatId: string) {
 
       window.history.pushState(null, "", href);
       setTimeout(() => {
-        const nextDraftChatId = resetDraftChatId(currentRoute.projectId);
-        const nextRuntimeId = createMainChatRuntimeId(nextDraftChatId);
-        createStoreIfMissing(
-          createChatRuntimeStoreInput({ runtimeId: nextRuntimeId })
-        );
-        createRuntimeIfMissing({
-          runtimeId: nextRuntimeId,
-        });
+        resetDraftChatId(currentRoute.projectId);
       }, 0);
       onStarted?.();
 
@@ -143,8 +128,6 @@ export function useStartProvisionalChat(chatId: string) {
       addMessageToTree,
       changeModel,
       chatId,
-      createRuntimeIfMissing,
-      createStoreIfMissing,
       currentRoute,
       session?.user,
       setPendingChatConfirmation,

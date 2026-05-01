@@ -6,8 +6,8 @@ import { AnonymousSessionInit } from "@/components/anonymous-session-init";
 import { AppRuntimeSlot } from "@/components/chat-runtime-controller";
 import {
   ChatRuntimeRegistryProvider,
-  type CreateRuntimeInput,
   MountedChatRuntimes,
+  type RuntimeId,
 } from "@/lib/chat-runtime";
 import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
@@ -31,13 +31,9 @@ export function ChatProviders({ children }: ChatProvidersProps) {
     draftChatId && (route.type === "home" || route.type === "projectHome")
       ? createMainChatRuntimeId(draftChatId)
       : null;
-  const initialRuntimeIds = useMemo<CreateRuntimeInput[]>(() => {
+  const initialRuntimeIds = useMemo<RuntimeId[]>(() => {
     if (initialRuntimeId) {
-      return [
-        {
-          runtimeId: initialRuntimeId,
-        },
-      ];
+      return [initialRuntimeId];
     }
 
     return [];
@@ -54,9 +50,9 @@ export function ChatProviders({ children }: ChatProvidersProps) {
     <>
       <AnonymousSessionInit />
       <ChatRuntimeStoreRegistryProvider initialStores={initialStores}>
-        <ChatRuntimeRegistryProvider initialRuntimes={initialRuntimeIds}>
+        <ChatRuntimeRegistryProvider initialRuntimeIds={initialRuntimeIds}>
           <MountedChatRuntimes>
-            {(runtime) => <AppRuntimeSlot runtime={runtime} />}
+            {(runtimeId) => <AppRuntimeSlot runtimeId={runtimeId} />}
           </MountedChatRuntimes>
           {children}
         </ChatRuntimeRegistryProvider>

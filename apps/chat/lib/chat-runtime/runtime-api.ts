@@ -2,27 +2,26 @@
 
 import { useMemo } from "react";
 import {
-  type ChatRuntimeEntry,
-  type CreateRuntimeInput,
+  type RuntimeId,
   useChatRuntimeRegistry,
 } from "./runtime-registry-provider";
 
 export interface ChatRuntimeActions {
-  createRuntimeIfMissing: (input: CreateRuntimeInput) => ChatRuntimeEntry;
+  ensureRuntime: (runtimeId: RuntimeId) => RuntimeId;
 }
 
 export function useChatRuntimeActions(): ChatRuntimeActions {
-  const { createRuntimeIfMissing } = useChatRuntimeRegistry();
+  const { ensureRuntime } = useChatRuntimeRegistry();
 
   return useMemo(
     () => ({
-      createRuntimeIfMissing,
+      ensureRuntime,
     }),
-    [createRuntimeIfMissing]
+    [ensureRuntime]
   );
 }
 
 export function useChatRuntime(runtimeId: string | null | undefined) {
-  const { getRuntimeById } = useChatRuntimeRegistry();
-  return getRuntimeById(runtimeId);
+  const { hasRuntime } = useChatRuntimeRegistry();
+  return hasRuntime(runtimeId) ? runtimeId : null;
 }

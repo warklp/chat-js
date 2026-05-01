@@ -72,7 +72,6 @@ export function SharedChatPage({ id }: { id: string }) {
         isReadonly={true}
         routeSource="share"
         runtimeKey={`share:${chat.id}`}
-        syncedMessages={messages ?? null}
       />
     </WithSkeleton>
   );

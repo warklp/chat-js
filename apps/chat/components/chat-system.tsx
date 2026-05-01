@@ -3,7 +3,6 @@
 import { memo } from "react";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
-import { MessageTreeSync } from "@/components/message-tree-sync";
 import { ArtifactProvider } from "@/hooks/use-artifact";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
@@ -25,7 +24,6 @@ export const ChatSystem = memo(function PureChatSystem({
   projectId,
   routeSource = projectId ? "project" : "chat",
   runtimeKey,
-  syncedMessages,
   store,
 }: {
   chat?: UIChat | null;
@@ -37,7 +35,6 @@ export const ChatSystem = memo(function PureChatSystem({
   projectId?: string;
   routeSource?: ChatRouteSource;
   runtimeKey: string;
-  syncedMessages?: ChatMessage[] | null;
   store?: CustomChatStoreApi<ChatMessage>;
 }) {
   return (
@@ -47,7 +44,6 @@ export const ChatSystem = memo(function PureChatSystem({
         key={runtimeKey}
         store={store}
       >
-        <MessageTreeSync messages={syncedMessages} />
         {isReadonly ? (
           <Chat
             chat={chat}

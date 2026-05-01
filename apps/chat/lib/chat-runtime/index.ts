@@ -39,9 +39,7 @@ export {
  * `MountedChatRuntimes` once outside the route tree.
  */
 export {
-  type ChatRuntimeEntry,
   ChatRuntimeRegistryProvider,
-  type CreateRuntimeInput,
   MountedChatRuntimes,
   type RuntimeId,
 } from "./runtime-registry-provider";

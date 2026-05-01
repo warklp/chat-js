@@ -2,9 +2,9 @@
 
 `@/lib/chat-runtime` owns multi-runtime lifetime.
 
-It keeps one long-lived runtime entry per opaque `runtimeId` and renders one
-mounted slot per entry. The package is intentionally ID-only: stores,
-streaming, routing, project context, persistence, and UI are app-level concerns.
+It keeps one long-lived runtime per opaque `runtimeId` and renders one mounted
+slot per id. The package is intentionally ID-only: stores, streaming, routing,
+project context, persistence, and UI are app-level concerns.
 
 Consumers should import from `@/lib/chat-runtime`, not from individual files.
 
@@ -12,14 +12,14 @@ Consumers should import from `@/lib/chat-runtime`, not from individual files.
 
 A runtime is just a stable non-empty `runtimeId`.
 
-The registry owns runtime entries. The app creates runtimes through provider
-initial state, event handlers, or committed effects. `MountedChatRuntimes`
-renders one background slot per registered runtime and passes that runtime to
-the slot renderer.
+The registry owns the active runtime id list. The app creates runtimes through
+provider initial state, event handlers, or committed effects.
+`MountedChatRuntimes` renders one background slot per registered id and passes
+that id to the slot renderer.
 
 ```txt
 ChatRuntimeRegistryProvider
-  owns runtime IDs
+  owns runtime ids
 
 MountedChatRuntimes
   runtime(runtime A)
@@ -33,10 +33,10 @@ The package does not define what the children do.
 
 ## Lifecycle
 
-Create initial runtimes when the provider mounts:
+Seed initial runtimes when the provider mounts:
 
 ```tsx
-<ChatRuntimeRegistryProvider initialRuntimes={[{ runtimeId }]}>
+<ChatRuntimeRegistryProvider initialRuntimeIds={[runtimeId]}>
   <App />
 </ChatRuntimeRegistryProvider>
 ```
@@ -44,9 +44,9 @@ Create initial runtimes when the provider mounts:
 Create or reuse a runtime after mount from an event handler or committed effect:
 
 ```ts
-const { createRuntimeIfMissing } = useChatRuntimeActions();
+const { ensureRuntime } = useChatRuntimeActions();
 
-const runtime = createRuntimeIfMissing({ runtimeId });
+ensureRuntime(runtimeId);
 ```
 
 Render code should use `useChatRuntime(runtimeId)` for reads. It should not
@@ -55,9 +55,9 @@ create runtimes.
 Render background runtime slots once near the app root:
 
 ```tsx
-<ChatRuntimeRegistryProvider initialRuntimes={initialRuntimes}>
+<ChatRuntimeRegistryProvider initialRuntimeIds={initialRuntimeIds}>
   <MountedChatRuntimes>
-    {(runtime) => <RuntimeSlot runtime={runtime} />}
+    {(runtimeId) => <RuntimeSlot runtimeId={runtimeId} />}
   </MountedChatRuntimes>
   <AppRoutes />
 </ChatRuntimeRegistryProvider>
@@ -66,7 +66,7 @@ Render background runtime slots once near the app root:
 Read a runtime by id:
 
 ```ts
-const runtime = useChatRuntime(runtimeId);
+const liveRuntimeId = useChatRuntime(runtimeId);
 ```
 
 ## Public API
@@ -76,12 +76,12 @@ const runtime = useChatRuntime(runtimeId);
 Top-level provider for runtime registry state.
 
 Mount it above code that calls runtime hooks. It accepts optional
-`initialRuntimes`, used once to seed runtime entries during provider
+`initialRuntimeIds`, used once to seed runtime ids during provider
 initialization.
 
 ### `MountedChatRuntimes`
 
-Calls its render function once for each registered runtime.
+Calls its render function once for each registered runtime id.
 
 ### `useChatRuntimeActions()`
 
@@ -89,7 +89,7 @@ Returns the mutating runtime lifecycle API:
 
 ```ts
 interface ChatRuntimeActions {
-  createRuntimeIfMissing(input: CreateRuntimeInput): ChatRuntimeEntry;
+  ensureRuntime(runtimeId: RuntimeId): RuntimeId;
 }
 ```
 
@@ -97,20 +97,12 @@ Call this from event handlers or committed effects, not from render.
 
 ### `useChatRuntime(runtimeId)`
 
-Returns the runtime entry for a runtime id, or `null` when there is no runtime.
+Returns the runtime id when it is registered, or `null` when there is no runtime.
 
 ## Types
 
 ```ts
 type RuntimeId = string;
-
-interface ChatRuntimeEntry {
-  runtimeId: RuntimeId;
-}
-
-interface CreateRuntimeInput {
-  runtimeId: RuntimeId;
-}
 ```
 
 ## This App's Integration
