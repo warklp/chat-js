@@ -22,7 +22,7 @@ export function useChatRuntimeActions(): ChatRuntimeActions {
   );
 }
 
-export function useChatRuntime(chatId: string | null | undefined) {
-  const { getRuntimeByChatId } = useChatRuntimeRegistry();
-  return getRuntimeByChatId(chatId);
+export function useChatRuntime(runtimeId: string | null | undefined) {
+  const { getRuntimeById } = useChatRuntimeRegistry();
+  return getRuntimeById(runtimeId);
 }

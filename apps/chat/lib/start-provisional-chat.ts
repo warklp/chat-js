@@ -5,13 +5,17 @@ import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
 import { useChatRuntimeActions } from "@/lib/chat-runtime";
+import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
   createParallelRequestBody,
 } from "@/lib/parallel-chat-requests";
-import { useChatRuntimeStoreActions } from "@/lib/stores/chat-runtime-store-registry";
+import {
+  createChatRuntimeStoreInput,
+  useChatRuntimeStoreActions,
+} from "@/lib/stores/chat-runtime-store-registry";
 import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
@@ -123,11 +127,12 @@ export function useStartProvisionalChat(chatId: string) {
       window.history.pushState(null, "", href);
       setTimeout(() => {
         const nextDraftChatId = resetDraftChatId(currentRoute.projectId);
-        createStoreIfMissing({
-          chatId: nextDraftChatId,
-        });
+        const nextRuntimeId = createMainChatRuntimeId(nextDraftChatId);
+        createStoreIfMissing(
+          createChatRuntimeStoreInput({ runtimeId: nextRuntimeId })
+        );
         createRuntimeIfMissing({
-          chatId: nextDraftChatId,
+          runtimeId: nextRuntimeId,
         });
       }, 0);
       onStarted?.();

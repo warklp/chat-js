@@ -6,11 +6,12 @@
  * into individual files.
  *
  * Responsibilities owned here:
- * - one runtime per chat id
+ * - one runtime per opaque runtime id
  * - runtime registry/provider state
  * - mounted background slots for app-provided runtime controllers
  *
  * Responsibilities intentionally kept outside this boundary:
+ * - runtime id construction/parsing
  * - route parsing and route policy
  * - project context
  * - chat persistence/confirmation state
@@ -39,10 +40,10 @@ export {
  */
 export {
   type ChatRuntimeEntry,
-  type ChatRuntimeId,
   ChatRuntimeRegistryProvider,
   type CreateRuntimeInput,
   MountedChatRuntimes,
+  type RuntimeId,
   useChatRuntimeRegistry,
   useMountedChatRuntime,
 } from "./runtime-registry-provider";

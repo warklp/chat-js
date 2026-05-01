@@ -10,22 +10,21 @@ import {
   useState,
 } from "react";
 
-export type ChatRuntimeId = `chat:${string}`;
+export type RuntimeId = string;
 
 export interface ChatRuntimeEntry {
-  chatId: string;
-  runtimeId: ChatRuntimeId;
+  runtimeId: RuntimeId;
 }
 
 export interface CreateRuntimeInput {
-  chatId: string;
+  runtimeId: RuntimeId;
 }
 
 interface ChatRuntimeRegistryContextValue {
   createRuntimeIfMissing: (input: CreateRuntimeInput) => ChatRuntimeEntry;
   entries: ChatRuntimeEntry[];
-  getRuntimeByChatId: (
-    chatId: string | null | undefined
+  getRuntimeById: (
+    runtimeId: string | null | undefined
   ) => ChatRuntimeEntry | null;
 }
 
@@ -35,21 +34,20 @@ const MountedChatRuntimeContext = createContext<ChatRuntimeEntry | null>(null);
 
 function createRuntimeEntry(input: CreateRuntimeInput): ChatRuntimeEntry {
   return {
-    chatId: input.chatId,
-    runtimeId: `chat:${input.chatId}`,
+    runtimeId: input.runtimeId,
   };
 }
 
 function createInitialRuntimeEntries(initialRuntimes: CreateRuntimeInput[]) {
   const entries: ChatRuntimeEntry[] = [];
-  const seenChatIds = new Set<string>();
+  const seenRuntimeIds = new Set<string>();
 
   for (const initialRuntime of initialRuntimes) {
-    if (seenChatIds.has(initialRuntime.chatId)) {
+    if (seenRuntimeIds.has(initialRuntime.runtimeId)) {
       continue;
     }
 
-    seenChatIds.add(initialRuntime.chatId);
+    seenRuntimeIds.add(initialRuntime.runtimeId);
     entries.push(createRuntimeEntry(initialRuntime));
   }
 
@@ -68,17 +66,18 @@ export function ChatRuntimeRegistryProvider({
   );
   const entriesRef = useRef<ChatRuntimeEntry[]>(entries);
 
-  const getRuntimeByChatId = useCallback(
-    (chatId: string | null | undefined) =>
-      chatId
-        ? (entriesRef.current.find((entry) => entry.chatId === chatId) ?? null)
+  const getRuntimeById = useCallback(
+    (runtimeId: string | null | undefined) =>
+      runtimeId
+        ? (entriesRef.current.find((entry) => entry.runtimeId === runtimeId) ??
+          null)
         : null,
     []
   );
 
   const createRuntimeIfMissing = useCallback((input: CreateRuntimeInput) => {
     const existingRuntime = entriesRef.current.find(
-      (entry) => entry.chatId === input.chatId
+      (entry) => entry.runtimeId === input.runtimeId
     );
 
     if (existingRuntime) {
@@ -97,9 +96,9 @@ export function ChatRuntimeRegistryProvider({
     () => ({
       createRuntimeIfMissing,
       entries,
-      getRuntimeByChatId,
+      getRuntimeById,
     }),
-    [createRuntimeIfMissing, entries, getRuntimeByChatId]
+    [createRuntimeIfMissing, entries, getRuntimeById]
   );
 
   return (

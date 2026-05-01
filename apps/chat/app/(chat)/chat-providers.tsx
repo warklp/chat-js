@@ -9,10 +9,12 @@ import {
   type CreateRuntimeInput,
   MountedChatRuntimes,
 } from "@/lib/chat-runtime";
+import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
 import {
   ChatRuntimeStoreRegistryProvider,
   type CreateChatRuntimeStoreInput,
+  createChatRuntimeStoreInput,
 } from "@/lib/stores/chat-runtime-store-registry";
 import { parseChatIdFromPathname } from "@/providers/parse-chat-id-from-pathname";
 
@@ -25,23 +27,27 @@ export function ChatProviders({ children }: ChatProvidersProps) {
   const route = useMemo(() => parseChatIdFromPathname(pathname), [pathname]);
   const projectId = route.type === "projectHome" ? route.projectId : null;
   const draftChatId = useDraftChatId(projectId);
+  const initialRuntimeId =
+    draftChatId && (route.type === "home" || route.type === "projectHome")
+      ? createMainChatRuntimeId(draftChatId)
+      : null;
   const initialRuntimeIds = useMemo<CreateRuntimeInput[]>(() => {
-    if (
-      draftChatId &&
-      (route.type === "home" || route.type === "projectHome")
-    ) {
+    if (initialRuntimeId) {
       return [
         {
-          chatId: draftChatId,
+          runtimeId: initialRuntimeId,
         },
       ];
     }
 
     return [];
-  }, [draftChatId, route.type]);
+  }, [initialRuntimeId]);
   const initialStores = useMemo<CreateChatRuntimeStoreInput[]>(
-    () => initialRuntimeIds,
-    [initialRuntimeIds]
+    () =>
+      initialRuntimeId
+        ? [createChatRuntimeStoreInput({ runtimeId: initialRuntimeId })]
+        : [],
+    [initialRuntimeId]
   );
 
   return (

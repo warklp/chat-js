@@ -9,7 +9,7 @@ import {
   markParallelRequestSpecsFailed,
   runParallelRequestSpecs,
 } from "@/lib/parallel-chat-requests";
-import { useChatRuntimeStore } from "@/lib/stores/chat-runtime-store-registry";
+import { useChatRuntimeStoreEntry } from "@/lib/stores/chat-runtime-store-registry";
 import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
 import {
   useChatPersistenceActions,
@@ -19,9 +19,9 @@ import {
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useTRPC } from "@/trpc/react";
 
-function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
+function ChatConfirmationEffects({ chatId }: { chatId: string }) {
   const addMessageToTree = useAddMessageToTree();
-  const isChatPersisted = useIsChatPersisted(runtime.chatId);
+  const isChatPersisted = useIsChatPersisted(chatId);
   const pendingConfirmation = usePendingChatConfirmation();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -43,12 +43,12 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: trpc.chat.getChatMessages.queryKey({
-            chatId: runtime.chatId,
+            chatId,
           }),
         }),
         queryClient.invalidateQueries({
           queryKey: trpc.chat.getChatById.queryKey({
-            chatId: runtime.chatId,
+            chatId,
           }),
         }),
         queryClient.invalidateQueries({
@@ -70,7 +70,7 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
     }
 
     runParallelRequestSpecs({
-      chatId: runtime.chatId,
+      chatId,
       message: pendingConfirmation.message,
       projectId: pendingConfirmation.projectId,
       requestSpecs: secondaryRequestSpecs,
@@ -97,11 +97,11 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
       });
   }, [
     addMessageToTree,
+    chatId,
     clearPendingChatConfirmation,
     isChatPersisted,
     pendingConfirmation,
     queryClient,
-    runtime.chatId,
     trpc,
   ]);
 
@@ -109,16 +109,16 @@ function ChatConfirmationEffects({ runtime }: { runtime: ChatRuntimeEntry }) {
 }
 
 export function AppRuntimeSlot({ runtime }: { runtime: ChatRuntimeEntry }) {
-  const store = useChatRuntimeStore(runtime.chatId);
+  const runtimeStoreEntry = useChatRuntimeStoreEntry(runtime.runtimeId);
 
-  if (!store) {
+  if (!runtimeStoreEntry) {
     return null;
   }
 
   return (
-    <CustomStoreProvider store={store}>
-      <ChatConfirmationEffects runtime={runtime} />
-      <ChatSync id={runtime.chatId} />
+    <CustomStoreProvider store={runtimeStoreEntry.store}>
+      <ChatConfirmationEffects chatId={runtimeStoreEntry.chatId} />
+      <ChatSync id={runtimeStoreEntry.chatId} />
     </CustomStoreProvider>
   );
 }

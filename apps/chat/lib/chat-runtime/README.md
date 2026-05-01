@@ -1,19 +1,16 @@
 # Chat Runtime
 
-`@/lib/chat-runtime` owns multi-chat runtime lifetime.
+`@/lib/chat-runtime` owns multi-runtime lifetime.
 
-It keeps one long-lived runtime entry per chat id and renders one mounted slot
-per entry. The package is intentionally ID-only: stores, streaming, project
-context, persistence, and UI are app-level concerns.
+It keeps one long-lived runtime entry per opaque `runtimeId` and renders one
+mounted slot per entry. The package is intentionally ID-only: stores,
+streaming, routing, project context, persistence, and UI are app-level concerns.
 
 Consumers should import from `@/lib/chat-runtime`, not from individual files.
 
 ## Mental Model
 
-A runtime is:
-
-- a `chatId`
-- a stable `runtimeId`
+A runtime is just a stable `runtimeId`.
 
 The registry owns runtime entries. The app creates runtimes through provider
 initial state, event handlers, or committed effects. `MountedChatRuntimes`
@@ -25,11 +22,11 @@ ChatRuntimeRegistryProvider
   owns runtime IDs
 
 MountedChatRuntimes
-  runtime(chat A)
+  runtime(runtime A)
     MountedChatRuntimeContext(runtime A)
       children
 
-  runtime(chat B)
+  runtime(runtime B)
     MountedChatRuntimeContext(runtime B)
       children
 ```
@@ -38,12 +35,27 @@ The package does not define what the children do. In this app the mounted child
 is an app runtime slot that provides the app chat store, mounts `ChatSync`, and
 runs app-specific confirmation effects.
 
+## Runtime IDs
+
+Runtime ids are opaque to the package. The app decides how to construct and
+parse them.
+
+In this app, chat/thread runtime ids are built with app-level helpers:
+
+```ts
+const runtimeId = createMainChatRuntimeId(chatId);
+```
+
+The app store registry parses that id back into `{ chatId, threadId }` when it
+needs app-specific state. That keeps the reusable runtime package independent
+from chats, threads, projects, and persistence.
+
 ## Lifecycle
 
 Create initial runtimes when the provider mounts:
 
 ```tsx
-<ChatRuntimeRegistryProvider initialRuntimes={[{ chatId }]}>
+<ChatRuntimeRegistryProvider initialRuntimes={[{ runtimeId }]}>
   <App />
 </ChatRuntimeRegistryProvider>
 ```
@@ -53,11 +65,11 @@ Create or reuse a runtime after mount from an event handler or committed effect:
 ```ts
 const { createRuntimeIfMissing } = useChatRuntimeActions();
 
-const runtime = createRuntimeIfMissing({ chatId });
+const runtime = createRuntimeIfMissing({ runtimeId });
 ```
 
-Render code should use `useChatRuntime(chatId)` for reads. It should not create
-runtimes.
+Render code should use `useChatRuntime(runtimeId)` for reads. It should not
+create runtimes.
 
 Render background runtime slots once near the chat root:
 
@@ -76,10 +88,10 @@ Read the runtime for a mounted background slot:
 const runtime = useMountedChatRuntime();
 ```
 
-Read a runtime by chat id:
+Read a runtime by id:
 
 ```ts
-const runtime = useChatRuntime(chatId);
+const runtime = useChatRuntime(runtimeId);
 ```
 
 ## Public API
@@ -117,9 +129,9 @@ interface ChatRuntimeActions {
 
 Call this from event handlers or committed effects, not from render.
 
-### `useChatRuntime(chatId)`
+### `useChatRuntime(runtimeId)`
 
-Returns the runtime entry for a chat id, or `null` when there is no runtime.
+Returns the runtime entry for a runtime id, or `null` when there is no runtime.
 
 ### `useChatRuntimeRegistry()`
 
@@ -129,7 +141,7 @@ Low-level registry context.
 interface ChatRuntimeRegistryContextValue {
   createRuntimeIfMissing(input: CreateRuntimeInput): ChatRuntimeEntry;
   entries: ChatRuntimeEntry[];
-  getRuntimeByChatId(chatId: string | null | undefined): ChatRuntimeEntry | null;
+  getRuntimeById(runtimeId: string | null | undefined): ChatRuntimeEntry | null;
 }
 ```
 
@@ -138,15 +150,14 @@ Prefer `useChatRuntimeActions` and `useChatRuntime` from feature code.
 ## Types
 
 ```ts
-type ChatRuntimeId = `chat:${string}`;
+type RuntimeId = string;
 
 interface ChatRuntimeEntry {
-  chatId: string;
-  runtimeId: ChatRuntimeId;
+  runtimeId: RuntimeId;
 }
 
 interface CreateRuntimeInput {
-  chatId: string;
+  runtimeId: RuntimeId;
 }
 ```
 
@@ -154,8 +165,10 @@ interface CreateRuntimeInput {
 
 This package does not own:
 
+- runtime id construction or parsing
 - routing
 - project context
+- chat/thread identity
 - chat store creation or store providers
 - chat persistence or confirmation state
 - query loading or cache invalidation

@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
+import type { ChatRuntimeId } from "@/lib/chat-runtime-id";
+import { parseChatRuntimeId } from "@/lib/chat-runtime-id";
 import {
   type CustomChatStoreApi,
   createCustomChatStore,
@@ -18,11 +20,15 @@ import {
 export interface CreateChatRuntimeStoreInput {
   chatId: string;
   initialMessages?: ChatMessage[];
+  runtimeId: ChatRuntimeId;
+  threadId: string;
 }
 
-interface ChatRuntimeStoreEntry {
+export interface ChatRuntimeStoreEntry {
   chatId: string;
+  runtimeId: ChatRuntimeId;
   store: CustomChatStoreApi<ChatMessage>;
+  threadId: string;
 }
 
 interface ChatRuntimeStoreRegistryContextValue {
@@ -30,9 +36,9 @@ interface ChatRuntimeStoreRegistryContextValue {
     input: CreateChatRuntimeStoreInput
   ) => CustomChatStoreApi<ChatMessage>;
   entries: ChatRuntimeStoreEntry[];
-  getStoreByChatId: (
-    chatId: string | null | undefined
-  ) => CustomChatStoreApi<ChatMessage> | null;
+  getEntryByRuntimeId: (
+    runtimeId: string | null | undefined
+  ) => ChatRuntimeStoreEntry | null;
 }
 
 const ChatRuntimeStoreRegistryContext =
@@ -43,7 +49,9 @@ function createStoreEntry(
 ): ChatRuntimeStoreEntry {
   return {
     chatId: input.chatId,
+    runtimeId: input.runtimeId,
     store: createCustomChatStore(input.initialMessages ?? []),
+    threadId: input.threadId,
   };
 }
 
@@ -51,14 +59,14 @@ function createInitialStoreEntries(
   initialStores: CreateChatRuntimeStoreInput[]
 ) {
   const entries: ChatRuntimeStoreEntry[] = [];
-  const seenChatIds = new Set<string>();
+  const seenRuntimeIds = new Set<string>();
 
   for (const initialStore of initialStores) {
-    if (seenChatIds.has(initialStore.chatId)) {
+    if (seenRuntimeIds.has(initialStore.runtimeId)) {
       continue;
     }
 
-    seenChatIds.add(initialStore.chatId);
+    seenRuntimeIds.add(initialStore.runtimeId);
     entries.push(createStoreEntry(initialStore));
   }
 
@@ -77,22 +85,26 @@ export function ChatRuntimeStoreRegistryProvider({
   );
   const entriesRef = useRef<ChatRuntimeStoreEntry[]>(entries);
 
-  const getStoreByChatId = useCallback((chatId: string | null | undefined) => {
-    if (!chatId) {
-      return null;
-    }
+  const getEntryByRuntimeId = useCallback(
+    (runtimeId: string | null | undefined) => {
+      if (!runtimeId) {
+        return null;
+      }
 
-    return (
-      entriesRef.current.find((entry) => entry.chatId === chatId)?.store ?? null
-    );
-  }, []);
+      return (
+        entriesRef.current.find((entry) => entry.runtimeId === runtimeId) ??
+        null
+      );
+    },
+    []
+  );
 
   const createStoreIfMissing = useCallback(
     (input: CreateChatRuntimeStoreInput) => {
-      const existingStore = getStoreByChatId(input.chatId);
+      const existingEntry = getEntryByRuntimeId(input.runtimeId);
 
-      if (existingStore) {
-        return existingStore;
+      if (existingEntry) {
+        return existingEntry.store;
       }
 
       const entry = createStoreEntry(input);
@@ -102,16 +114,16 @@ export function ChatRuntimeStoreRegistryProvider({
       setEntries(nextEntries);
       return entry.store;
     },
-    [getStoreByChatId]
+    [getEntryByRuntimeId]
   );
 
   const value = useMemo(
     () => ({
       createStoreIfMissing,
       entries,
-      getStoreByChatId,
+      getEntryByRuntimeId,
     }),
-    [createStoreIfMissing, entries, getStoreByChatId]
+    [createStoreIfMissing, entries, getEntryByRuntimeId]
   );
 
   return (
@@ -119,6 +131,26 @@ export function ChatRuntimeStoreRegistryProvider({
       {children}
     </ChatRuntimeStoreRegistryContext.Provider>
   );
+}
+
+export function createChatRuntimeStoreInput({
+  initialMessages,
+  runtimeId,
+}: {
+  initialMessages?: ChatMessage[];
+  runtimeId: ChatRuntimeId;
+}): CreateChatRuntimeStoreInput {
+  const parsed = parseChatRuntimeId(runtimeId);
+  if (!parsed) {
+    throw new Error(`Invalid chat runtime id: ${runtimeId}`);
+  }
+
+  return {
+    chatId: parsed.chatId,
+    initialMessages,
+    runtimeId,
+    threadId: parsed.threadId,
+  };
 }
 
 export function useChatRuntimeStoreRegistry() {
@@ -142,12 +174,16 @@ export function useChatRuntimeStoreActions() {
   );
 }
 
-export function useChatRuntimeStore(chatId: string | null | undefined) {
+export function useChatRuntimeStoreEntry(runtimeId: string | null | undefined) {
   const { entries } = useChatRuntimeStoreRegistry();
 
-  if (!chatId) {
+  if (!runtimeId) {
     return null;
   }
 
-  return entries.find((entry) => entry.chatId === chatId)?.store ?? null;
+  return entries.find((entry) => entry.runtimeId === runtimeId) ?? null;
+}
+
+export function useChatRuntimeStore(runtimeId: string | null | undefined) {
+  return useChatRuntimeStoreEntry(runtimeId)?.store ?? null;
 }

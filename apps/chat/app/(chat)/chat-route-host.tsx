@@ -20,9 +20,14 @@ import {
   useChatRuntime,
   useChatRuntimeActions,
 } from "@/lib/chat-runtime";
+import {
+  type ChatRuntimeId,
+  createMainChatRuntimeId,
+} from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
 import {
   type CreateChatRuntimeStoreInput,
+  createChatRuntimeStoreInput,
   useChatRuntimeStore,
   useChatRuntimeStoreActions,
 } from "@/lib/stores/chat-runtime-store-registry";
@@ -238,7 +243,6 @@ interface RouteRuntimeCreationRequest {
 }
 
 function getRouteRuntimeCreationRequest({
-  chatId,
   existingRuntime,
   existingStore,
   initialMessages,
@@ -246,9 +250,9 @@ function getRouteRuntimeCreationRequest({
   persistedMessages,
   persistedRoute,
   project,
+  runtimeId,
   route,
 }: {
-  chatId: string | null;
   existingRuntime: ReturnType<typeof useChatRuntime>;
   existingStore: ReturnType<typeof useChatRuntimeStore>;
   initialMessages: ReturnType<
@@ -258,9 +262,10 @@ function getRouteRuntimeCreationRequest({
   persistedMessages: unknown;
   persistedRoute: PersistedChatRoute | null;
   project: unknown;
+  runtimeId: ChatRuntimeId | null;
   route: HostedParsedChatRoute;
 }): RouteRuntimeCreationRequest | null {
-  if ((existingRuntime && existingStore) || !chatId) {
+  if ((existingRuntime && existingStore) || !runtimeId) {
     return null;
   }
 
@@ -271,12 +276,12 @@ function getRouteRuntimeCreationRequest({
 
     return {
       runtimeInput: {
-        chatId,
+        runtimeId,
       },
-      storeInput: {
-        chatId,
+      storeInput: createChatRuntimeStoreInput({
         initialMessages,
-      },
+        runtimeId,
+      }),
       markPersisted: true,
     };
   }
@@ -287,11 +292,9 @@ function getRouteRuntimeCreationRequest({
 
   return {
     runtimeInput: {
-      chatId,
+      runtimeId,
     },
-    storeInput: {
-      chatId,
-    },
+    storeInput: createChatRuntimeStoreInput({ runtimeId }),
     markPersisted: false,
   };
 }
@@ -332,8 +335,11 @@ function HostedChatRoute({
   const draftChatId = useDraftChatId(projectHomeId);
   const persistedRoute = getPersistedRoute(route);
   const runtimeChatId = persistedRoute?.id ?? draftChatId;
-  const existingRuntime = useChatRuntime(runtimeChatId);
-  const existingStore = useChatRuntimeStore(runtimeChatId);
+  const runtimeId = runtimeChatId
+    ? createMainChatRuntimeId(runtimeChatId)
+    : null;
+  const existingRuntime = useChatRuntime(runtimeId);
+  const existingStore = useChatRuntimeStore(runtimeId);
   const isExistingRuntimePersisted = useRuntimeIsChatPersisted(existingStore);
   const persistedChatId = persistedRoute?.id ?? "";
   const shouldLoadPersistedMessages =
@@ -383,7 +389,6 @@ function HostedChatRoute({
   const runtimeCreationRequest = useMemo(
     () =>
       getRouteRuntimeCreationRequest({
-        chatId: runtimeChatId,
         existingRuntime,
         existingStore,
         initialMessages: persistedInitialState.initialMessages,
@@ -391,6 +396,7 @@ function HostedChatRoute({
         persistedMessages,
         persistedRoute,
         project: projectQuery.data,
+        runtimeId,
         route,
       }),
     [
@@ -402,7 +408,7 @@ function HostedChatRoute({
       persistedRoute,
       projectQuery.data,
       route,
-      runtimeChatId,
+      runtimeId,
     ]
   );
   useEnsureRouteRuntimeAfterCommit(runtimeCreationRequest);
