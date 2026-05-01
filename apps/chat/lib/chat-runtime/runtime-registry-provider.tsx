@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  Fragment,
   type ReactNode,
   useCallback,
   useContext,
@@ -12,93 +13,78 @@ import {
 
 export type RuntimeId = string;
 
-export interface ChatRuntimeEntry {
-  runtimeId: RuntimeId;
-}
-
-export interface CreateRuntimeInput {
-  runtimeId: RuntimeId;
-}
-
 interface ChatRuntimeRegistryContextValue {
-  createRuntimeIfMissing: (input: CreateRuntimeInput) => ChatRuntimeEntry;
-  entries: ChatRuntimeEntry[];
-  getRuntimeById: (
-    runtimeId: string | null | undefined
-  ) => ChatRuntimeEntry | null;
+  ensureRuntime: (runtimeId: RuntimeId) => RuntimeId;
+  hasRuntime: (runtimeId: string | null | undefined) => boolean;
+  runtimeIds: RuntimeId[];
 }
 
 const ChatRuntimeRegistryContext =
   createContext<ChatRuntimeRegistryContextValue | null>(null);
-const MountedChatRuntimeContext = createContext<ChatRuntimeEntry | null>(null);
 
-function createRuntimeEntry(input: CreateRuntimeInput): ChatRuntimeEntry {
-  return {
-    runtimeId: input.runtimeId,
-  };
+function assertValidRuntimeId(runtimeId: RuntimeId): asserts runtimeId {
+  if (!runtimeId) {
+    throw new Error("Runtime id is required");
+  }
 }
 
-function createInitialRuntimeEntries(initialRuntimes: CreateRuntimeInput[]) {
-  const entries: ChatRuntimeEntry[] = [];
+function createInitialRuntimeIds(initialRuntimeIds: RuntimeId[]) {
+  const runtimeIds: RuntimeId[] = [];
   const seenRuntimeIds = new Set<string>();
 
-  for (const initialRuntime of initialRuntimes) {
-    if (seenRuntimeIds.has(initialRuntime.runtimeId)) {
+  for (const runtimeId of initialRuntimeIds) {
+    assertValidRuntimeId(runtimeId);
+
+    if (seenRuntimeIds.has(runtimeId)) {
       continue;
     }
 
-    seenRuntimeIds.add(initialRuntime.runtimeId);
-    entries.push(createRuntimeEntry(initialRuntime));
+    seenRuntimeIds.add(runtimeId);
+    runtimeIds.push(runtimeId);
   }
 
-  return entries;
+  return runtimeIds;
 }
 
 export function ChatRuntimeRegistryProvider({
   children,
-  initialRuntimes = [],
+  initialRuntimeIds = [],
 }: {
   children: ReactNode;
-  initialRuntimes?: CreateRuntimeInput[];
+  initialRuntimeIds?: RuntimeId[];
 }) {
-  const [entries, setEntries] = useState<ChatRuntimeEntry[]>(() =>
-    createInitialRuntimeEntries(initialRuntimes)
+  const [runtimeIds, setRuntimeIds] = useState<RuntimeId[]>(() =>
+    createInitialRuntimeIds(initialRuntimeIds)
   );
-  const entriesRef = useRef<ChatRuntimeEntry[]>(entries);
+  const runtimeIdsRef = useRef<RuntimeId[]>(runtimeIds);
 
-  const getRuntimeById = useCallback(
+  const hasRuntime = useCallback(
     (runtimeId: string | null | undefined) =>
-      runtimeId
-        ? (entriesRef.current.find((entry) => entry.runtimeId === runtimeId) ??
-          null)
-        : null,
+      runtimeId ? runtimeIdsRef.current.includes(runtimeId) : false,
     []
   );
 
-  const createRuntimeIfMissing = useCallback((input: CreateRuntimeInput) => {
-    const existingRuntime = entriesRef.current.find(
-      (entry) => entry.runtimeId === input.runtimeId
-    );
+  const ensureRuntime = useCallback((runtimeId: RuntimeId) => {
+    assertValidRuntimeId(runtimeId);
 
-    if (existingRuntime) {
-      return existingRuntime;
+    if (runtimeIdsRef.current.includes(runtimeId)) {
+      return runtimeId;
     }
 
-    const runtime = createRuntimeEntry(input);
-    const nextEntries = [...entriesRef.current, runtime];
+    const nextRuntimeIds = [...runtimeIdsRef.current, runtimeId];
 
-    entriesRef.current = nextEntries;
-    setEntries(nextEntries);
-    return runtime;
+    runtimeIdsRef.current = nextRuntimeIds;
+    setRuntimeIds(nextRuntimeIds);
+    return runtimeId;
   }, []);
 
   const value = useMemo(
     () => ({
-      createRuntimeIfMissing,
-      entries,
-      getRuntimeById,
+      ensureRuntime,
+      hasRuntime,
+      runtimeIds,
     }),
-    [createRuntimeIfMissing, entries, getRuntimeById]
+    [ensureRuntime, hasRuntime, runtimeIds]
   );
 
   return (
@@ -118,43 +104,17 @@ export function useChatRuntimeRegistry() {
   return context;
 }
 
-function MountedChatRuntime({
-  children,
-  runtime,
-}: {
-  children: ReactNode;
-  runtime: ChatRuntimeEntry;
-}) {
-  return (
-    <MountedChatRuntimeContext.Provider value={runtime}>
-      {children}
-    </MountedChatRuntimeContext.Provider>
-  );
-}
-
-export function useMountedChatRuntime() {
-  const runtime = useContext(MountedChatRuntimeContext);
-  if (!runtime) {
-    throw new Error(
-      "useMountedChatRuntime must be used within MountedChatRuntimes"
-    );
-  }
-  return runtime;
-}
-
 export function MountedChatRuntimes({
   children,
 }: {
-  children: (runtime: ChatRuntimeEntry) => ReactNode;
+  children: (runtimeId: RuntimeId) => ReactNode;
 }) {
-  const { entries } = useChatRuntimeRegistry();
+  const { runtimeIds } = useChatRuntimeRegistry();
 
   return (
     <>
-      {entries.map((runtime) => (
-        <MountedChatRuntime key={runtime.runtimeId} runtime={runtime}>
-          {children(runtime)}
-        </MountedChatRuntime>
+      {runtimeIds.map((runtimeId) => (
+        <Fragment key={runtimeId}>{children(runtimeId)}</Fragment>
       ))}
     </>
   );

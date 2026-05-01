@@ -10,12 +10,12 @@ Consumers should import from `@/lib/chat-runtime`, not from individual files.
 
 ## Mental Model
 
-A runtime is just a stable `runtimeId`.
+A runtime is just a stable non-empty `runtimeId`.
 
 The registry owns runtime entries. The app creates runtimes through provider
 initial state, event handlers, or committed effects. `MountedChatRuntimes`
-renders one background slot per registered runtime and provides mounted runtime
-context to its children.
+renders one background slot per registered runtime and passes that runtime to
+the slot renderer.
 
 ```txt
 ChatRuntimeRegistryProvider
@@ -23,32 +23,13 @@ ChatRuntimeRegistryProvider
 
 MountedChatRuntimes
   runtime(runtime A)
-    MountedChatRuntimeContext(runtime A)
-      children
+    children(runtime A)
 
   runtime(runtime B)
-    MountedChatRuntimeContext(runtime B)
-      children
+    children(runtime B)
 ```
 
-The package does not define what the children do. In this app the mounted child
-is an app runtime slot that provides the app chat store, mounts `ChatSync`, and
-runs app-specific confirmation effects.
-
-## Runtime IDs
-
-Runtime ids are opaque to the package. The app decides how to construct and
-parse them.
-
-In this app, chat/thread runtime ids are built with app-level helpers:
-
-```ts
-const runtimeId = createMainChatRuntimeId(chatId);
-```
-
-The app store registry parses that id back into `{ chatId, threadId }` when it
-needs app-specific state. That keeps the reusable runtime package independent
-from chats, threads, projects, and persistence.
+The package does not define what the children do.
 
 ## Lifecycle
 
@@ -71,21 +52,15 @@ const runtime = createRuntimeIfMissing({ runtimeId });
 Render code should use `useChatRuntime(runtimeId)` for reads. It should not
 create runtimes.
 
-Render background runtime slots once near the chat root:
+Render background runtime slots once near the app root:
 
 ```tsx
 <ChatRuntimeRegistryProvider initialRuntimes={initialRuntimes}>
   <MountedChatRuntimes>
-    {(runtime) => <AppRuntimeSlot runtime={runtime} />}
+    {(runtime) => <RuntimeSlot runtime={runtime} />}
   </MountedChatRuntimes>
   <AppRoutes />
 </ChatRuntimeRegistryProvider>
-```
-
-Read the runtime for a mounted background slot:
-
-```ts
-const runtime = useMountedChatRuntime();
 ```
 
 Read a runtime by id:
@@ -108,15 +83,6 @@ initialization.
 
 Calls its render function once for each registered runtime.
 
-Each slot render is wrapped in mounted runtime context for
-`useMountedChatRuntime`.
-
-### `useMountedChatRuntime()`
-
-Returns the `ChatRuntimeEntry` for the current `MountedChatRuntimes` slot.
-
-Use this inside components rendered by `MountedChatRuntimes`.
-
 ### `useChatRuntimeActions()`
 
 Returns the mutating runtime lifecycle API:
@@ -133,20 +99,6 @@ Call this from event handlers or committed effects, not from render.
 
 Returns the runtime entry for a runtime id, or `null` when there is no runtime.
 
-### `useChatRuntimeRegistry()`
-
-Low-level registry context.
-
-```ts
-interface ChatRuntimeRegistryContextValue {
-  createRuntimeIfMissing(input: CreateRuntimeInput): ChatRuntimeEntry;
-  entries: ChatRuntimeEntry[];
-  getRuntimeById(runtimeId: string | null | undefined): ChatRuntimeEntry | null;
-}
-```
-
-Prefer `useChatRuntimeActions` and `useChatRuntime` from feature code.
-
 ## Types
 
 ```ts
@@ -160,6 +112,18 @@ interface CreateRuntimeInput {
   runtimeId: RuntimeId;
 }
 ```
+
+## This App's Integration
+
+This app builds chat/thread runtime ids outside the package:
+
+```ts
+const runtimeId = createMainChatRuntimeId(chatId);
+```
+
+The app store registry parses that id back into `{ chatId, threadId }` when it
+needs app-specific state. The mounted slot provides the app chat store, mounts
+`ChatSync`, and runs app-specific confirmation effects.
 
 ## Non-Goals
 

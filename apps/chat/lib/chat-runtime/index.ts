@@ -1,7 +1,7 @@
 /**
  * Chat runtime public API.
  *
- * This folder is the package-like boundary for the reusable multi-chat runtime
+ * This folder is the package-like boundary for the reusable multi-runtime
  * layer. Consumers should import from `@/lib/chat-runtime` instead of reaching
  * into individual files.
  *
@@ -34,7 +34,7 @@ export {
 } from "./runtime-api";
 
 /**
- * Runtime registry provider and low-level registry operations.
+ * Runtime registry provider and mounted runtime slot renderer.
  * Mount `ChatRuntimeRegistryProvider` near the chat app root and
  * `MountedChatRuntimes` once outside the route tree.
  */
@@ -44,6 +44,4 @@ export {
   type CreateRuntimeInput,
   MountedChatRuntimes,
   type RuntimeId,
-  useChatRuntimeRegistry,
-  useMountedChatRuntime,
 } from "./runtime-registry-provider";
