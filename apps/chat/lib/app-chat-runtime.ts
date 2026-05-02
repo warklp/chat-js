@@ -1,6 +1,6 @@
-import type { CreateRuntimeInput, Runtime } from "@/lib/chat-runtime";
 import type { ChatRuntimeId } from "@/lib/chat-runtime-id";
 import { parseChatRuntimeId } from "@/lib/chat-runtime-id";
+import type { CreateRuntimeInput, Runtime } from "@/lib/runtime-registry";
 import type { ChatMessage, UiToolName } from "./ai/types";
 import {
   type CustomChatStoreApi,

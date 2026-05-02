@@ -21,12 +21,12 @@ import {
   type CreateAppRuntimeInput,
   createAppRuntimeInput,
 } from "@/lib/app-chat-runtime";
-import { useRuntime, useRuntimeActions } from "@/lib/chat-runtime";
 import {
   type ChatRuntimeId,
   createMainChatRuntimeId,
 } from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
+import { useRuntime, useRuntimeActions } from "@/lib/runtime-registry";
 import { useRuntimeIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
 import { useChatModels } from "@/providers/chat-models-provider";
 import {

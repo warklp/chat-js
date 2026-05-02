@@ -2,7 +2,7 @@
  * Runtime registry public API.
  *
  * This folder is the package-like boundary for the reusable multi-runtime
- * layer. Consumers should import from `@/lib/chat-runtime` instead of reaching
+ * layer. Consumers should import from `@/lib/runtime-registry` instead of reaching
  * into individual files.
  *
  * Responsibilities owned here:
@@ -34,15 +34,15 @@ export {
 } from "./runtime-api";
 
 /**
- * Runtime registry provider and mounted runtime slot renderer.
- * Mount `RuntimeRegistryProvider` near the app root and `MountedRuntimes`
+ * Runtime registry provider and runtime slot renderer.
+ * Mount `RuntimeRegistryProvider` near the app root and `RuntimeSlots`
  * once outside the route tree.
  */
 export {
   type CreateRuntimeInput,
-  MountedRuntimes,
   type Runtime,
   type RuntimeId,
   RuntimeRegistryProvider,
+  RuntimeSlots,
   useRuntimeRegistry,
 } from "./runtime-registry-provider";

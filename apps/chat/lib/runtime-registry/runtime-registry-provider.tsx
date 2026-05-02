@@ -136,7 +136,7 @@ export function useRuntimeRegistry<TData = unknown>() {
   return context as RuntimeRegistryContextValue<TData>;
 }
 
-export function MountedRuntimes<TData = unknown>({
+export function RuntimeSlots<TData = unknown>({
   children,
 }: {
   children: (runtime: Runtime<TData>) => ReactNode;
