@@ -89,7 +89,7 @@ Returns the mutating runtime lifecycle API:
 
 ```ts
 interface ChatRuntimeActions<TData> {
-  ensureRuntime(input: CreateRuntimeInput<TData>): ChatRuntime<TData>;
+  ensureRuntime(input: CreateRuntimeInput<TData>): void;
 }
 ```
 

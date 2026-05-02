@@ -2,13 +2,12 @@
 
 import { useMemo } from "react";
 import {
-  type ChatRuntime,
   type CreateRuntimeInput,
   useChatRuntimeRegistry,
 } from "./runtime-registry-provider";
 
 export interface ChatRuntimeActions<TData = unknown> {
-  ensureRuntime: (input: CreateRuntimeInput<TData>) => ChatRuntime<TData>;
+  ensureRuntime: (input: CreateRuntimeInput<TData>) => void;
 }
 
 export function useChatRuntimeActions<

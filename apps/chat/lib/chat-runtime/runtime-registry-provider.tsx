@@ -7,7 +7,6 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useRef,
   useState,
 } from "react";
 
@@ -24,7 +23,7 @@ export interface CreateRuntimeInput<TData = unknown> {
 }
 
 interface ChatRuntimeRegistryContextValue<TData = unknown> {
-  ensureRuntime: (input: CreateRuntimeInput<TData>) => ChatRuntime<TData>;
+  ensureRuntime: (input: CreateRuntimeInput<TData>) => void;
   getRuntimeById: (
     runtimeId: string | null | undefined
   ) => ChatRuntime<TData> | null;
@@ -81,36 +80,32 @@ export function ChatRuntimeRegistryProvider<TData = unknown>({
   const [runtimes, setRuntimes] = useState<ChatRuntime<TData>[]>(() =>
     createInitialRuntimes(initialRuntimes)
   );
-  const runtimesRef = useRef<ChatRuntime<TData>[]>(runtimes);
 
-  const getRuntimeById = useCallback((runtimeId: string | null | undefined) => {
-    if (!runtimeId) {
-      return null;
-    }
+  const getRuntimeById = useCallback(
+    (runtimeId: string | null | undefined) => {
+      if (!runtimeId) {
+        return null;
+      }
 
-    return (
-      runtimesRef.current.find((runtime) => runtime.runtimeId === runtimeId) ??
-      null
-    );
-  }, []);
+      return (
+        runtimes.find((runtime) => runtime.runtimeId === runtimeId) ?? null
+      );
+    },
+    [runtimes]
+  );
 
   const ensureRuntime = useCallback((input: CreateRuntimeInput<TData>) => {
     assertValidRuntimeId(input.runtimeId);
 
-    const existingRuntime = runtimesRef.current.find(
-      (runtime) => runtime.runtimeId === input.runtimeId
-    );
+    setRuntimes((currentRuntimes) => {
+      if (
+        currentRuntimes.some((runtime) => runtime.runtimeId === input.runtimeId)
+      ) {
+        return currentRuntimes;
+      }
 
-    if (existingRuntime) {
-      return existingRuntime;
-    }
-
-    const runtime = createRuntime(input);
-    const nextRuntimes = [...runtimesRef.current, runtime];
-
-    runtimesRef.current = nextRuntimes;
-    setRuntimes(nextRuntimes);
-    return runtime;
+      return [...currentRuntimes, createRuntime(input)];
+    });
   }, []);
 
   const value = useMemo(
