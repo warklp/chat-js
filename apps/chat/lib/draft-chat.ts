@@ -8,6 +8,10 @@ const projectDraftVersions = new Map<string, number>();
 const draftIds = new Map<string, string>();
 const listeners = new Set<() => void>();
 
+function subscribeDisabled() {
+  return () => undefined;
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -60,10 +64,16 @@ export function resetDraftChatId(projectId?: string | null) {
   return nextId;
 }
 
-export function useDraftChatId(projectId?: string | null) {
+export function useDraftChatId(
+  projectId?: string | null,
+  options?: { disabled?: boolean }
+) {
+  const disabled = options?.disabled ?? false;
+
   return useSyncExternalStore(
-    subscribe,
-    () => getDraftChatId(projectId, getDraftVersion(projectId)),
+    disabled ? subscribeDisabled : subscribe,
+    () =>
+      disabled ? null : getDraftChatId(projectId, getDraftVersion(projectId)),
     () => null
   );
 }

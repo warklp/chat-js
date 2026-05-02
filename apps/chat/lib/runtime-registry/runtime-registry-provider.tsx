@@ -6,6 +6,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -80,6 +81,29 @@ export function RuntimeRegistryProvider<TData = unknown>({
   const [runtimes, setRuntimes] = useState<Runtime<TData>[]>(() =>
     createInitialRuntimes(initialRuntimes)
   );
+
+  useEffect(() => {
+    const nextInitialRuntimes = createInitialRuntimes(initialRuntimes);
+
+    if (nextInitialRuntimes.length === 0) {
+      return;
+    }
+
+    setRuntimes((currentRuntimes) => {
+      const missingRuntimes = nextInitialRuntimes.filter(
+        (nextRuntime) =>
+          !currentRuntimes.some(
+            (runtime) => runtime.runtimeId === nextRuntime.runtimeId
+          )
+      );
+
+      if (missingRuntimes.length === 0) {
+        return currentRuntimes;
+      }
+
+      return [...currentRuntimes, ...missingRuntimes];
+    });
+  }, [initialRuntimes]);
 
   const getRuntimeById = useCallback(
     (runtimeId: string | null | undefined) => {

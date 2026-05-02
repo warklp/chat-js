@@ -21,12 +21,11 @@ interface ChatProvidersProps {
 export function ChatProviders({ children }: ChatProvidersProps) {
   const pathname = usePathname();
   const route = useMemo(() => parseChatIdFromPathname(pathname), [pathname]);
+  const isDraftRoute = route.type === "home" || route.type === "projectHome";
   const projectId = route.type === "projectHome" ? route.projectId : null;
-  const draftChatId = useDraftChatId(projectId);
+  const draftChatId = useDraftChatId(projectId, { disabled: !isDraftRoute });
   const initialRuntimeId =
-    draftChatId && (route.type === "home" || route.type === "projectHome")
-      ? createMainChatRuntimeId(draftChatId)
-      : null;
+    isDraftRoute && draftChatId ? createMainChatRuntimeId(draftChatId) : null;
   const initialRuntimes = useMemo<CreateAppRuntimeInput[]>(() => {
     if (initialRuntimeId) {
       return [

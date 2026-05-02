@@ -85,6 +85,11 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
         }
       })
       .catch(() => {
+        markParallelRequestSpecsFailed({
+          addMessageToTree,
+          message: pendingConfirmation.message,
+          requestSpecs: secondaryRequestSpecs,
+        });
         toast.error("Failed to complete all parallel responses");
       })
       .finally(() => {
