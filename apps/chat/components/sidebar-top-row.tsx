@@ -6,7 +6,6 @@ import { InternalLink } from "@/components/internal-link";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { useSidebar } from "@/components/ui/sidebar";
 import { config } from "@/lib/config";
-import { resetDraftChatId } from "@/lib/draft-chat";
 
 export function SidebarTopRow() {
   const { isMobile, openMobile, setOpenMobile, state, toggleSidebar } =
@@ -21,7 +20,6 @@ export function SidebarTopRow() {
           href="/"
           onNavigate={() => {
             setOpenMobile(false);
-            resetDraftChatId();
           }}
         >
           <span className="flex cursor-pointer items-center gap-2 rounded-md p-1 font-semibold text-lg hover:bg-muted">

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { resetDraftChatId } from "@/lib/draft-chat";
 
 export function KeyboardShortcuts() {
   const router = useRouter();
@@ -15,7 +14,6 @@ export function KeyboardShortcuts() {
       if (e.shiftKey && e.key === "O" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpenMobile(false);
-        resetDraftChatId();
         router.push("/");
       }
     };

@@ -20,12 +20,12 @@ import {
   type AppRuntimeData,
   type CreateAppRuntimeInput,
   createAppRuntimeInput,
+  useCurrentProvisionalAppRuntimeIdentity,
 } from "@/lib/app-chat-runtime";
 import {
   type ChatRuntimeId,
   createMainChatRuntimeId,
 } from "@/lib/chat-runtime-id";
-import { useDraftChatId } from "@/lib/draft-chat";
 import { useRuntime, useRuntimeActions } from "@/lib/runtime-registry";
 import { useRuntimeIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
 import { useChatModels } from "@/providers/chat-models-provider";
@@ -295,12 +295,13 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   const searchParams = useSearchParams();
   const { getModelById } = useChatModels();
   const projectHomeId = getProjectHomeId(route);
-  const draftChatId = useDraftChatId(projectHomeId);
+  const provisionalRuntime = useCurrentProvisionalAppRuntimeIdentity();
   const persistedRoute = getPersistedRoute(route);
-  const runtimeChatId = persistedRoute?.id ?? draftChatId;
-  const runtimeId = runtimeChatId
-    ? createMainChatRuntimeId(runtimeChatId)
-    : null;
+  const runtimeChatId =
+    persistedRoute?.id ?? provisionalRuntime?.chatId ?? null;
+  const runtimeId = persistedRoute
+    ? createMainChatRuntimeId(persistedRoute.id)
+    : (provisionalRuntime?.runtimeId ?? null);
   const existingRuntime = useRuntime<AppRuntimeData>(runtimeId);
   const existingStore = existingRuntime?.data.store ?? null;
   const isExistingRuntimePersisted = useRuntimeIsChatPersisted(existingStore);

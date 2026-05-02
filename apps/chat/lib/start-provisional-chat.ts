@@ -4,7 +4,6 @@ import type { Route } from "next";
 import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useCurrentChatRoute } from "@/lib/chat-route";
-import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
 import {
   addPendingAssistantMessages,
@@ -117,9 +116,6 @@ export function useStartProvisionalChat(chatId: string) {
       });
 
       window.history.pushState(null, "", href);
-      setTimeout(() => {
-        resetDraftChatId(currentRoute.projectId);
-      }, 0);
       onStarted?.();
 
       return true;
