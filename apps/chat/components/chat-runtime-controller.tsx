@@ -1,13 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
-import {
-  type AppRuntime,
-  materializeAppRuntimeStore,
-} from "@/lib/app-chat-runtime";
+import { type AppRuntime, getAppRuntimeStore } from "@/lib/app-chat-runtime";
 import {
   markParallelRequestSpecsFailed,
   runParallelRequestSpecs,
@@ -111,7 +108,7 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
 }
 
 export function AppRuntimeSlot({ runtime }: { runtime: AppRuntime }) {
-  const [store] = useState(() => materializeAppRuntimeStore(runtime));
+  const store = getAppRuntimeStore(runtime);
 
   return (
     <CustomStoreProvider store={store}>

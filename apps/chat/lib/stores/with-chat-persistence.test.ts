@@ -4,6 +4,14 @@ import type { ChatMessage } from "@/lib/ai/types";
 import { createCustomChatStore } from "./custom-store-provider";
 
 describe("withChatPersistence", () => {
+  it("can initialize persisted state without a follow-up store update", () => {
+    const store = createCustomChatStore<ChatMessage>([], {
+      initialIsChatPersisted: true,
+    });
+
+    assert.equal(store.getState().isChatPersisted, true);
+  });
+
   it("tracks app-level chat persistence outside the runtime registry", () => {
     const store = createCustomChatStore<ChatMessage>();
 

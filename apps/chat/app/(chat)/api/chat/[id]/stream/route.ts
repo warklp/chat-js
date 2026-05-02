@@ -39,10 +39,6 @@ export async function GET(
   const { id: chatId } = await params;
   const messageId = request.nextUrl.searchParams.get("messageId");
 
-  if (request.nextUrl.searchParams.get("duplicate") === "1") {
-    return new Response(null, { status: 204 });
-  }
-
   if (!messageId) {
     return new ChatSDKError("bad_request:api").toResponse();
   }

@@ -33,7 +33,8 @@ export type CustomChatStoreState<UI_MESSAGE extends UIMessage = UIMessage> =
 
 const ENABLE_TRACING_ON_DEV = false;
 export function createCustomChatStore<TMessage extends UIMessage = UIMessage>(
-  initialMessages: TMessage[] = []
+  initialMessages: TMessage[] = [],
+  options: { initialIsChatPersisted?: boolean } = {}
 ) {
   return createStore<CustomChatStoreState<TMessage>>()(
     devtools(
@@ -46,7 +47,10 @@ export function createCustomChatStore<TMessage extends UIMessage = UIMessage>(
                   createChatStoreCreator<TMessage>(initialMessages)
                 )
               )
-            )
+            ),
+            {
+              initialIsChatPersisted: options.initialIsChatPersisted,
+            }
           ),
           process.env.NODE_ENV === "development" && ENABLE_TRACING_ON_DEV
         )

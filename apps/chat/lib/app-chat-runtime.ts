@@ -12,7 +12,7 @@ export interface AppRuntimeData {
   chatId: string;
   initialMessages?: ChatMessage[];
   initialTool?: UiToolName | null;
-  store: CustomChatStoreApi<ChatMessage> | null;
+  store: CustomChatStoreApi<ChatMessage>;
   threadId: string;
 }
 
@@ -41,26 +41,25 @@ export function createAppRuntimeInput({
       chatId: parsed.chatId,
       initialMessages,
       initialTool,
-      store: null,
+      store: createAppRuntimeStore({ bootstrap, initialMessages }),
       threadId: parsed.threadId,
     },
     runtimeId,
   };
 }
 
-export function materializeAppRuntimeStore(runtime: AppRuntime) {
-  if (runtime.data.store) {
-    return runtime.data.store;
-  }
+function createAppRuntimeStore({
+  bootstrap,
+  initialMessages,
+}: {
+  bootstrap: boolean;
+  initialMessages?: ChatMessage[];
+}) {
+  return createCustomChatStore<ChatMessage>(initialMessages ?? [], {
+    initialIsChatPersisted: bootstrap,
+  });
+}
 
-  const store = createCustomChatStore<ChatMessage>(
-    runtime.data.initialMessages ?? []
-  );
-
-  if (runtime.data.bootstrap) {
-    store.getState().setChatPersisted(true);
-  }
-
-  runtime.data.store = store;
-  return store;
+export function getAppRuntimeStore(runtime: AppRuntime) {
+  return runtime.data.store;
 }

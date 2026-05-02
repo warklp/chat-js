@@ -27,7 +27,8 @@ export type ChatPersistenceAugmentedState<UM extends UIMessage> =
 
 export const withChatPersistence =
   <UI_MESSAGE extends UIMessage, T extends BaseChatStoreState<UI_MESSAGE>>(
-    creator: StateCreator<T, [], []>
+    creator: StateCreator<T, [], []>,
+    options: { initialIsChatPersisted?: boolean } = {}
   ): StateCreator<T & ChatPersistenceAugmentedState<UI_MESSAGE>, [], []> =>
   (set, get, api) => {
     const base = creator(set, get, api);
@@ -35,7 +36,7 @@ export const withChatPersistence =
 
     return {
       ...base,
-      isChatPersisted: false,
+      isChatPersisted: options.initialIsChatPersisted ?? false,
       pendingChatConfirmation: null,
       clearPendingChatConfirmation: () => {
         set({ pendingChatConfirmation: null } as Partial<

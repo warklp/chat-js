@@ -1,11 +1,10 @@
 "use client";
 
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
-import { ChatSDKError } from "@/lib/ai/errors";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useChat } from "@/lib/stores/base";
@@ -18,47 +17,8 @@ import {
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
 
-function getResumableActiveStreamId(activeStreamId: string | null | undefined) {
-  return activeStreamId && !activeStreamId.startsWith("pending:")
-    ? activeStreamId
-    : null;
-}
-
 function isResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return !!(activeStreamId && !activeStreamId.startsWith("pending:"));
-}
-
-const reconnectClaimTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
-const RECONNECT_CLAIM_TTL_MS = 60_000;
-
-function claimReconnectStream(activeStreamId: string | null | undefined) {
-  const streamId = getResumableActiveStreamId(activeStreamId);
-  if (!streamId) {
-    return false;
-  }
-
-  if (reconnectClaimTimeouts.has(streamId)) {
-    return false;
-  }
-
-  const timeout = setTimeout(() => {
-    reconnectClaimTimeouts.delete(streamId);
-  }, RECONNECT_CLAIM_TTL_MS);
-  reconnectClaimTimeouts.set(streamId, timeout);
-  return true;
-}
-
-function releaseReconnectStream(activeStreamId: string | null | undefined) {
-  const streamId = getResumableActiveStreamId(activeStreamId);
-  if (!streamId) {
-    return;
-  }
-
-  const timeout = reconnectClaimTimeouts.get(streamId);
-  if (timeout) {
-    clearTimeout(timeout);
-  }
-  reconnectClaimTimeouts.delete(streamId);
 }
 
 export function ChatSync({ id }: { id: string }) {
@@ -66,13 +26,11 @@ export function ChatSync({ id }: { id: string }) {
   const { mutate: saveChatMessage } = useSaveMessageMutation();
   const { setChatPersisted } = useChatPersistenceActions();
   const { setDataStream } = useDataStream();
-  const [autoResume, setAutoResume] = useState(true);
 
   const isAuthenticated = !!session?.user;
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
   const hasReportedConfirmationRef = useRef(false);
-  const claimedReconnectStreamIdRef = useRef<string | null>(null);
 
   const lastMessage = threadInitialMessages.at(-1);
   const lastMessageRef = useRef(lastMessage);
@@ -81,7 +39,7 @@ export function ChatSync({ id }: { id: string }) {
     lastMessage?.metadata?.activeStreamId
   );
 
-  const { stop } = useChat<ChatMessage>({
+  useChat<ChatMessage>({
     experimental_throttle: 100,
     id,
     // TODO: this is a special "snapshot" value in the store that is only updated
@@ -90,13 +48,10 @@ export function ChatSync({ id }: { id: string }) {
     messages: threadInitialMessages,
     generateId: generateUUID,
     onFinish: ({ message }) => {
-      releaseReconnectStream(claimedReconnectStreamIdRef.current);
-      claimedReconnectStreamIdRef.current = null;
       addMessageToTree(message);
       saveChatMessage({ message, chatId: id });
-      setAutoResume(true);
     },
-    resume: autoResume && isLastMessagePartial,
+    resume: isLastMessagePartial,
     transport: new DefaultChatTransport({
       api: "/api/chat",
       fetch: fetchWithErrorHandlers as typeof fetch,
@@ -116,17 +71,6 @@ export function ChatSync({ id }: { id: string }) {
         const partialMessageId = isResumableActiveStreamId(activeStreamId)
           ? (current?.id ?? null)
           : null;
-        const didClaim = claimReconnectStream(activeStreamId);
-
-        if (!(didClaim || !partialMessageId)) {
-          return {
-            api: `/api/chat/${chatId}/stream?messageId=${partialMessageId}&duplicate=1`,
-          };
-        }
-
-        if (didClaim) {
-          claimedReconnectStreamIdRef.current = activeStreamId;
-        }
 
         return {
           api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
@@ -134,7 +78,6 @@ export function ChatSync({ id }: { id: string }) {
       },
     }),
     onData: (dataPart) => {
-      setAutoResume(true);
       if (
         !hasReportedConfirmationRef.current &&
         dataPart.type === "data-chatConfirmed" &&
@@ -148,35 +91,10 @@ export function ChatSync({ id }: { id: string }) {
       );
     },
     onError: (error) => {
-      releaseReconnectStream(claimedReconnectStreamIdRef.current);
-      claimedReconnectStreamIdRef.current = null;
-
-      if (
-        error instanceof ChatSDKError &&
-        error.type === "not_found" &&
-        error.surface === "stream"
-      ) {
-        setAutoResume(false);
-      }
-
       const { message, description } = getStreamErrorToastContent(error);
       toast.error(message, description ? { description } : undefined);
     },
   });
-  const stopRef = useRef(stop);
-  stopRef.current = stop;
-
-  // Keep route changes from turning an in-flight stream into a client-side
-  // partial finish. The server owns persisted stream finalization.
-  useEffect(
-    () => () => {
-      stopRef.current?.();
-      releaseReconnectStream(claimedReconnectStreamIdRef.current);
-      claimedReconnectStreamIdRef.current = null;
-      setDataStream([]);
-    },
-    [setDataStream]
-  );
 
   useCompleteDataPart();
 
