@@ -12,7 +12,7 @@ import {
 
 export type RuntimeId = string;
 
-export interface ChatRuntime<TData = unknown> {
+export interface Runtime<TData = unknown> {
   data: TData;
   runtimeId: RuntimeId;
 }
@@ -22,16 +22,16 @@ export interface CreateRuntimeInput<TData = unknown> {
   runtimeId: RuntimeId;
 }
 
-interface ChatRuntimeRegistryContextValue<TData = unknown> {
+interface RuntimeRegistryContextValue<TData = unknown> {
   ensureRuntime: (input: CreateRuntimeInput<TData>) => void;
   getRuntimeById: (
     runtimeId: string | null | undefined
-  ) => ChatRuntime<TData> | null;
-  runtimes: ChatRuntime<TData>[];
+  ) => Runtime<TData> | null;
+  runtimes: Runtime<TData>[];
 }
 
-const ChatRuntimeRegistryContext =
-  createContext<ChatRuntimeRegistryContextValue | null>(null);
+const RuntimeRegistryContext =
+  createContext<RuntimeRegistryContextValue | null>(null);
 
 function assertValidRuntimeId(runtimeId: RuntimeId): asserts runtimeId {
   if (!runtimeId) {
@@ -41,7 +41,7 @@ function assertValidRuntimeId(runtimeId: RuntimeId): asserts runtimeId {
 
 function createRuntime<TData>(
   input: CreateRuntimeInput<TData>
-): ChatRuntime<TData> {
+): Runtime<TData> {
   assertValidRuntimeId(input.runtimeId);
 
   return {
@@ -53,7 +53,7 @@ function createRuntime<TData>(
 function createInitialRuntimes<TData>(
   initialRuntimes: CreateRuntimeInput<TData>[]
 ) {
-  const runtimes: ChatRuntime<TData>[] = [];
+  const runtimes: Runtime<TData>[] = [];
   const seenRuntimeIds = new Set<string>();
 
   for (const initialRuntime of initialRuntimes) {
@@ -70,14 +70,14 @@ function createInitialRuntimes<TData>(
   return runtimes;
 }
 
-export function ChatRuntimeRegistryProvider<TData = unknown>({
+export function RuntimeRegistryProvider<TData = unknown>({
   children,
   initialRuntimes = [],
 }: {
   children: ReactNode;
   initialRuntimes?: CreateRuntimeInput<TData>[];
 }) {
-  const [runtimes, setRuntimes] = useState<ChatRuntime<TData>[]>(() =>
+  const [runtimes, setRuntimes] = useState<Runtime<TData>[]>(() =>
     createInitialRuntimes(initialRuntimes)
   );
 
@@ -118,30 +118,30 @@ export function ChatRuntimeRegistryProvider<TData = unknown>({
   );
 
   return (
-    <ChatRuntimeRegistryContext.Provider
-      value={value as ChatRuntimeRegistryContextValue}
+    <RuntimeRegistryContext.Provider
+      value={value as RuntimeRegistryContextValue}
     >
       {children}
-    </ChatRuntimeRegistryContext.Provider>
+    </RuntimeRegistryContext.Provider>
   );
 }
 
-export function useChatRuntimeRegistry<TData = unknown>() {
-  const context = useContext(ChatRuntimeRegistryContext);
+export function useRuntimeRegistry<TData = unknown>() {
+  const context = useContext(RuntimeRegistryContext);
   if (!context) {
     throw new Error(
-      "useChatRuntimeRegistry must be used within ChatRuntimeRegistryProvider"
+      "useRuntimeRegistry must be used within RuntimeRegistryProvider"
     );
   }
-  return context as ChatRuntimeRegistryContextValue<TData>;
+  return context as RuntimeRegistryContextValue<TData>;
 }
 
-export function MountedChatRuntimes<TData = unknown>({
+export function MountedRuntimes<TData = unknown>({
   children,
 }: {
-  children: (runtime: ChatRuntime<TData>) => ReactNode;
+  children: (runtime: Runtime<TData>) => ReactNode;
 }) {
-  const { runtimes } = useChatRuntimeRegistry<TData>();
+  const { runtimes } = useRuntimeRegistry<TData>();
 
   return (
     <>

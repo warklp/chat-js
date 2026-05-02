@@ -21,7 +21,7 @@ import {
   type CreateAppRuntimeInput,
   createAppRuntimeInput,
 } from "@/lib/app-chat-runtime";
-import { useChatRuntime, useChatRuntimeActions } from "@/lib/chat-runtime";
+import { useRuntime, useRuntimeActions } from "@/lib/chat-runtime";
 import {
   type ChatRuntimeId,
   createMainChatRuntimeId,
@@ -277,7 +277,7 @@ function getRouteRuntimeCreationRequest({
 function useEnsureRouteRuntimeAfterCommit(
   request: RouteRuntimeCreationRequest | null
 ) {
-  const { ensureRuntime } = useChatRuntimeActions<AppRuntimeData>();
+  const { ensureRuntime } = useRuntimeActions<AppRuntimeData>();
 
   useEffect(() => {
     if (!request) {
@@ -301,7 +301,7 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   const runtimeId = runtimeChatId
     ? createMainChatRuntimeId(runtimeChatId)
     : null;
-  const existingRuntime = useChatRuntime<AppRuntimeData>(runtimeId);
+  const existingRuntime = useRuntime<AppRuntimeData>(runtimeId);
   const existingStore = existingRuntime?.data.store ?? null;
   const isExistingRuntimePersisted = useRuntimeIsChatPersisted(existingStore);
   const persistedChatId = persistedRoute?.id ?? "";

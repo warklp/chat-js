@@ -9,10 +9,7 @@ import {
   type CreateAppRuntimeInput,
   createAppRuntimeInput,
 } from "@/lib/app-chat-runtime";
-import {
-  ChatRuntimeRegistryProvider,
-  MountedChatRuntimes,
-} from "@/lib/chat-runtime";
+import { MountedRuntimes, RuntimeRegistryProvider } from "@/lib/chat-runtime";
 import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
 import { parseChatIdFromPathname } from "@/providers/parse-chat-id-from-pathname";
@@ -46,12 +43,12 @@ export function ChatProviders({ children }: ChatProvidersProps) {
   return (
     <>
       <AnonymousSessionInit />
-      <ChatRuntimeRegistryProvider initialRuntimes={initialRuntimes}>
-        <MountedChatRuntimes<AppRuntimeData>>
+      <RuntimeRegistryProvider initialRuntimes={initialRuntimes}>
+        <MountedRuntimes<AppRuntimeData>>
           {(runtime) => <AppRuntimeSlot runtime={runtime} />}
-        </MountedChatRuntimes>
+        </MountedRuntimes>
         {children}
-      </ChatRuntimeRegistryProvider>
+      </RuntimeRegistryProvider>
     </>
   );
 }

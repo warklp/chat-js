@@ -1,4 +1,4 @@
-import type { ChatRuntime, CreateRuntimeInput } from "@/lib/chat-runtime";
+import type { CreateRuntimeInput, Runtime } from "@/lib/chat-runtime";
 import type { ChatRuntimeId } from "@/lib/chat-runtime-id";
 import { parseChatRuntimeId } from "@/lib/chat-runtime-id";
 import type { ChatMessage, UiToolName } from "./ai/types";
@@ -16,7 +16,7 @@ export interface AppRuntimeData {
   threadId: string;
 }
 
-export type AppRuntime = ChatRuntime<AppRuntimeData>;
+export type AppRuntime = Runtime<AppRuntimeData>;
 export type CreateAppRuntimeInput = CreateRuntimeInput<AppRuntimeData>;
 
 export function createAppRuntimeInput({
