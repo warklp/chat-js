@@ -71,6 +71,7 @@ export function SharedChatPage({ id }: { id: string }) {
         initialMessages={initialThreadMessages}
         isReadonly={true}
         routeSource="share"
+        runtimeKey={`share:${chat.id}`}
       />
     </WithSkeleton>
   );

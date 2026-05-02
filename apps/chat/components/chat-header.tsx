@@ -6,24 +6,25 @@ import { HeaderBreadcrumb } from "@/components/header-breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Session } from "@/lib/auth";
 import type { ChatRouteSource } from "@/lib/chat-route";
+import type { UIChat } from "@/lib/types/ui-chat";
 import { cn } from "@/lib/utils";
 import { ShareButton } from "./share-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 function PureChatHeader({
+  chat,
   chatId,
   isReadonly,
   hasMessages,
-  persistedQueriesEnabled,
   projectId,
   routeSource,
   user,
   className,
 }: {
+  chat?: UIChat | null;
   chatId: string;
   isReadonly: boolean;
   hasMessages: boolean;
-  persistedQueriesEnabled: boolean;
   projectId?: string;
   routeSource: ChatRouteSource;
   user?: Session["user"];
@@ -40,18 +41,18 @@ function PureChatHeader({
         <div className="flex min-w-0 items-center gap-2">
           <SidebarTrigger className="md:hidden" />
           <HeaderBreadcrumb
+            chat={chat}
             chatId={chatId}
             className="ml-2"
             hasMessages={hasMessages}
             isReadonly={isReadonly}
-            persistedQueriesEnabled={persistedQueriesEnabled}
             projectId={projectId}
             routeSource={routeSource}
             user={user}
           />
         </div>
 
-        {!isReadonly && hasMessages && (
+        {!isReadonly && hasMessages && chat && (
           <ShareButton chatId={chatId} className="hidden md:flex" />
         )}
         {isReadonly && (

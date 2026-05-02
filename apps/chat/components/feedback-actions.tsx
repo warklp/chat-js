@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { type ChatMessage, getPrimarySelectedModelId } from "@/lib/ai/types";
 import type { Vote } from "@/lib/db/schema";
 import { useMessageById } from "@/lib/stores/base";
+import { useIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
 import { useSession } from "@/providers/session-provider";
 import { useTRPC } from "@/trpc/react";
 import { MessageAction as Action } from "./ai-elements/message";
@@ -24,6 +25,7 @@ export function FeedbackActions({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
+  const isChatPersisted = useIsChatPersisted(chatId);
 
   const isAuthenticated = !!session?.user;
 
@@ -43,51 +45,55 @@ export function FeedbackActions({
 
   return (
     <>
-      <Action
-        className="pointer-events-auto! h-7 w-7 p-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        data-testid="message-downvote"
-        disabled={vote && !vote.isUpvoted}
-        onClick={() => {
-          toast.promise(
-            voteMessageMutation.mutateAsync({
-              chatId,
-              messageId,
-              type: "down" as const,
-            }),
-            {
-              loading: "Downvoting Response...",
-              success: "Downvoted Response!",
-              error: "Failed to downvote response.",
-            }
-          );
-        }}
-        tooltip="Downvote Response"
-      >
-        <ThumbsDown size={14} />
-      </Action>
+      {isChatPersisted ? (
+        <>
+          <Action
+            className="pointer-events-auto! h-7 w-7 p-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            data-testid="message-downvote"
+            disabled={vote && !vote.isUpvoted}
+            onClick={() => {
+              toast.promise(
+                voteMessageMutation.mutateAsync({
+                  chatId,
+                  messageId,
+                  type: "down" as const,
+                }),
+                {
+                  loading: "Downvoting Response...",
+                  success: "Downvoted Response!",
+                  error: "Failed to downvote response.",
+                }
+              );
+            }}
+            tooltip="Downvote Response"
+          >
+            <ThumbsDown size={14} />
+          </Action>
 
-      <Action
-        className="pointer-events-auto! h-7 w-7 p-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        data-testid="message-upvote"
-        disabled={vote?.isUpvoted}
-        onClick={() => {
-          toast.promise(
-            voteMessageMutation.mutateAsync({
-              chatId,
-              messageId,
-              type: "up" as const,
-            }),
-            {
-              loading: "Upvoting Response...",
-              success: "Upvoted Response!",
-              error: "Failed to upvote response.",
-            }
-          );
-        }}
-        tooltip="Upvote Response"
-      >
-        <ThumbsUp size={14} />
-      </Action>
+          <Action
+            className="pointer-events-auto! h-7 w-7 p-0 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            data-testid="message-upvote"
+            disabled={vote?.isUpvoted}
+            onClick={() => {
+              toast.promise(
+                voteMessageMutation.mutateAsync({
+                  chatId,
+                  messageId,
+                  type: "up" as const,
+                }),
+                {
+                  loading: "Upvoting Response...",
+                  success: "Upvoted Response!",
+                  error: "Failed to upvote response.",
+                }
+              );
+            }}
+            tooltip="Upvote Response"
+          >
+            <ThumbsUp size={14} />
+          </Action>
+        </>
+      ) : null}
 
       <RetryButton messageId={messageId} />
       <SelectedModelId messageId={messageId} />

@@ -385,7 +385,10 @@ function PureMultimodalInput({
 
     if (primaryRequest) {
       sendMessage(message, {
-        body: createParallelRequestBody(primaryRequest, true),
+        body: {
+          ...createParallelRequestBody(primaryRequest, true),
+          projectId: currentRoute.projectId ?? undefined,
+        },
       });
 
       addMessageToTree(message);
@@ -418,7 +421,12 @@ function PureMultimodalInput({
           toast.error("Failed to complete all parallel responses");
         });
     } else {
-      sendMessage(message);
+      sendMessage(
+        message,
+        currentRoute.projectId
+          ? { body: { projectId: currentRoute.projectId } }
+          : undefined
+      );
       addMessageToTree(message);
     }
 

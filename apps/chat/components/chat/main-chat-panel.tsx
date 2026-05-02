@@ -3,22 +3,23 @@
 import { ChatHeader } from "@/components/chat-header";
 import type { ChatRouteSource } from "@/lib/chat-route";
 import { useMessageIds } from "@/lib/stores/hooks-base";
+import type { UIChat } from "@/lib/types/ui-chat";
 import { useSession } from "@/providers/session-provider";
 import { ChatContent } from "./chat-content";
 
 export function MainChatPanel({
+  chat,
   chatId,
   projectId,
   isReadonly,
   className,
-  persistedQueriesEnabled,
   routeSource,
 }: {
+  chat?: UIChat | null;
   chatId: string;
   projectId?: string;
   isReadonly: boolean;
   className?: string;
-  persistedQueriesEnabled: boolean;
   routeSource: ChatRouteSource;
 }) {
   const { data: session } = useSession();
@@ -28,11 +29,11 @@ export function MainChatPanel({
   return (
     <div className={className}>
       <ChatHeader
+        chat={chat}
         chatId={chatId}
         className={"h-(--header-height)"}
         hasMessages={hasMessages}
         isReadonly={isReadonly}
-        persistedQueriesEnabled={persistedQueriesEnabled}
         projectId={projectId}
         routeSource={routeSource}
         user={session?.user}

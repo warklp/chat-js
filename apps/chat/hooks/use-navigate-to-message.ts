@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { useDataStream } from "@/components/data-stream-provider";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useChatActions } from "@/lib/stores/base";
+import { useDataStream } from "@/lib/stores/hooks-data-stream";
 import { useSwitchToMessage } from "@/lib/stores/hooks-threads";
 
 export function useNavigateToMessage() {
@@ -22,7 +22,9 @@ export function useNavigateToMessage() {
         newThread &&
         artifact.isVisible &&
         artifact.messageId &&
-        !newThread.some((message) => message.id === artifact.messageId)
+        !newThread.some(
+          (message: ChatMessage) => message.id === artifact.messageId
+        )
       ) {
         closeArtifact();
       }
