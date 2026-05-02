@@ -5,17 +5,16 @@ import { useMemo } from "react";
 import { AnonymousSessionInit } from "@/components/anonymous-session-init";
 import { AppRuntimeSlot } from "@/components/chat-runtime-controller";
 import {
+  type AppRuntimeData,
+  type CreateAppRuntimeInput,
+  createAppRuntimeInput,
+} from "@/lib/app-chat-runtime";
+import {
   ChatRuntimeRegistryProvider,
   MountedChatRuntimes,
-  type RuntimeId,
 } from "@/lib/chat-runtime";
 import { createMainChatRuntimeId } from "@/lib/chat-runtime-id";
 import { useDraftChatId } from "@/lib/draft-chat";
-import {
-  ChatRuntimeStoreRegistryProvider,
-  type CreateChatRuntimeStoreInput,
-  createChatRuntimeStoreInput,
-} from "@/lib/stores/chat-runtime-store-registry";
 import { parseChatIdFromPathname } from "@/providers/parse-chat-id-from-pathname";
 
 interface ChatProvidersProps {
@@ -31,32 +30,28 @@ export function ChatProviders({ children }: ChatProvidersProps) {
     draftChatId && (route.type === "home" || route.type === "projectHome")
       ? createMainChatRuntimeId(draftChatId)
       : null;
-  const initialRuntimeIds = useMemo<RuntimeId[]>(() => {
+  const initialRuntimes = useMemo<CreateAppRuntimeInput[]>(() => {
     if (initialRuntimeId) {
-      return [initialRuntimeId];
+      return [
+        createAppRuntimeInput({
+          bootstrap: false,
+          runtimeId: initialRuntimeId,
+        }),
+      ];
     }
 
     return [];
   }, [initialRuntimeId]);
-  const initialStores = useMemo<CreateChatRuntimeStoreInput[]>(
-    () =>
-      initialRuntimeId
-        ? [createChatRuntimeStoreInput({ runtimeId: initialRuntimeId })]
-        : [],
-    [initialRuntimeId]
-  );
 
   return (
     <>
       <AnonymousSessionInit />
-      <ChatRuntimeStoreRegistryProvider initialStores={initialStores}>
-        <ChatRuntimeRegistryProvider initialRuntimeIds={initialRuntimeIds}>
-          <MountedChatRuntimes>
-            {(runtimeId) => <AppRuntimeSlot runtimeId={runtimeId} />}
-          </MountedChatRuntimes>
-          {children}
-        </ChatRuntimeRegistryProvider>
-      </ChatRuntimeStoreRegistryProvider>
+      <ChatRuntimeRegistryProvider initialRuntimes={initialRuntimes}>
+        <MountedChatRuntimes<AppRuntimeData>>
+          {(runtime) => <AppRuntimeSlot runtime={runtime} />}
+        </MountedChatRuntimes>
+        {children}
+      </ChatRuntimeRegistryProvider>
     </>
   );
 }

@@ -2,16 +2,19 @@
 
 import { useMemo } from "react";
 import {
-  type RuntimeId,
+  type ChatRuntime,
+  type CreateRuntimeInput,
   useChatRuntimeRegistry,
 } from "./runtime-registry-provider";
 
-export interface ChatRuntimeActions {
-  ensureRuntime: (runtimeId: RuntimeId) => RuntimeId;
+export interface ChatRuntimeActions<TData = unknown> {
+  ensureRuntime: (input: CreateRuntimeInput<TData>) => ChatRuntime<TData>;
 }
 
-export function useChatRuntimeActions(): ChatRuntimeActions {
-  const { ensureRuntime } = useChatRuntimeRegistry();
+export function useChatRuntimeActions<
+  TData = unknown,
+>(): ChatRuntimeActions<TData> {
+  const { ensureRuntime } = useChatRuntimeRegistry<TData>();
 
   return useMemo(
     () => ({
@@ -21,7 +24,9 @@ export function useChatRuntimeActions(): ChatRuntimeActions {
   );
 }
 
-export function useChatRuntime(runtimeId: string | null | undefined) {
-  const { hasRuntime } = useChatRuntimeRegistry();
-  return hasRuntime(runtimeId) ? runtimeId : null;
+export function useChatRuntime<TData = unknown>(
+  runtimeId: string | null | undefined
+) {
+  const { getRuntimeById } = useChatRuntimeRegistry<TData>();
+  return getRuntimeById(runtimeId);
 }
