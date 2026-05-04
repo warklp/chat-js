@@ -337,16 +337,12 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
       shouldLoadPersistedMessages && (messagesQueryOptions.enabled ?? true),
   });
 
-  const chatQueryReady =
-    !shouldLoadPersistedMessages ||
-    isFreshRouteQueryReady({
-      isFetchedAfterMount: chatQuery.isFetchedAfterMount,
-    });
-  const messagesQueryReady =
-    !shouldLoadPersistedMessages ||
-    isFreshRouteQueryReady({
-      isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
-    });
+  const chatQueryReady = isFreshRouteQueryReady({
+    isFetchedAfterMount: chatQuery.isFetchedAfterMount,
+  });
+  const messagesQueryReady = isFreshRouteQueryReady({
+    isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
+  });
   const persistedChat = getFreshRouteQueryData({
     data: chatQuery.data,
     isFetchedAfterMount: chatQuery.isFetchedAfterMount,
