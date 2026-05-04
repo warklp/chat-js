@@ -177,13 +177,21 @@ function getFreshRouteQueryData<TData>({
 }
 
 function isFreshRouteQueryReady({
+  isFetchedAfterMount,
+}: {
+  isFetchedAfterMount: boolean;
+}) {
+  return isFetchedAfterMount;
+}
+
+function getFreshRouteQueryError({
   error,
   isFetchedAfterMount,
 }: {
   error: unknown;
   isFetchedAfterMount: boolean;
 }) {
-  return isFetchedAfterMount || !!error;
+  return isFetchedAfterMount ? error : null;
 }
 
 function getOverrideModelId({
@@ -307,11 +315,12 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   const isExistingRuntimePersisted = useRuntimeIsChatPersisted(existingStore);
   const persistedChatId = persistedRoute?.id ?? "";
   const shouldLoadPersistedMessages =
-    !!persistedRoute && isExistingRuntimePersisted;
+    !!persistedRoute && isExistingRuntimePersisted && !isSessionPending;
 
   const projectQuery = useQuery({
     ...trpc.project.getById.queryOptions({ id: projectHomeId ?? "" }),
-    enabled: route.type === "projectHome" && !!session?.user,
+    enabled:
+      route.type === "projectHome" && !!session?.user && !isSessionPending,
   });
 
   const chatQueryOptions = useGetChatByIdQueryOptions(persistedChatId);
@@ -331,13 +340,11 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   const chatQueryReady =
     !shouldLoadPersistedMessages ||
     isFreshRouteQueryReady({
-      error: chatQuery.error,
       isFetchedAfterMount: chatQuery.isFetchedAfterMount,
     });
   const messagesQueryReady =
     !shouldLoadPersistedMessages ||
     isFreshRouteQueryReady({
-      error: messagesQuery.error,
       isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
     });
   const persistedChat = getFreshRouteQueryData({
@@ -346,6 +353,14 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   });
   const persistedMessages = getFreshRouteQueryData({
     data: messagesQuery.data,
+    isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
+  });
+  const persistedChatError = getFreshRouteQueryError({
+    error: chatQuery.error,
+    isFetchedAfterMount: chatQuery.isFetchedAfterMount,
+  });
+  const persistedMessagesError = getFreshRouteQueryError({
+    error: messagesQuery.error,
     isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
   });
 
@@ -419,9 +434,9 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   if (
     shouldReturnNotFound({
       chat: persistedChat,
-      chatError: chatQuery.error,
+      chatError: persistedChatError,
       hasLiveRuntime,
-      messagesError: messagesQuery.error,
+      messagesError: persistedMessagesError,
       persistedRoute,
       project: projectQuery.data,
       route,
