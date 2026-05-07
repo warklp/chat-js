@@ -212,6 +212,33 @@ describe("scaffoldFromTemplate", () => {
 		).not.toContain("bun");
 	});
 
+	it("allows known native package build scripts for pnpm scaffolds", async () => {
+		const destination = await makeTempDir("chat-app-pnpm");
+
+		await scaffoldFromTemplate(destination, { packageManager: "pnpm" });
+
+		const packageJson = JSON.parse(
+			await readFile(join(destination, "package.json"), "utf8"),
+		) as {
+			packageManager?: string;
+		};
+		const workspaceConfig = await readFile(
+			join(destination, "pnpm-workspace.yaml"),
+			"utf8",
+		);
+
+		expect(packageJson.packageManager).toBeUndefined();
+		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
+		expect(workspaceConfig).toContain("allowBuilds:");
+		expect(workspaceConfig).toContain("better-sqlite3: true");
+		expect(workspaceConfig).toContain("electron: true");
+		expect(workspaceConfig).toContain("electron-winstaller: true");
+		expect(workspaceConfig).toContain("esbuild: true");
+		expect(workspaceConfig).toContain("fs-xattr: true");
+		expect(workspaceConfig).toContain("macos-alias: true");
+		expect(workspaceConfig).toContain("sharp: true");
+	});
+
 	it("starts generated apps with an empty installable tool registry", async () => {
 		const destination = await makeTempDir("chat-app-tools");
 
@@ -287,9 +314,11 @@ describe("scaffoldElectron", () => {
 			devDependencies: Record<string, string>;
 			scripts: Record<string, string>;
 			overrides?: Record<string, string>;
+			pnpm?: unknown;
 		};
 
 		expect(packageJson.packageManager).toBeUndefined();
+		expect(packageJson.pnpm).toBeUndefined();
 		expect(packageJson.devDependencies["@better-auth/electron"]).toBe("1.5.6");
 		expect(packageJson.devDependencies["better-auth"]).toBe("1.5.6");
 		expect(packageJson.devDependencies.esbuild).toBeDefined();
@@ -315,5 +344,35 @@ describe("scaffoldElectron", () => {
 		expect(
 			await readFile(join(projectDir, "electron", "README.md"), "utf8"),
 		).not.toContain("bun ");
+	});
+
+	it("allows Electron install/build scripts for pnpm scaffolds", async () => {
+		const projectDir = await makeTempDir("electron-pnpm");
+
+		await scaffoldFromTemplate(projectDir, { packageManager: "pnpm" });
+		await scaffoldElectron(projectDir, {
+			projectName: "my-chat-app",
+			packageManager: "pnpm",
+		});
+
+		const packageJson = JSON.parse(
+			await readFile(join(projectDir, "electron", "package.json"), "utf8"),
+		) as { pnpm?: unknown };
+		const workspaceConfig = await readFile(
+			join(projectDir, "electron", "pnpm-workspace.yaml"),
+			"utf8",
+		);
+
+		expect(packageJson.pnpm).toBeUndefined();
+		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
+		expect(workspaceConfig).toContain("allowBuilds:");
+		expect(workspaceConfig).toContain("blockExoticSubdeps: false");
+		expect(workspaceConfig).toContain("better-sqlite3: true");
+		expect(workspaceConfig).toContain("electron: true");
+		expect(workspaceConfig).toContain("electron-winstaller: true");
+		expect(workspaceConfig).toContain("esbuild: true");
+		expect(workspaceConfig).toContain("fs-xattr: true");
+		expect(workspaceConfig).toContain("macos-alias: true");
+		expect(workspaceConfig).toContain("sharp: true");
 	});
 });

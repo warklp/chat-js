@@ -44,6 +44,16 @@ const ELECTRON_EXCLUDED_FILES = new Set([
   "branding.json",
 ]);
 
+const PNPM_BUILD_SCRIPT_ALLOWLIST = [
+  "better-sqlite3",
+  "electron",
+  "electron-winstaller",
+  "esbuild",
+  "fs-xattr",
+  "macos-alias",
+  "sharp",
+] as const;
+
 function getCliPackageRoot(): string {
   const __dir = dirname(fileURLToPath(import.meta.url));
 
@@ -127,6 +137,35 @@ async function resetInstallableTools(destination: string): Promise<void> {
   await mkdir(toolsDir, { recursive: true });
   await writeFile(join(toolsDir, "tools.ts"), createEmptyToolsTemplate());
   await writeFile(join(toolsDir, "ui.ts"), createEmptyUiTemplate());
+}
+
+async function writePnpmWorkspaceConfig(
+  destination: string,
+  options?: { blockExoticSubdeps?: boolean }
+): Promise<void> {
+  const packageLines = ["packages:", "  - ."];
+  const pnpm10Lines = [
+    "onlyBuiltDependencies:",
+    ...PNPM_BUILD_SCRIPT_ALLOWLIST.map((name) => `  - ${name}`),
+  ];
+  const pnpm11Lines = [
+    "allowBuilds:",
+    ...PNPM_BUILD_SCRIPT_ALLOWLIST.map((name) => `  ${name}: true`),
+  ];
+  const supplyChainLines =
+    typeof options?.blockExoticSubdeps === "boolean"
+      ? [`blockExoticSubdeps: ${options.blockExoticSubdeps}`]
+      : [];
+
+  await writeFile(
+    join(destination, "pnpm-workspace.yaml"),
+    `${[
+      ...packageLines,
+      ...pnpm10Lines,
+      ...pnpm11Lines,
+      ...supplyChainLines,
+    ].join("\n")}\n`,
+  );
 }
 
 async function applyChatTemplateSourceTransforms(
@@ -276,6 +315,10 @@ async function normalizeChatAppFiles(
   vercelJson.buildCommand = runScript(packageManager, "build");
   await writeFile(vercelJsonPath, `${JSON.stringify(vercelJson, null, 2)}\n`);
 
+  if (packageManager === "pnpm") {
+    await writePnpmWorkspaceConfig(destination);
+  }
+
   await resetInstallableTools(destination);
 }
 
@@ -309,6 +352,10 @@ async function normalizeElectronFiles(
     ["bun run make:win", runScript(packageManager, "make:win")],
     ["bun run make:linux", runScript(packageManager, "make:linux")],
   ]);
+
+  if (packageManager === "pnpm") {
+    await writePnpmWorkspaceConfig(destination, { blockExoticSubdeps: false });
+  }
 }
 
 async function excludeElectronFromRootTypecheck(projectDir: string): Promise<void> {
