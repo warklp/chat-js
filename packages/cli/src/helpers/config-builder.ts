@@ -4,6 +4,7 @@ import {
   configDescriptionSchema,
   type ConfigInput,
 } from "../../../../apps/chat/lib/config-schema";
+import { GATEWAY_MODEL_DEFAULTS } from "../../../../apps/chat/lib/ai/gateway-model-defaults";
 import type {
   AuthProvider,
   BuiltInToolKey,
@@ -123,6 +124,14 @@ function toConfigInput(input: {
   builtInTools: Record<BuiltInToolKey, boolean>;
   auth: Record<AuthProvider, boolean>;
 }): ConfigInput {
+  const gatewayToolDefaults = GATEWAY_MODEL_DEFAULTS[input.gateway].tools;
+  const hasImageDefault =
+    typeof (gatewayToolDefaults.image as { default?: unknown }).default ===
+    "string";
+  const hasVideoDefault =
+    typeof (gatewayToolDefaults.video as { default?: unknown }).default ===
+    "string";
+
   return {
     appName: input.appName,
     appPrefix: input.appPrefix,
@@ -148,8 +157,12 @@ function toConfigInput(input: {
         urlRetrieval: { enabled: input.builtInTools.urlRetrieval },
         deepResearch: { enabled: input.builtInTools.deepResearch },
         codeExecution: { enabled: input.builtInTools.codeExecution },
-        image: { enabled: input.builtInTools.imageGeneration },
-        video: { enabled: input.builtInTools.videoGeneration },
+        image: {
+          enabled: input.builtInTools.imageGeneration && hasImageDefault,
+        },
+        video: {
+          enabled: input.builtInTools.videoGeneration && hasVideoDefault,
+        },
       },
     },
   } as ConfigInput;

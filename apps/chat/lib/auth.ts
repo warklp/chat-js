@@ -13,6 +13,14 @@ import {
   ELECTRON_TRUSTED_ORIGINS,
 } from "./electron-auth";
 
+type BetterAuthOptions = Parameters<typeof betterAuth>[0];
+type BetterAuthPlugin = NonNullable<BetterAuthOptions["plugins"]>[number];
+
+const electronAuthPlugin = electron({
+  clientID: ELECTRON_AUTH_CLIENT_ID,
+  cookiePrefix: ELECTRON_AUTH_COOKIE_PREFIX,
+}) as unknown as BetterAuthPlugin;
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -71,14 +79,7 @@ export const auth = betterAuth({
   plugins: [
     lastLoginMethod(),
     nextCookies(),
-    ...(config.desktopApp.enabled
-      ? [
-          electron({
-            clientID: ELECTRON_AUTH_CLIENT_ID,
-            cookiePrefix: ELECTRON_AUTH_COOKIE_PREFIX,
-          }),
-        ]
-      : []),
+    ...(config.desktopApp.enabled ? [electronAuthPlugin] : []),
   ],
 });
 

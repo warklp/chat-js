@@ -23,19 +23,34 @@ export function getRegistryUrl(override?: string): string {
 function getRegistryIndexUrl(registryUrl?: string): string {
 	const template = getRegistryUrl(registryUrl);
 	if (template.includes("{name}")) {
+		const itemTemplate = template.replace("{name}", "__name__");
+		const isLocalPath = isLocalSource(template);
+		if (isLocalPath && path.basename(path.dirname(itemTemplate)) === "items") {
+			return path.join(path.dirname(path.dirname(itemTemplate)), "index.json");
+		}
+		if (!isLocalPath) {
+			const itemUrl = new URL(itemTemplate);
+			if (path.basename(path.dirname(itemUrl.pathname)) === "items") {
+				return new URL("../index.json", itemUrl).toString();
+			}
+		}
 		return template.replace(/(\{name\}\.json|\{name\})$/, "index.json");
 	}
 
-	if (template.startsWith(".") || path.isAbsolute(template)) {
+	if (isLocalSource(template)) {
 		return path.join(path.dirname(template), "index.json");
 	}
 
 	return new URL("../index.json", template).toString();
 }
 
+function isLocalSource(source: string): boolean {
+	return !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(source) || path.isAbsolute(source);
+}
+
 async function fetchJson(source: string): Promise<unknown> {
-	const isLocalPath = source.startsWith(".") || path.isAbsolute(source);
-	const filePath = source.startsWith(".")
+	const isLocalPath = isLocalSource(source);
+	const filePath = isLocalPath
 		? path.resolve(process.cwd(), source)
 		: source;
 

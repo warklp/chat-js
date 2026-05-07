@@ -112,6 +112,45 @@ describe("buildConfigTs", () => {
 		expect(output).toContain("video: {");
 		expect(output).toContain("enabled: false");
 	});
+	it("keeps unsupported media tools disabled for openai-compatible scaffolds", () => {
+		const output = buildConfigTs({
+			appName: "My Chat",
+			appPrefix: "my-chat",
+			appUrl: "http://localhost:3000",
+			withElectron: false,
+			gateway: "openai-compatible",
+			coreFeatures: {
+				attachments: false,
+				parallelResponses: true,
+				documents: true,
+				mcp: false,
+				followupSuggestions: true,
+			},
+			documentTypes: {
+				text: true,
+				code: true,
+				sheet: true,
+			},
+			builtInTools: {
+				webSearch: true,
+				urlRetrieval: true,
+				deepResearch: true,
+				codeExecution: true,
+				imageGeneration: true,
+				videoGeneration: true,
+			},
+			auth: {
+				google: false,
+				github: true,
+				vercel: false,
+			},
+		});
+
+		expect(output).toContain('gateway: "openai-compatible"');
+		expect(output).toContain("image: {");
+		expect(output).toContain('default: "gpt-image-1"');
+		expect(output).toMatch(/video:\s*{\s*enabled:\s*false,/m);
+	});
 });
 
 describe("scaffoldFromTemplate", () => {
@@ -171,6 +210,22 @@ describe("scaffoldFromTemplate", () => {
 		expect(
 			await readFile(join(destination, "scripts", "db-branch-use.sh"), "utf8"),
 		).not.toContain("bun");
+	});
+
+	it("starts generated apps with an empty installable tool registry", async () => {
+		const destination = await makeTempDir("chat-app-tools");
+
+		await scaffoldFromTemplate(destination);
+
+		expect(
+			existsSync(join(destination, "tools", "chatjs", "get-weather")),
+		).toBe(false);
+		expect(
+			await readFile(join(destination, "tools", "chatjs", "tools.ts"), "utf8"),
+		).not.toContain("getWeather");
+		expect(
+			await readFile(join(destination, "tools", "chatjs", "ui.ts"), "utf8"),
+		).not.toContain("GetWeatherRenderer");
 	});
 
 	it("falls back to repo source apps when synced templates are missing", async () => {
@@ -243,9 +298,15 @@ describe("scaffoldElectron", () => {
 		) as {
 			devDependencies: Record<string, string>;
 		};
+		const rootTsconfig = JSON.parse(
+			await readFile(join(projectDir, "tsconfig.json"), "utf8"),
+		) as {
+			exclude?: string[];
+		};
 		expect(packageJson.devDependencies.tsx).toBe(
 			rootPackageJson.devDependencies.tsx,
 		);
+		expect(rootTsconfig.exclude).toContain("electron");
 		for (const script of Object.values(packageJson.scripts)) {
 			expect(script).not.toContain("bun ");
 			expect(script).not.toContain("bunx");

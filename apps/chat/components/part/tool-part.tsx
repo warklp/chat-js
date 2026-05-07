@@ -3,10 +3,7 @@
 import type { ToolUIPart } from "ai";
 import type { ComponentType } from "react";
 import {
-  type InstalledToolPart,
-  type InstalledToolType,
   isInstalledToolType,
-  type ToolRendererProps,
   toolRendererRegistry,
 } from "@/lib/ai/tool-renderer-registry";
 import type { ChatTools } from "@/lib/ai/types";
@@ -24,18 +21,28 @@ interface ToolPartProps {
   part: ToolUIPart<ChatTools>;
 }
 
-function renderInstalledTool<T extends InstalledToolType>({
+type InstalledToolRenderer = ComponentType<{
+  tool: ToolUIPart<ChatTools>;
+  messageId: string;
+  isReadonly: boolean;
+}>;
+
+function renderInstalledTool({
   part,
   messageId,
   isReadonly,
 }: {
-  part: InstalledToolPart<T>;
+  part: ToolUIPart<ChatTools>;
   messageId: string;
   isReadonly: boolean;
 }) {
-  const Renderer = toolRendererRegistry[part.type] as unknown as ComponentType<
-    ToolRendererProps<T>
-  >;
+  const Renderer = (
+    toolRendererRegistry as Record<string, InstalledToolRenderer | undefined>
+  )[part.type];
+
+  if (!Renderer) {
+    return null;
+  }
 
   return <Renderer isReadonly={isReadonly} messageId={messageId} tool={part} />;
 }
@@ -82,7 +89,7 @@ export function ToolPart({ part, messageId, isReadonly }: ToolPartProps) {
 
   if (isInstalledToolType(type)) {
     return renderInstalledTool({
-      part: part as InstalledToolPart<typeof type>,
+      part,
       messageId,
       isReadonly,
     });

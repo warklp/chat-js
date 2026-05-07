@@ -4,10 +4,10 @@
  * Validates that enabled features in config have their required env vars.
  * Run via `bun run check-env` or automatically in prebuild.
  */
-import "dotenv/config";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { config as loadEnvConfig } from "dotenv";
 // biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
 import * as ts from "typescript";
 import type { GatewayType } from "../lib/ai/gateways/registry";
@@ -22,6 +22,9 @@ import {
   isRequirementSatisfied,
 } from "../lib/config-requirements";
 import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
+
+loadEnvConfig({ path: ".env.local" });
+loadEnvConfig();
 
 interface ValidationError {
   feature: string;
@@ -376,7 +379,7 @@ function validateBaseUrl(env: NodeJS.ProcessEnv): ValidationError | null {
 }
 
 function checkGatewaySnapshot(): string | null {
-  if (config.ai.gateway === generatedForGateway) {
+  if ((config.ai.gateway as GatewayType) === generatedForGateway) {
     return null;
   }
   return `models.generated.ts was built for "${generatedForGateway}" but config uses "${config.ai.gateway}". Run \`bun fetch:models\` to update the fallback snapshot.`;
@@ -422,4 +425,7 @@ async function checkEnv(): Promise<void> {
   console.log("✅ Environment validation passed");
 }
 
-await checkEnv();
+checkEnv().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

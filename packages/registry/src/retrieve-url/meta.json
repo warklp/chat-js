@@ -1,3 +1,4 @@
 {
-  "description": "Fetch structured information from a single URL"
+  "description": "Fetch structured information from a single URL",
+  "registryDependencies": ["toolkit-renderer"]
 }

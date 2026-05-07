@@ -15,6 +15,11 @@ import {
 	type Gateway,
 } from "../types";
 
+type EnvRequirementLike = {
+	description?: string;
+	options: string[][];
+};
+
 export type EnvVarEntry = {
 	/** The env var name(s), e.g. "AI_GATEWAY_API_KEY" or "AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET" */
 	vars: string;
@@ -30,7 +35,7 @@ const envDescriptions = new Map(Object.entries(envVarDescriptions));
  * Expand an EnvRequirement into one or more EnvVarEntries, pulling
  * descriptions from the Zod schema.
  */
-function requirementToEntries(requirement: EnvRequirement): EnvVarEntry[] {
+function requirementToEntries(requirement: EnvRequirementLike): EnvVarEntry[] {
 	const oneOfGroup =
 		requirement.options.length > 1
 			? requirement.options
@@ -59,6 +64,7 @@ export function collectEnvChecklist(input: {
 	coreFeatures: Record<CoreFeatureKey, boolean>;
 	builtInTools: Record<BuiltInToolKey, boolean>;
 	auth: Record<AuthProvider, boolean>;
+	installableToolEnvRequirements?: EnvRequirementLike[];
 }): EnvVarEntry[] {
 	const entries: EnvVarEntry[] = [];
 
@@ -105,6 +111,16 @@ export function collectEnvChecklist(input: {
 		if (!requirement) continue;
 		if (seen.has(requirement.description)) continue;
 		seen.add(requirement.description);
+
+		featureItems.push(...requirementToEntries(requirement));
+	}
+
+	for (const requirement of input.installableToolEnvRequirements ?? []) {
+		const dedupeKey =
+			requirement.description ??
+			requirement.options.map((option) => option.join("+")).join("|");
+		if (seen.has(dedupeKey)) continue;
+		seen.add(dedupeKey);
 
 		featureItems.push(...requirementToEntries(requirement));
 	}
