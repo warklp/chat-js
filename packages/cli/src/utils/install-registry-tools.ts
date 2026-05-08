@@ -49,9 +49,9 @@ export async function installRegistryTools({
 	installDependenciesNow?: boolean;
 	packageManager?: PackageManager;
 	confirmOverwrite?: (existingFiles: string[]) => Promise<boolean>;
-}): Promise<void> {
+}): Promise<{ envRequirements: EnvRequirement[] }> {
 	if (tools.length === 0) {
-		return;
+		return { envRequirements: [] };
 	}
 
 	const toolsIndexPath = path.join(toolsDir, "tools.ts");
@@ -205,4 +205,10 @@ export async function installRegistryTools({
 		injectSpinner.fail("Failed to update tool registry index");
 		throw err;
 	}
+
+	return {
+		envRequirements: resolution.items.flatMap(
+			(item) => item.envRequirements ?? [],
+		),
+	};
 }

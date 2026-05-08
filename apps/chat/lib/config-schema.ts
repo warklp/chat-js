@@ -530,10 +530,8 @@ export type ConfigInput = {
  * Only `ai.gateway` is required — all other `ai` fields are optional overrides
  * on top of the gateway defaults supplied by `applyDefaults`.
  */
-export function defineConfig<G extends GatewayType>(
-  config: ConfigInputForGateway<G>
-): ConfigInput {
-  return config as ConfigInput;
+export function defineConfig<const T extends ConfigInput>(config: T): T {
+  return config;
 }
 
 function mergeToolsConfig<T extends Record<string, unknown>>(

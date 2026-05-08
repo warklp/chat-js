@@ -1,7 +1,10 @@
 import { evalite } from "evalite";
 import { runCoreChatAgentEval } from "@/lib/ai/eval-agent";
 import type { ChatMessage } from "@/lib/ai/types";
+import { config } from "@/lib/config";
 import { generateUUID } from "@/lib/utils";
+
+const evalModelId = config.ai.workflows.chat;
 
 evalite("Chat Agent Eval", {
   data: async () => [
@@ -28,7 +31,7 @@ evalite("Chat Agent Eval", {
       metadata: {
         createdAt: new Date(),
         parentMessageId: null,
-        selectedModel: "anthropic/claude-haiku-4.5",
+        selectedModel: evalModelId,
         activeStreamId: null,
       },
     };
@@ -37,7 +40,7 @@ evalite("Chat Agent Eval", {
     const result = await runCoreChatAgentEval({
       userMessage,
       previousMessages: [],
-      selectedModelId: "anthropic/claude-haiku-4.5",
+      selectedModelId: evalModelId,
       activeTools: [], // No tools for simple Q&A
     });
 

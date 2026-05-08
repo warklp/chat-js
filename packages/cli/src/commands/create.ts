@@ -24,6 +24,7 @@ import {
 	scaffoldFromGit,
 	scaffoldFromTemplate,
 } from "../helpers/scaffold";
+import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { resolveToolsPath } from "../utils/get-config";
 import { inferPackageManager } from "../utils/get-package-manager";
@@ -176,6 +177,7 @@ export const create = new Command()
 			const assistantTools = await promptAssistantTools(
 				registryItems,
 				options.yes,
+				gateway,
 			);
 			const auth = await promptAuth(options.yes);
 			const withElectron = await promptElectron(options.yes, options.electron);
@@ -236,9 +238,10 @@ export const create = new Command()
 				? false
 				: await promptInstall(packageManager, options.yes);
 
+			let installableToolEnvRequirements: RegistryEnvRequirement[] = [];
 			if (assistantTools.installableTools.length > 0) {
 				const toolsDir = resolveToolsPath("@/tools/chatjs", targetDir);
-				await installRegistryTools({
+				const registryInstall = await installRegistryTools({
 					tools: assistantTools.installableTools,
 					cwd: targetDir,
 					toolsDir,
@@ -247,6 +250,7 @@ export const create = new Command()
 					installDependenciesNow: false,
 					packageManager,
 				});
+				installableToolEnvRequirements = registryInstall.envRequirements;
 			}
 
 			if (installNow) {
@@ -267,6 +271,7 @@ export const create = new Command()
 				coreFeatures,
 				builtInTools: assistantTools.builtInTools,
 				auth,
+				installableToolEnvRequirements,
 			});
 
 			outro("Your ChatJS app is ready!");

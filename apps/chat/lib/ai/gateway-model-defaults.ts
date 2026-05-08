@@ -196,7 +196,7 @@ const openaiDefaults = {
     text: { polish: "gpt-5-mini" },
     sheet: { format: "gpt-5-mini", analyze: "gpt-5-mini" },
     code: { edits: "gpt-5-mini" },
-    image: { enabled: false },
+    image: { enabled: false, default: "gpt-image-1" },
     video: { enabled: false },
     deepResearch: {
       enabled: false,
@@ -239,7 +239,7 @@ const openaiCompatibleDefaults = {
     text: { polish: "gpt-5-mini" },
     sheet: { format: "gpt-5-mini", analyze: "gpt-5-mini" },
     code: { edits: "gpt-5-mini" },
-    image: { enabled: false },
+    image: { enabled: false, default: "gpt-image-1" },
     video: { enabled: false },
     deepResearch: {
       enabled: false,

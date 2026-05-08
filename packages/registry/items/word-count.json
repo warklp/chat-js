@@ -5,6 +5,9 @@
     "ai",
     "zod"
   ],
+  "registryDependencies": [
+    "toolkit-renderer"
+  ],
   "files": [
     {
       "path": "tool.ts",

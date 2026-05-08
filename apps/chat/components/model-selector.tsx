@@ -123,7 +123,13 @@ function getSelectionCount(selection: SelectedModelValue): number {
     return 1;
   }
 
-  return Object.values(selection).reduce((count, value) => count + value, 0);
+  let count = 0;
+
+  for (const value of Object.values(selection)) {
+    count += value ?? 0;
+  }
+
+  return count;
 }
 
 function PureCommandItem({
@@ -282,7 +288,7 @@ function PureModelSelector({
 
     return new Set<AppModelId>(
       Object.entries(optimisticSelection)
-        .filter(([, count]) => count > 0)
+        .filter(([, count]) => typeof count === "number" && count > 0)
         .map(([modelId]) => modelId as AppModelId)
     );
   }, [optimisticSelection]);

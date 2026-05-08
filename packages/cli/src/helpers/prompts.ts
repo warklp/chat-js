@@ -98,6 +98,26 @@ const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
 	videoGeneration: "Generate videos inside chat",
 };
 
+function isSupportedBuiltInTool(gateway: Gateway, key: BuiltInToolKey): boolean {
+	const gatewayToolDefaults = GATEWAY_MODEL_DEFAULTS[gateway].tools;
+
+	if (key === "imageGeneration") {
+		return (
+			typeof (gatewayToolDefaults.image as { default?: unknown }).default ===
+			"string"
+		);
+	}
+
+	if (key === "videoGeneration") {
+		return (
+			typeof (gatewayToolDefaults.video as { default?: unknown }).default ===
+			"string"
+		);
+	}
+
+	return true;
+}
+
 const AUTH_LABELS: Record<AuthProvider, string> = {
 	google: "Google OAuth",
 	github: "GitHub OAuth",
@@ -224,11 +244,15 @@ export async function promptDocumentTypes(
 export async function promptAssistantTools(
 	registryItems: RegistryIndexItem[],
 	skipPrompt: boolean,
+	gateway: Gateway,
 ): Promise<{
 	builtInTools: Record<BuiltInToolKey, boolean>;
 	installableTools: string[];
 }> {
 	const installableItems = registryItems.filter((item) => !item.hidden);
+	const supportedBuiltInTools = BUILT_IN_TOOL_KEYS.filter((key) =>
+		isSupportedBuiltInTool(gateway, key),
+	);
 
 	if (skipPrompt) {
 		return {
@@ -240,7 +264,7 @@ export async function promptAssistantTools(
 	const selected = await multiselect({
 		message: `Which ${highlighter.info("assistant tools")} would you like to enable? ${highlighter.dim("(space to toggle, enter to submit)")}`,
 		options: [
-			...BUILT_IN_TOOL_KEYS.map((key) => ({
+			...supportedBuiltInTools.map((key) => ({
 				value: key,
 				label: BUILT_IN_TOOL_LABELS[key],
 				hint:
@@ -254,7 +278,7 @@ export async function promptAssistantTools(
 				hint: item.description,
 			})),
 		],
-		initialValues: BUILT_IN_TOOL_KEYS.filter(
+		initialValues: supportedBuiltInTools.filter(
 			(key) => BUILT_IN_TOOL_DEFAULTS[key],
 		),
 		required: false,

@@ -8,6 +8,9 @@
     "react-markdown",
     "zod"
   ],
+  "registryDependencies": [
+    "toolkit-renderer"
+  ],
   "envRequirements": [
     {
       "description": "FIRECRAWL_API_KEY",

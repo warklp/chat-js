@@ -112,6 +112,45 @@ describe("buildConfigTs", () => {
 		expect(output).toContain("video: {");
 		expect(output).toContain("enabled: false");
 	});
+	it("keeps unsupported media tools disabled for openai-compatible scaffolds", () => {
+		const output = buildConfigTs({
+			appName: "My Chat",
+			appPrefix: "my-chat",
+			appUrl: "http://localhost:3000",
+			withElectron: false,
+			gateway: "openai-compatible",
+			coreFeatures: {
+				attachments: false,
+				parallelResponses: true,
+				documents: true,
+				mcp: false,
+				followupSuggestions: true,
+			},
+			documentTypes: {
+				text: true,
+				code: true,
+				sheet: true,
+			},
+			builtInTools: {
+				webSearch: true,
+				urlRetrieval: true,
+				deepResearch: true,
+				codeExecution: true,
+				imageGeneration: true,
+				videoGeneration: true,
+			},
+			auth: {
+				google: false,
+				github: true,
+				vercel: false,
+			},
+		});
+
+		expect(output).toContain('gateway: "openai-compatible"');
+		expect(output).toContain("image: {");
+		expect(output).toContain('default: "gpt-image-1"');
+		expect(output).toMatch(/video:\s*{\s*enabled:\s*false,/m);
+	});
 });
 
 describe("scaffoldFromTemplate", () => {
@@ -173,6 +212,49 @@ describe("scaffoldFromTemplate", () => {
 		).not.toContain("bun");
 	});
 
+	it("allows known native package build scripts for pnpm scaffolds", async () => {
+		const destination = await makeTempDir("chat-app-pnpm");
+
+		await scaffoldFromTemplate(destination, { packageManager: "pnpm" });
+
+		const packageJson = JSON.parse(
+			await readFile(join(destination, "package.json"), "utf8"),
+		) as {
+			packageManager?: string;
+		};
+		const workspaceConfig = await readFile(
+			join(destination, "pnpm-workspace.yaml"),
+			"utf8",
+		);
+
+		expect(packageJson.packageManager).toBeUndefined();
+		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
+		expect(workspaceConfig).toContain("allowBuilds:");
+		expect(workspaceConfig).toContain("better-sqlite3: true");
+		expect(workspaceConfig).toContain("electron: true");
+		expect(workspaceConfig).toContain("electron-winstaller: true");
+		expect(workspaceConfig).toContain("esbuild: true");
+		expect(workspaceConfig).toContain("fs-xattr: true");
+		expect(workspaceConfig).toContain("macos-alias: true");
+		expect(workspaceConfig).toContain("sharp: true");
+	});
+
+	it("starts generated apps with an empty installable tool registry", async () => {
+		const destination = await makeTempDir("chat-app-tools");
+
+		await scaffoldFromTemplate(destination);
+
+		expect(
+			existsSync(join(destination, "tools", "chatjs", "get-weather")),
+		).toBe(false);
+		expect(
+			await readFile(join(destination, "tools", "chatjs", "tools.ts"), "utf8"),
+		).not.toContain("getWeather");
+		expect(
+			await readFile(join(destination, "tools", "chatjs", "ui.ts"), "utf8"),
+		).not.toContain("GetWeatherRenderer");
+	});
+
 	it("falls back to repo source apps when synced templates are missing", async () => {
 		const projectDir = await makeTempDir("chat-app-fallback");
 		const templatesDir = join(getCliPackageRoot(), "templates");
@@ -232,9 +314,11 @@ describe("scaffoldElectron", () => {
 			devDependencies: Record<string, string>;
 			scripts: Record<string, string>;
 			overrides?: Record<string, string>;
+			pnpm?: unknown;
 		};
 
 		expect(packageJson.packageManager).toBeUndefined();
+		expect(packageJson.pnpm).toBeUndefined();
 		expect(packageJson.devDependencies["@better-auth/electron"]).toBe("1.5.6");
 		expect(packageJson.devDependencies["better-auth"]).toBe("1.5.6");
 		expect(packageJson.devDependencies.esbuild).toBeDefined();
@@ -243,9 +327,15 @@ describe("scaffoldElectron", () => {
 		) as {
 			devDependencies: Record<string, string>;
 		};
+		const rootTsconfig = JSON.parse(
+			await readFile(join(projectDir, "tsconfig.json"), "utf8"),
+		) as {
+			exclude?: string[];
+		};
 		expect(packageJson.devDependencies.tsx).toBe(
 			rootPackageJson.devDependencies.tsx,
 		);
+		expect(rootTsconfig.exclude).toContain("electron");
 		for (const script of Object.values(packageJson.scripts)) {
 			expect(script).not.toContain("bun ");
 			expect(script).not.toContain("bunx");
@@ -254,5 +344,35 @@ describe("scaffoldElectron", () => {
 		expect(
 			await readFile(join(projectDir, "electron", "README.md"), "utf8"),
 		).not.toContain("bun ");
+	});
+
+	it("allows Electron install/build scripts for pnpm scaffolds", async () => {
+		const projectDir = await makeTempDir("electron-pnpm");
+
+		await scaffoldFromTemplate(projectDir, { packageManager: "pnpm" });
+		await scaffoldElectron(projectDir, {
+			projectName: "my-chat-app",
+			packageManager: "pnpm",
+		});
+
+		const packageJson = JSON.parse(
+			await readFile(join(projectDir, "electron", "package.json"), "utf8"),
+		) as { pnpm?: unknown };
+		const workspaceConfig = await readFile(
+			join(projectDir, "electron", "pnpm-workspace.yaml"),
+			"utf8",
+		);
+
+		expect(packageJson.pnpm).toBeUndefined();
+		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
+		expect(workspaceConfig).toContain("allowBuilds:");
+		expect(workspaceConfig).toContain("blockExoticSubdeps: false");
+		expect(workspaceConfig).toContain("better-sqlite3: true");
+		expect(workspaceConfig).toContain("electron: true");
+		expect(workspaceConfig).toContain("electron-winstaller: true");
+		expect(workspaceConfig).toContain("esbuild: true");
+		expect(workspaceConfig).toContain("fs-xattr: true");
+		expect(workspaceConfig).toContain("macos-alias: true");
+		expect(workspaceConfig).toContain("sharp: true");
 	});
 });

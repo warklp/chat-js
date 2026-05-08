@@ -93,6 +93,10 @@ export class MCPClient {
     return this.authorizationUrl;
   }
 
+  get serverInfo() {
+    return this.client?.serverInfo;
+  }
+
   async connect(oauthState?: string): Promise<McpClientInstance | undefined> {
     if (this.status === "connected" && this.client) {
       return this.client;
@@ -212,12 +216,17 @@ export class MCPClient {
   /**
    * Get tools from the MCP server, already in AI SDK format.
    */
-  async tools(): Promise<Record<string, Tool>> {
+  async tools(
+    ...args: Parameters<NonNullable<McpClientInstance>["tools"]>
+  ): Promise<Record<string, Tool>> {
     if (!this.client) {
       throw new Error("Client not connected");
     }
     try {
-      return (await this.client.tools()) as ToolSet as Record<string, Tool>;
+      return (await this.client.tools(...args)) as ToolSet as Record<
+        string,
+        Tool
+      >;
     } catch (error) {
       this.handlePotentialAuthError(error);
       throw error;
