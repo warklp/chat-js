@@ -1,5 +1,11 @@
 # @chat-js/cli
 
+## 0.6.5
+
+### Patch Changes
+
+- [#198](https://github.com/FranciscoMoretti/chat-js/pull/198) [`e85a88f`](https://github.com/FranciscoMoretti/chat-js/commit/e85a88fe062a95f28a6c68898e49a64b001da3cb) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Fix scaffold config validation, registry-tool install issues, and pnpm native build approvals across package managers and gateway/tool combinations.
+
 ## 0.6.4
 
 ### Patch Changes
