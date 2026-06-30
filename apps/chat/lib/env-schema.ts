@@ -82,6 +82,15 @@ export const serverEnvSchema = {
     .optional()
     .describe("API key for OpenAI-compatible provider"),
   OPENAI_API_KEY: z.string().optional().describe("OpenAI API key"),
+  LITELLM_BASE_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe("LiteLLM proxy base URL"),
+  LITELLM_API_KEY: z
+    .string()
+    .optional()
+    .describe("LiteLLM proxy API key (master or virtual key)"),
 
   // Optional cleanup cron job secret
   CRON_SECRET: z
