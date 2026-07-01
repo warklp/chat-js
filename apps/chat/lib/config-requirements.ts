@@ -39,8 +39,8 @@ export const gatewayEnvRequirements: Record<GatewayType, EnvRequirement> = {
     description: "OPENAI_COMPATIBLE_BASE_URL, OPENAI_COMPATIBLE_API_KEY",
   },
   litellm: {
-    options: [["LITELLM_BASE_URL", "LITELLM_API_KEY"]],
-    description: "LITELLM_BASE_URL, LITELLM_API_KEY",
+    options: [["LITELLM_BASE_URL"]],
+    description: "LITELLM_BASE_URL",
   },
 };
 

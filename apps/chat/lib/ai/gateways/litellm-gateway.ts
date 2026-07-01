@@ -9,10 +9,10 @@ import type { GatewayProvider } from "./gateway-provider";
 const log = createModuleLogger("ai/gateways/litellm");
 
 interface LiteLLMModelResponse {
-  created: number;
+  created?: number;
   id: string;
   object: string;
-  owned_by: string;
+  owned_by?: string;
 }
 
 function toAiGatewayModel(model: LiteLLMModelResponse): AiGatewayModel {
@@ -92,6 +92,7 @@ export class LiteLLMGateway
 
       const response = await fetch(url, {
         headers,
+        signal: AbortSignal.timeout(10_000),
         next: { revalidate: 3600 },
       });
 
