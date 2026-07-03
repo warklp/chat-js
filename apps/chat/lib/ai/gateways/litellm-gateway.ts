@@ -10,13 +10,6 @@ import type { GatewayProvider } from "./gateway-provider";
 const log = createModuleLogger("ai/gateways/litellm");
 const TRAILING_SLASHES_REGEX = /\/+$/;
 
-interface LiteLLMModelResponse {
-  created?: number;
-  id: string;
-  object?: string;
-  owned_by?: string;
-}
-
 const litellmModelsResponseSchema = z.object({
   data: z.array(
     z.object({
@@ -27,6 +20,10 @@ const litellmModelsResponseSchema = z.object({
     })
   ),
 });
+
+type LiteLLMModelResponse = z.infer<
+  typeof litellmModelsResponseSchema
+>["data"][number];
 
 function toAiGatewayModel(model: LiteLLMModelResponse): AiGatewayModel {
   return {
