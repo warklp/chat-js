@@ -76,7 +76,6 @@ const vercelDefaults = {
     "google/gemini-3-pro-preview",
     "anthropic/claude-sonnet-4.5",
     "anthropic/claude-opus-4.5",
-    "xai/grok-4",
   ],
   anonymousModels: ["google/gemini-2.5-flash-lite", "openai/gpt-5-nano"],
   workflows: {
@@ -253,6 +252,49 @@ const openaiCompatibleDefaults = {
   },
 } satisfies ModelDefaultsFor<"openai-compatible">;
 
+const litellmDefaults = {
+  providerOrder: ["openai"],
+  disabledModels: [],
+  curatedDefaults: [
+    "openai/gpt-4o-mini",
+    "openai/gpt-4o",
+    "openai/gpt-5-mini",
+    "openai/gpt-5-nano",
+  ],
+  anonymousModels: ["openai/gpt-4o-mini"],
+  workflows: {
+    chat: "openai/gpt-4o-mini",
+    title: "openai/gpt-4o-mini",
+    pdf: "openai/gpt-4o-mini",
+    chatImageCompatible: "openai/gpt-4o-mini",
+  },
+  tools: {
+    webSearch: { enabled: false },
+    urlRetrieval: { enabled: false },
+    codeExecution: { enabled: false },
+    mcp: { enabled: false },
+    documents: {
+      enabled: true,
+      types: { text: true, code: true, sheet: true },
+    },
+    followupSuggestions: { enabled: false, default: "openai/gpt-4o-mini" },
+    text: { polish: "openai/gpt-4o-mini" },
+    sheet: { format: "openai/gpt-4o-mini", analyze: "openai/gpt-4o-mini" },
+    code: { edits: "openai/gpt-4o-mini" },
+    image: { enabled: false },
+    video: { enabled: false },
+    deepResearch: {
+      enabled: false,
+      defaultModel: "openai/gpt-4o-mini",
+      finalReportModel: "openai/gpt-4o",
+      allowClarification: true,
+      maxResearcherIterations: 1,
+      maxConcurrentResearchUnits: 2,
+      maxSearchQueries: 2,
+    },
+  },
+} satisfies ModelDefaultsFor<"litellm">;
+
 // Record ensures a compile error if a new gateway is added but not here.
 export const GATEWAY_MODEL_DEFAULTS: {
   [G in GatewayType]: ModelDefaultsFor<G>;
@@ -261,4 +303,5 @@ export const GATEWAY_MODEL_DEFAULTS: {
   openrouter: openrouterDefaults,
   openai: openaiDefaults,
   "openai-compatible": openaiCompatibleDefaults,
+  litellm: litellmDefaults,
 };

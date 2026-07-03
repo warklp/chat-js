@@ -7,6 +7,7 @@ export const GATEWAYS: readonly GatewayType[] = [
   "openrouter",
   "openai",
   "openai-compatible",
+  "litellm",
 ] as const;
 
 export type Gateway = GatewayType;

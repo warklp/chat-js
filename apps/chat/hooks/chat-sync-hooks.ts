@@ -169,7 +169,9 @@ export function useRenameChat() {
         (old) => old?.map((c) => (c.id === chatId ? { ...c, title } : c)) ?? old
       );
       if (previousChatById) {
-        qc.setQueryData<UIChat | null>(byIdKey, { ...previousChatById, title });
+        qc.setQueryData<UIChat | null>(byIdKey, (old) =>
+          old ? { ...old, title } : old
+        );
       }
 
       return { previousAllChats, previousChatById };

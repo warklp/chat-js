@@ -106,6 +106,7 @@
                   "gateways/openrouter",
                   "gateways/openai",
                   "gateways/openai-compatible",
+                  "gateways/litellm",
                   "gateways/custom"
                 ]
               }

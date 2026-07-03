@@ -161,6 +161,7 @@ const gatewaySchemaMap: {
   openrouter: createAiSchema("openrouter"),
   openai: createAiSchema("openai"),
   "openai-compatible": createAiSchema("openai-compatible"),
+  litellm: createAiSchema("litellm"),
 };
 
 export const aiConfigSchema = z
@@ -169,6 +170,7 @@ export const aiConfigSchema = z
     gatewaySchemaMap.openrouter,
     gatewaySchemaMap.openai,
     gatewaySchemaMap["openai-compatible"],
+    gatewaySchemaMap.litellm,
   ])
   .default({
     gateway: DEFAULT_GATEWAY,
