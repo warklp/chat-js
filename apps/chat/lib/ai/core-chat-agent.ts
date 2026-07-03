@@ -1,3 +1,4 @@
+import type { SharedV3ProviderOptions } from "@ai-sdk/provider";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { addExplicitToolRequestToMessages } from "@/app/(chat)/api/chat/add-explicit-tool-request-to-messages";
 import { filterPartsForLLM } from "@/app/(chat)/api/chat/filter-reasoning-parts";
@@ -158,7 +159,7 @@ export async function createCoreChatAgent({
     },
     onChunk,
     abortSignal,
-    providerOptions,
+    providerOptions: providerOptions as SharedV3ProviderOptions,
     onFinish: async () => {
       // Clean up MCP clients when streaming is done (onFinish runs for both success and error)
       await mcpCleanup();

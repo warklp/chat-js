@@ -76,7 +76,6 @@ const vercelDefaults = {
     "google/gemini-3-pro-preview",
     "anthropic/claude-sonnet-4.5",
     "anthropic/claude-opus-4.5",
-    "xai/grok-4",
   ],
   anonymousModels: ["google/gemini-2.5-flash-lite", "openai/gpt-5-nano"],
   workflows: {

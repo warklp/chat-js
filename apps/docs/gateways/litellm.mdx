@@ -15,13 +15,13 @@ The LiteLLM gateway connects ChatJS to a [LiteLLM proxy](https://docs.litellm.ai
 
 ## Setup
 
-1. Deploy a LiteLLM proxy server ([quickstart guide](https://docs.litellm.ai/docs/simple_proxy)) and note the URL and API key.
+1. Deploy a LiteLLM proxy server ([quickstart guide](https://docs.litellm.ai/docs/simple_proxy)) and note the URL. If your proxy requires authentication, also note a master key or virtual key.
 
-2. Set the proxy URL and API key in `.env.local`:
+2. Set the proxy URL and optional API key in `.env.local`:
 
 ```bash
-LITELLM_BASE_URL=http://localhost:4000   # Your LiteLLM proxy URL
-LITELLM_API_KEY=sk-...                   # Master key or virtual key
+LITELLM_BASE_URL=http://localhost:4000   # Your LiteLLM proxy URL, without /v1
+LITELLM_API_KEY=sk-...                   # Optional; only if your proxy requires auth
 ```
 
 3. Set the gateway in your config:
@@ -53,7 +53,7 @@ Model IDs must match the model names configured in your LiteLLM proxy. These typ
 
 ## Available Models
 
-Models are fetched at runtime from your LiteLLM proxy's `/models` endpoint and cached for 1 hour. The available models depend entirely on what you have configured in your proxy's `config.yaml`.
+Models are fetched at runtime from your LiteLLM proxy's `/v1/models` endpoint and cached for 1 hour. The available models depend entirely on what you have configured in your proxy's `config.yaml`.
 
 ### Example proxy configuration
 
@@ -95,7 +95,7 @@ response = completion(
     model="openai/gpt-4o",
     messages=[{"role": "user", "content": "Hello!"}],
     api_base="http://localhost:4000",  # your proxy URL
-    api_key="sk-...",                  # your proxy key
+    api_key="sk-...",                  # optional; your proxy key if required
 )
 print(response.choices[0].message.content)
 ```

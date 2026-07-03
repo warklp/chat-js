@@ -1,19 +1,32 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Experimental_VideoModelV3 } from "@ai-sdk/provider";
 import type { ImageModel, LanguageModel } from "ai";
+import { z } from "zod";
 import { createModuleLogger } from "@/lib/logger";
 import type { AiGatewayModel } from "../ai-gateway-models-schemas";
 import { getFallbackModels } from "./fallback-models";
 import type { GatewayProvider } from "./gateway-provider";
 
 const log = createModuleLogger("ai/gateways/litellm");
+const TRAILING_SLASHES_REGEX = /\/+$/;
 
 interface LiteLLMModelResponse {
   created?: number;
   id: string;
-  object: string;
+  object?: string;
   owned_by?: string;
 }
+
+const litellmModelsResponseSchema = z.object({
+  data: z.array(
+    z.object({
+      created: z.number().optional(),
+      id: z.string(),
+      object: z.string().optional(),
+      owned_by: z.string().optional(),
+    })
+  ),
+});
 
 function toAiGatewayModel(model: LiteLLMModelResponse): AiGatewayModel {
   return {
@@ -70,6 +83,14 @@ export class LiteLLMGateway
     return process.env.LITELLM_BASE_URL;
   }
 
+  private getModelsUrl(baseURL: string): string {
+    const normalizedBaseURL = baseURL.replace(TRAILING_SLASHES_REGEX, "");
+    if (normalizedBaseURL.endsWith("/v1")) {
+      return `${normalizedBaseURL}/models`;
+    }
+    return `${normalizedBaseURL}/v1/models`;
+  }
+
   async fetchModels(): Promise<AiGatewayModel[]> {
     const apiKey = this.getApiKey();
     const baseURL = this.getBaseURL();
@@ -79,7 +100,7 @@ export class LiteLLMGateway
       return [...getFallbackModels(this.type)];
     }
 
-    const url = `${baseURL}/models`;
+    const url = this.getModelsUrl(baseURL);
     log.debug({ url }, "Fetching models from LiteLLM proxy");
 
     try {
@@ -104,8 +125,8 @@ export class LiteLLMGateway
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
 
-      const body = await response.json();
-      const models = (body.data ?? []) as LiteLLMModelResponse[];
+      const body = litellmModelsResponseSchema.parse(await response.json());
+      const models = body.data;
       const result = models.map(toAiGatewayModel);
 
       log.info(

@@ -29,6 +29,10 @@ export const gatewayEnvRequirements: Record<Gateway, EnvRequirement> = {
 		options: [["OPENAI_COMPATIBLE_BASE_URL", "OPENAI_COMPATIBLE_API_KEY"]],
 		description: "OPENAI_COMPATIBLE_BASE_URL + OPENAI_COMPATIBLE_API_KEY",
 	},
+	litellm: {
+		options: [["LITELLM_BASE_URL"]],
+		description: "LITELLM_BASE_URL",
+	},
 };
 
 export const coreFeatureEnvRequirements: Partial<
@@ -102,6 +106,8 @@ export const envVarDescriptions: Record<string, string> = {
 	VERCEL_OIDC_TOKEN: "OIDC token available in Vercel runtime",
 	OPENAI_COMPATIBLE_BASE_URL: "Base URL for OpenAI-compatible gateway",
 	OPENAI_COMPATIBLE_API_KEY: "API key for OpenAI-compatible gateway",
+	LITELLM_BASE_URL: "Base URL for LiteLLM proxy",
+	LITELLM_API_KEY: "Optional API key for LiteLLM proxy",
 	TAVILY_API_KEY: "Tavily API key for web search",
 	FIRECRAWL_API_KEY: "Firecrawl API key for search/retrieval",
 	MCP_ENCRYPTION_KEY: "Encryption key for MCP connector secrets",

@@ -8,7 +8,7 @@ import { buildConfigTs } from "./config-builder";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { resolveRegistryItems } from "../registry/resolve";
 import { installRegistryTools } from "../utils/install-registry-tools";
-import type { BuiltInToolKey, Gateway } from "../types";
+import { GATEWAYS, type BuiltInToolKey, type Gateway } from "../types";
 
 const localRegistryUrl = resolve(
 	dirname(fileURLToPath(import.meta.url)),
@@ -74,12 +74,7 @@ describe("scaffold contracts", () => {
 			videoGeneration: true,
 		} satisfies Record<BuiltInToolKey, boolean>;
 
-		for (const gateway of [
-			"vercel",
-			"openrouter",
-			"openai",
-			"openai-compatible",
-		] as const) {
+		for (const gateway of GATEWAYS) {
 			const output = buildConfigFor(gateway, allBuiltIns);
 			expect(output).toContain(`gateway: ${JSON.stringify(gateway)}`);
 		}
@@ -87,6 +82,11 @@ describe("scaffold contracts", () => {
 		const openaiCompatible = buildConfigFor("openai-compatible", allBuiltIns);
 		expect(openaiCompatible).toContain('default: "gpt-image-1"');
 		expect(openaiCompatible).toMatch(/video:\s*{\s*enabled:\s*false,/m);
+
+		const litellm = buildConfigFor("litellm", allBuiltIns);
+		expect(litellm).toContain('chat: "openai/gpt-4o-mini"');
+		expect(litellm).toMatch(/image:\s*{\s*enabled:\s*false,/m);
+		expect(litellm).toMatch(/video:\s*{\s*enabled:\s*false,/m);
 	});
 
 	it("resolves and injects every visible registry tool without scaffolding an app", async () => {

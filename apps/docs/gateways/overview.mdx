@@ -12,7 +12,7 @@ ChatJS uses a **gateway** to route all AI requests (model listing, chat completi
 | [Vercel AI Gateway](/gateways/vercel) (default) | 120+ | `AI_GATEWAY_API_KEY` or auto OIDC | Dedicated image models | Vercel deployments |
 | [OpenRouter](/gateways/openrouter) | Hundreds | `OPENROUTER_API_KEY` | Via multimodal models | Broadest model access |
 | [OpenAI](/gateways/openai) | OpenAI only | `OPENAI_API_KEY` | `gpt-image-1` and others | Direct OpenAI access |
-| [LiteLLM](/gateways/litellm) | 100+ providers | `LITELLM_API_KEY` | Provider-dependent | Unified proxy for all major providers |
+| [LiteLLM](/gateways/litellm) | 100+ providers | `LITELLM_BASE_URL` + optional key | Provider-dependent | Unified proxy for all major providers |
 | [OpenAI Compatible](/gateways/openai-compatible) | Varies | `OPENAI_COMPATIBLE_API_KEY` (optional) | Provider-dependent | Ollama, LM Studio, vLLM, Azure |
 
 Need a provider not listed here? See [Custom Gateway](/gateways/custom).
