@@ -31,6 +31,11 @@ export type MediaWriteInput = {
   mediaType: string;
 };
 
+export type CostUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+};
+
 export type ImageGenerationModel =
   | {
       model: ImageModel;
@@ -64,6 +69,10 @@ export type ToolRuntimeContext = {
     imageGeneration(input?: ModelSelection): Promise<ImageGenerationModel>;
     language(input?: ModelSelection): Promise<LanguageModel>;
     video(input?: ModelSelection): Promise<VideoModel>;
+  };
+  cost: {
+    addAPICost(apiName: string, cost: number): void;
+    addLLMCost(modelId: string, usage: CostUsage, source: string): void;
   };
 };
 

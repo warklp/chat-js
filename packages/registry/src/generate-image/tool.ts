@@ -116,6 +116,13 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
               }),
             },
           });
+          if (result.usage) {
+            ctx.cost.addLLMCost(
+              imageGenerationModel.modelId,
+              result.usage,
+              "generateImage-multimodal"
+            );
+          }
 
           const imageFile = result.files?.find((file) =>
             file.mediaType.startsWith("image/")
@@ -161,6 +168,16 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
           filename: `generated-image-${Date.now()}.${mediaExtension(image.mediaType)}`,
           mediaType: image.mediaType,
         });
+        if (result.usage) {
+          ctx.cost.addLLMCost(
+            imageGenerationModel.modelId,
+            {
+              inputTokens: result.usage.inputTokens,
+              outputTokens: result.usage.outputTokens,
+            },
+            "generateImage-traditional"
+          );
+        }
 
         return {
           imageUrl: stored.url,

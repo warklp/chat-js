@@ -5,6 +5,7 @@ import {
   type ToolRuntimeContext,
 } from "@toolkit/lib/runtime";
 
+const COST_CENTS = 50;
 const DEFAULT_ASPECT_RATIO = "16:9";
 const DEFAULT_DURATION_SECONDS = 5;
 const ALLOWED_EXTENSIONS = new Set(["mp4", "webm", "mov"]);
@@ -94,6 +95,7 @@ export const generateVideo = defineTool({
           filename: `generated-video-${Date.now()}.${extension}`,
           mediaType: result.video.mediaType,
         });
+        ctx.cost.addAPICost("generateVideo", COST_CENTS);
 
         return {
           prompt,

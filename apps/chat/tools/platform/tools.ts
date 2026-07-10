@@ -69,9 +69,11 @@ function fileUiPartToFilePart(part: FileUIPart): FilePart {
 
 function createToolRuntimeContext({
   attachments,
+  costAccumulator,
   lastGeneratedImage,
 }: {
   attachments: FileUIPart[];
+  costAccumulator: CostAccumulator;
   lastGeneratedImage: { imageUrl: string; name: string } | null;
 }): ToolRuntimeContext {
   return {
@@ -169,6 +171,14 @@ function createToolRuntimeContext({
         return getVideoModel(model ?? config.ai.tools.video.default);
       },
     },
+    cost: {
+      addAPICost: (apiName, cost) => {
+        costAccumulator.addAPICost(apiName, cost);
+      },
+      addLLMCost: (modelId, usage, source) => {
+        costAccumulator.addLLMCost(modelId as AppModelId, usage, source);
+      },
+    },
   };
 }
 
@@ -199,6 +209,7 @@ export function getTools({
   };
   const installedRuntimeContext = createToolRuntimeContext({
     attachments,
+    costAccumulator,
     lastGeneratedImage,
   });
   const installedTools = createInstalledTools(installedRuntimeContext);
