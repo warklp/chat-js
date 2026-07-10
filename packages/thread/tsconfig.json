@@ -9,7 +9,8 @@
 		"jsx": "react-jsx",
 		"noEmit": true,
 		"esModuleInterop": true,
-		"isolatedModules": true
+		"isolatedModules": true,
+		"types": ["bun"]
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"]
 }

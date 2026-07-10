@@ -109,6 +109,15 @@ type SendMessageInput<TMessage extends UIMessage> = Parameters<
 	AbstractChat<TMessage>["sendMessage"]
 >[0];
 
+function getInputMessageId<TMessage extends UIMessage>(
+	input: NonNullable<SendMessageInput<TMessage>>,
+) {
+	if ("id" in input && typeof input.id === "string") {
+		return input.id;
+	}
+	return input.messageId;
+}
+
 function parentKey(parentId: string | null) {
 	return parentId ?? ROOT_PARENT_ID;
 }
@@ -142,7 +151,7 @@ async function createUserMessageFromInput<TMessage extends UIMessage>({
 	fallbackId: string;
 	input: NonNullable<SendMessageInput<TMessage>>;
 }): Promise<TMessage> {
-	const messageId = input.messageId ?? fallbackId;
+	const messageId = getInputMessageId(input) ?? fallbackId;
 	const metadata = "metadata" in input ? input.metadata : undefined;
 
 	if ("text" in input) {
@@ -606,7 +615,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		}
 
 		const userMessage = await createUserMessageFromInput({
-			fallbackId: input.messageId ?? this.generateMessageId(),
+			fallbackId: getInputMessageId(input) ?? this.generateMessageId(),
 			input,
 		});
 
