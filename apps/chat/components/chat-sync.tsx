@@ -40,6 +40,9 @@ export function ChatSync({ id }: { id: string }) {
   );
 
   useChat<ChatMessage>({
+    concurrency: {
+      maxActiveStreamsPerParent: 1,
+    },
     experimental_throttle: 100,
     id,
     // TODO: this is a special "snapshot" value in the store that is only updated

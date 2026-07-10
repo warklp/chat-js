@@ -44,9 +44,12 @@ function createThreadStore(initialMessages: ChatMessage[]) {
     withThreads<ChatMessage, BaseChatStoreState<ChatMessage>>(
       (set) =>
         ({
+          _messageIndex: { update: () => undefined },
+          _memoizedSelectors: new Map(),
+          _throttledMessages: initialMessages,
           messages: initialMessages,
           setMessages: (messages: ChatMessage[]) => set({ messages }),
-        }) as BaseChatStoreState<ChatMessage>
+        }) as unknown as BaseChatStoreState<ChatMessage>
     )
   );
 }
@@ -118,9 +121,9 @@ describe("withThreads", () => {
     assert.deepEqual(allMessageIds, [
       "user-root",
       "assistant-a",
-      "assistant-b",
       "user-nested",
       "assistant-nested-a",
+      "assistant-b",
       "assistant-nested-b",
     ]);
 
@@ -133,5 +136,132 @@ describe("withThreads", () => {
       restoredThread?.at(-1)?.metadata.activeStreamId,
       "pending:assistant-nested-b"
     );
+  });
+
+  it("preserves metadata shape and clears active streams when replacing a tree message", () => {
+    const rootUser = createMessage({
+      id: "user-root",
+      role: "user",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    const assistant = createMessage({
+      id: "assistant-a",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:01.000Z",
+      parentMessageId: rootUser.id,
+      activeStreamId: "pending:assistant-a",
+    });
+    const assistantWithoutMetadata = {
+      id: assistant.id,
+      parts: [],
+      role: "assistant",
+    } as unknown as ChatMessage;
+
+    const store = createThreadStore([rootUser, assistant]);
+    store.getState().addMessageToTree(assistantWithoutMetadata);
+
+    const updatedAssistant = store.getState().allMessages.at(-1);
+    assert.equal(updatedAssistant?.metadata.activeStreamId, null);
+    assert.equal(
+      updatedAssistant?.metadata.selectedModel,
+      assistant.metadata.selectedModel
+    );
+  });
+
+  it("fills metadata for runtime assistant shells in tree snapshots", () => {
+    const rootUser = createMessage({
+      id: "user-root",
+      role: "user",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    const assistantWithoutMetadata = {
+      id: "assistant-a",
+      parts: [],
+      role: "assistant",
+    } as unknown as ChatMessage;
+
+    const store = createThreadStore([rootUser]);
+
+    store.getState().setTreeSnapshot({
+      childrenByParentId: {
+        __root__: [rootUser.id],
+        [rootUser.id]: [assistantWithoutMetadata.id],
+      },
+      cursorId: assistantWithoutMetadata.id,
+      messagesById: {
+        [rootUser.id]: rootUser,
+        [assistantWithoutMetadata.id]: assistantWithoutMetadata,
+      },
+      parentById: {
+        [rootUser.id]: null,
+        [assistantWithoutMetadata.id]: rootUser.id,
+      },
+      rootIds: [rootUser.id],
+      version: 1,
+    });
+
+    const assistant = store.getState().messages.at(-1);
+    assert.equal(assistant?.metadata.parentMessageId, rootUser.id);
+    assert.equal(
+      assistant?.metadata.selectedModel,
+      rootUser.metadata.selectedModel
+    );
+  });
+
+  it("adds exactly one user sibling when editing after branch navigation", () => {
+    const userA = createMessage({
+      id: "user-a",
+      role: "user",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    const assistantA = createMessage({
+      id: "assistant-a",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:01.000Z",
+      parentMessageId: userA.id,
+    });
+    const userB = createMessage({
+      id: "user-b",
+      role: "user",
+      createdAt: "2024-01-01T00:00:02.000Z",
+    });
+    const assistantB = createMessage({
+      id: "assistant-b",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:03.000Z",
+      parentMessageId: userB.id,
+    });
+    const userC = createMessage({
+      id: "user-c",
+      role: "user",
+      createdAt: "2024-01-01T00:00:04.000Z",
+    });
+    const assistantC = createMessage({
+      id: "assistant-c",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:05.000Z",
+      parentMessageId: userC.id,
+    });
+
+    const store = createThreadStore([userA, assistantA]);
+    store.getState().addMessageToTree(userB);
+    store.getState().addMessageToTree(assistantB);
+
+    assert.equal(
+      store.getState().getMessageSiblingInfo(userB.id)?.siblings.length,
+      2
+    );
+
+    store.getState().switchToSibling(userB.id, "prev");
+    store.getState().setMessages([]);
+    store.getState().addMessageToTree(userC);
+    store.getState().addMessageToTree(assistantC);
+
+    const rootSiblingIds = store
+      .getState()
+      .getMessageSiblingInfo(userC.id)
+      ?.siblings.map((message: ChatMessage) => message.id);
+
+    assert.deepEqual(rootSiblingIds, [userA.id, userB.id, userC.id]);
   });
 });
