@@ -1,5 +1,4 @@
 import "server-only";
-import { del } from "@vercel/blob";
 import {
   and,
   asc,
@@ -18,6 +17,7 @@ import type {
   ToolOutput,
 } from "@/lib/ai/types";
 import { isSelectedModelValue } from "@/lib/ai/types";
+import { deleteFilesByUrls } from "@/lib/blob";
 import { createModuleLogger } from "@/lib/logger";
 import { chatMessageToDbMessage } from "@/lib/message-conversion";
 
@@ -1210,10 +1210,10 @@ async function deleteAttachmentsFromMessages(messages: DBMessage[]) {
     // Deduplicate in case the same file URL is referenced multiple times
     const uniqueUrls = [...new Set(attachmentUrls)];
     if (uniqueUrls.length > 0) {
-      await del(uniqueUrls);
+      await deleteFilesByUrls(uniqueUrls);
     }
   } catch (error) {
-    console.error("Failed to delete attachments from Vercel Blob:", error);
+    console.error("Failed to delete stored attachments:", error);
     // Don't throw here - we still want to proceed with message deletion
     // even if blob cleanup fails
   }

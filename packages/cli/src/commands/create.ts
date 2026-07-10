@@ -18,12 +18,14 @@ import {
 	promptGateway,
 	promptInstall,
 	promptProjectName,
+	promptStorage,
 } from "../helpers/prompts";
 import {
 	scaffoldElectron,
 	scaffoldFromGit,
 	scaffoldFromTemplate,
 } from "../helpers/scaffold";
+import { storageEnvRequirements } from "../helpers/storage-provider";
 import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { resolveToolsPath } from "../utils/get-config";
@@ -94,6 +96,8 @@ const createOptionsSchema = z.object({
 	fromGit: z.string().optional(),
 	registry: z.string().optional(),
 	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
+	storageProvider: z.string().optional(),
+	storageConfig: z.string().optional(),
 });
 
 export const create = new Command()
@@ -115,6 +119,14 @@ export const create = new Command()
 	.option(
 		"--from-git <url>",
 		"clone from a git repository instead of the built-in scaffold",
+	)
+	.option(
+		"--storage-provider <provider>",
+		"Files SDK provider (for example: vercel-blob, s3, r2, gcs)",
+	)
+	.option(
+		"--storage-config <json>",
+		"JSON object passed to the selected Files SDK adapter",
 	)
 	.action(async (directory, opts) => {
 		try {
@@ -179,6 +191,21 @@ export const create = new Command()
 				options.yes,
 				gateway,
 			);
+			const usesStorage =
+				coreFeatures.attachments ||
+				assistantTools.builtInTools.imageGeneration ||
+				assistantTools.builtInTools.videoGeneration ||
+				options.storageProvider !== undefined;
+			const storage = usesStorage
+				? await promptStorage(
+						options.yes,
+						options.storageProvider,
+						options.storageConfig,
+					)
+				: {
+						provider: "memory" as const,
+						options: {},
+					};
 			const auth = await promptAuth(options.yes);
 			const withElectron = await promptElectron(options.yes, options.electron);
 
@@ -186,9 +213,12 @@ export const create = new Command()
 			const scaffoldSpinner = spinner("Scaffolding project...").start();
 			try {
 				if (options.fromGit) {
-					await scaffoldFromGit(options.fromGit, targetDir);
+					await scaffoldFromGit(options.fromGit, targetDir, { storage });
 				} else {
-					await scaffoldFromTemplate(targetDir, { packageManager });
+					await scaffoldFromTemplate(targetDir, {
+						packageManager,
+						storage,
+					});
 				}
 				if (withElectron) {
 					await scaffoldElectron(targetDir, {
@@ -271,7 +301,12 @@ export const create = new Command()
 				coreFeatures,
 				builtInTools: assistantTools.builtInTools,
 				auth,
-				installableToolEnvRequirements,
+				installableToolEnvRequirements: [
+					...installableToolEnvRequirements,
+					...(usesStorage
+						? storageEnvRequirements(storage.provider, storage.options)
+						: []),
+				],
 			});
 
 			outro("Your ChatJS app is ready!");

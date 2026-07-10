@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { deleteFilesByUrls, listFiles } from "@/lib/blob";
+import { deleteFilesByUrls, keyFromFileRequest, listFiles } from "@/lib/blob";
 import { config } from "@/lib/config";
 import { getAllAttachmentUrls } from "@/lib/db/queries";
 import { env } from "@/lib/env";
@@ -39,19 +39,31 @@ export async function GET(request: NextRequest) {
 async function cleanupOrphanedAttachments() {
   // Skip cleanup if neither image tool nor attachments is enabled
   const imageGenerationEnabled = config.ai.tools.image.enabled;
+  const videoGenerationEnabled = config.ai.tools.video.enabled;
   const attachmentsEnabled = config.features.attachments;
-  if (!(imageGenerationEnabled || attachmentsEnabled)) {
+  if (
+    !(imageGenerationEnabled || videoGenerationEnabled || attachmentsEnabled)
+  ) {
     return { deletedCount: 0, deletedUrls: [], skipped: true };
   }
 
   try {
-    // Get all attachment URLs from all messages
-    const usedAttachmentUrls = new Set(await getAllAttachmentUrls());
+    const attachmentUrls = await getAllAttachmentUrls();
+    const parsedAttachmentKeys = attachmentUrls.map(keyFromFileRequest);
+    if (parsedAttachmentKeys.some((key) => key === null)) {
+      return {
+        deletedCount: 0,
+        deletedUrls: [],
+        skipped: true,
+        reason: "Some stored attachment URLs do not contain a stable file key",
+      };
+    }
+    const usedAttachmentKeys = new Set(parsedAttachmentKeys);
 
-    // Get all blobs from Vercel Blob storage
+    // Get all files from the configured storage provider
     const { blobs } = await listFiles();
 
-    // Find orphaned blobs (older than 1 hour and not referenced in any message)
+    // Find old files that are not referenced in any message
     const oneHourAgo = new Date(
       Date.now() - ORPHANED_ATTACHMENTS_RETENTION_TIME
     );
@@ -60,7 +72,7 @@ async function cleanupOrphanedAttachments() {
     for (const blob of blobs) {
       const blobDate = new Date(blob.uploadedAt);
       const isOld = blobDate < oneHourAgo;
-      const isUnused = !usedAttachmentUrls.has(blob.url);
+      const isUnused = !usedAttachmentKeys.has(blob.pathname);
 
       if (isOld && isUnused) {
         orphanedUrls.push(blob.url);

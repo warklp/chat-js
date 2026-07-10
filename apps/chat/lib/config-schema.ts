@@ -123,13 +123,15 @@ function createAiSchema<G extends GatewayType>(g: G) {
         }),
         image: z.discriminatedUnion("enabled", [
           z.object({
-            enabled: z.literal(true).describe("Requires BLOB_READ_WRITE_TOKEN"),
+            enabled: z
+              .literal(true)
+              .describe("Requires configured file storage"),
             default: gatewayImageModelId<G>(),
           }),
           z.object({
             enabled: z
               .literal(false)
-              .describe("Requires BLOB_READ_WRITE_TOKEN"),
+              .describe("Requires configured file storage"),
             default: gatewayImageModelId<G>().optional(),
           }),
         ]),
@@ -247,7 +249,7 @@ export const attachmentsConfigSchema =
 export const featuresConfigObjectSchema = z.object({
   attachments: z
     .boolean()
-    .describe("File attachments (requires BLOB_READ_WRITE_TOKEN)"),
+    .describe("File attachments (requires configured file storage)"),
   parallelResponses: z
     .boolean()
     .default(true)

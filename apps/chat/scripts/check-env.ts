@@ -8,20 +8,22 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnvConfig } from "dotenv";
+import { type EnvVar, getProvider } from "files-sdk/providers";
 // biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
 import * as ts from "typescript";
 import type { GatewayType } from "../lib/ai/gateways/registry";
 import { generatedForGateway } from "../lib/ai/models.generated";
+import { createStorageAdapter } from "../lib/blob";
 import { config } from "../lib/config";
 import {
   aiToolEnvRequirements,
   authEnvRequirements,
-  featureEnvRequirements,
   gatewayEnvRequirements,
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
 import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
+import { storageProvider } from "../lib/storage-provider";
 
 loadEnvConfig({ path: ".env.local" });
 loadEnvConfig();
@@ -41,6 +43,8 @@ type StaticToolEnvVars = StaticToolEnvVar[];
 type StaticToolMetadata = {
   toolEnvVars: StaticToolEnvVars;
 };
+
+const STORAGE_OPTION_HINT = /or pass `([^`]+)`/;
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -227,26 +231,76 @@ function validateFeatures(env: NodeJS.ProcessEnv): ValidationError[] {
     errors.push(gatewayError);
   }
 
-  const featureEntries = Object.entries(featureEnvRequirements) as [
-    keyof typeof featureEnvRequirements,
-    NonNullable<
-      (typeof featureEnvRequirements)[keyof typeof featureEnvRequirements]
-    >,
-  ][];
-  for (const [feature, requirement] of featureEntries) {
-    if (!(requirement && config.features[feature])) {
-      continue;
-    }
-    const missing = getMissingRequirement(requirement, env);
-    if (missing) {
-      errors.push({
-        feature: `features.${feature}`,
-        missing: [missing],
-      });
-    }
+  return errors;
+}
+
+function hasStorageEnvVariable(variable: EnvVar, env: NodeJS.ProcessEnv) {
+  return [variable.key, ...(variable.aliases ?? [])].some((key) => !!env[key]);
+}
+
+function validateStorage(env: NodeJS.ProcessEnv): ValidationError | null {
+  const enabled =
+    config.features.attachments ||
+    config.ai.tools.image.enabled ||
+    config.ai.tools.video.enabled;
+  if (!enabled) {
+    return null;
   }
 
-  return errors;
+  const metadata = getProvider(storageProvider.slug);
+  if (!metadata) {
+    return {
+      feature: "fileStorage",
+      missing: [`Unknown Files SDK provider: ${storageProvider.slug}`],
+    };
+  }
+
+  try {
+    createStorageAdapter();
+  } catch (error) {
+    return {
+      feature: `fileStorage (${metadata.name})`,
+      missing: [
+        error instanceof Error ? error.message : "Invalid adapter options",
+      ],
+    };
+  }
+
+  const missing = (metadata.env.required ?? [])
+    .filter((variable) => {
+      const optionName = STORAGE_OPTION_HINT.exec(variable.description)?.[1];
+      return (
+        variable.readBy === "files-sdk" &&
+        !(
+          optionName &&
+          (storageProvider.options as Record<string, unknown>)[optionName] !==
+            undefined
+        ) &&
+        !hasStorageEnvVariable(variable, env)
+      );
+    })
+    .map(({ key }) => key);
+  const credentialModes = (metadata.env.credentialModes ?? []).map((mode) =>
+    mode.vars.filter((variable) => variable.readBy === "files-sdk")
+  );
+  const credentialsSatisfied =
+    credentialModes.length === 0 ||
+    credentialModes.some(
+      (mode) =>
+        mode.length === 0 ||
+        mode.every((variable) => hasStorageEnvVariable(variable, env))
+    );
+  if (!credentialsSatisfied) {
+    missing.push(
+      credentialModes
+        .map((mode) => mode.map(({ key }) => key).join(" + "))
+        .join(" or ")
+    );
+  }
+
+  return missing.length > 0
+    ? { feature: `fileStorage (${metadata.name})`, missing }
+    : null;
 }
 
 function validateAiTools(env: NodeJS.ProcessEnv): ValidationError[] {
@@ -397,9 +451,11 @@ async function checkEnv(): Promise<void> {
   }
 
   const baseUrlError = validateBaseUrl(env);
+  const storageError = validateStorage(env);
   const installedToolErrors = await validateInstalledTools(env);
   const errors = [
     ...(baseUrlError ? [baseUrlError] : []),
+    ...(storageError ? [storageError] : []),
     ...validateFeatures(env),
     ...validateAiTools(env),
     ...validateAuthentication(env),

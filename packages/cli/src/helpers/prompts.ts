@@ -6,6 +6,7 @@ import {
 	select,
 	text,
 } from "@clack/prompts";
+import { getProvider } from "files-sdk/providers";
 import type { RegistryIndexItem } from "../registry/fetch";
 import {
 	AUTHENTICATION_DEFAULTS,
@@ -32,6 +33,12 @@ import {
 } from "../types";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
+import {
+	INSTALLABLE_STORAGE_PROVIDERS,
+	parseStorageOptions,
+	resolveStorageProvider,
+	type StorageSelection,
+} from "./storage-provider";
 
 const defaultTools = GATEWAY_MODEL_DEFAULTS["vercel"].tools;
 
@@ -98,7 +105,10 @@ const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
 	videoGeneration: "Generate videos inside chat",
 };
 
-function isSupportedBuiltInTool(gateway: Gateway, key: BuiltInToolKey): boolean {
+function isSupportedBuiltInTool(
+	gateway: Gateway,
+	key: BuiltInToolKey,
+): boolean {
 	const gatewayToolDefaults = GATEWAY_MODEL_DEFAULTS[gateway].tools;
 
 	if (key === "imageGeneration") {
@@ -185,6 +195,62 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 	handleCancel(gateway);
 
 	return gateway;
+}
+
+export async function promptStorage(
+	skipPrompt: boolean,
+	explicitProvider?: string,
+	explicitOptions?: string,
+): Promise<StorageSelection> {
+	const provider = explicitProvider
+		? resolveStorageProvider(explicitProvider)
+		: skipPrompt
+			? "vercel-blob"
+			: await select({
+					message: `Which ${highlighter.info("file storage provider")} would you like to use?`,
+					options: INSTALLABLE_STORAGE_PROVIDERS.map((slug) => {
+						const metadata = getProvider(slug);
+						return {
+							value: slug,
+							label: metadata?.name ?? slug,
+							hint: metadata?.description,
+						};
+					}),
+					initialValue: "vercel-blob",
+				});
+	handleCancel(provider);
+
+	const metadata = getProvider(provider);
+	if (!metadata) {
+		throw new Error(`Unknown Files SDK provider: ${provider}`);
+	}
+	if (explicitOptions) {
+		return { provider, options: parseStorageOptions(explicitOptions) };
+	}
+
+	const configKeys = metadata.env.config ?? [];
+	if (configKeys.length === 0) {
+		return { provider, options: {} };
+	}
+	if (skipPrompt) {
+		throw new Error(
+			`${metadata.name} requires adapter options (${configKeys.join(", ")}). Pass them as JSON with --storage-config.`,
+		);
+	}
+
+	const value = await text({
+		message: `Adapter options as JSON (see adapter docs; hints: ${configKeys.join(", ")})`,
+		placeholder: '{ "providerOption": "value" }',
+		validate: (input) => {
+			try {
+				parseStorageOptions(input ?? "");
+			} catch (error) {
+				return error instanceof Error ? error.message : "Invalid JSON object";
+			}
+		},
+	});
+	handleCancel(value);
+	return { provider, options: parseStorageOptions(value) };
 }
 
 export async function promptCoreFeatures(

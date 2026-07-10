@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { extractFilenameFromUrl, uploadFile } from "@/lib/blob";
+import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
 
 // Use Blob instead of File since File is not available in Node.js environment
@@ -62,15 +62,8 @@ export async function POST(request: Request) {
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const data = await uploadFile(filename, fileBuffer);
-
-      // Remove prefix from pathname in response
-      const cleanFilename = extractFilenameFromUrl(data.pathname);
-
-      return NextResponse.json({
-        ...data,
-        pathname: cleanFilename || filename,
-      });
+      const data = await uploadFile(filename, fileBuffer, file.type);
+      return NextResponse.json(data);
     } catch (_error) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }

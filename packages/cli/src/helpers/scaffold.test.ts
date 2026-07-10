@@ -154,6 +154,37 @@ describe("buildConfigTs", () => {
 });
 
 describe("scaffoldFromTemplate", () => {
+	it("installs only the selected Files SDK provider dependencies", async () => {
+		const destination = await makeTempDir("chat-app-s3");
+
+		await scaffoldFromTemplate(destination, {
+			storage: {
+				provider: "s3",
+				options: { bucket: "uploads", region: "us-east-1" },
+			},
+		});
+
+		const packageJson = JSON.parse(
+			await readFile(join(destination, "package.json"), "utf8"),
+		) as { dependencies: Record<string, string> };
+		const providerSource = await readFile(
+			join(destination, "lib", "storage-provider.ts"),
+			"utf8",
+		);
+
+		expect(packageJson.dependencies["files-sdk"]).toBe("2.1.0");
+		expect(packageJson.dependencies["@vercel/blob"]).toBeUndefined();
+		expect(packageJson.dependencies["@aws-sdk/client-s3"]).toBe("^3.700.0");
+		expect(packageJson.dependencies["@aws-sdk/s3-presigned-post"]).toBe(
+			"^3.700.0",
+		);
+		expect(packageJson.dependencies["@aws-sdk/s3-request-presigner"]).toBe(
+			"^3.700.0",
+		);
+		expect(providerSource).toContain('from "files-sdk/s3"');
+		expect(providerSource).toContain('"bucket": "uploads"');
+	});
+
 	it("writes a standalone-safe root package.json", async () => {
 		const destination = await makeTempDir("chat-app");
 
