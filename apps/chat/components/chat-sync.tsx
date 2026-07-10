@@ -14,6 +14,7 @@ import {
   useAddMessageToTree,
   useThreadInitialMessages,
 } from "@/lib/stores/hooks-threads";
+import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
 
@@ -51,6 +52,10 @@ export function ChatSync({ id }: { id: string }) {
     messages: threadInitialMessages,
     generateId: generateUUID,
     onFinish: ({ message }) => {
+      traceThread("primary-request", "stream.finish", {
+        chatId: id,
+        message: summarizeThreadMessages([message])[0],
+      });
       addMessageToTree(message);
       saveChatMessage({ message, chatId: id });
     },
@@ -59,6 +64,12 @@ export function ChatSync({ id }: { id: string }) {
       api: "/api/chat",
       fetch: fetchWithErrorHandlers as typeof fetch,
       prepareSendMessagesRequest({ messages, id: requestId, body }) {
+        traceThread("primary-request", "transport.prepareSend", {
+          body,
+          chatId: id,
+          requestId,
+          runtimeMessages: summarizeThreadMessages(messages),
+        });
         return {
           body: {
             id: requestId,
@@ -75,12 +86,22 @@ export function ChatSync({ id }: { id: string }) {
           ? (current?.id ?? null)
           : null;
 
+        traceThread("primary-request", "transport.prepareReconnect", {
+          activeStreamId,
+          chatId,
+          partialMessageId,
+        });
+
         return {
           api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
         };
       },
     }),
     onData: (dataPart) => {
+      traceThread("primary-request", "stream.data", {
+        chatId: id,
+        dataType: dataPart.type,
+      });
       if (
         !hasReportedConfirmationRef.current &&
         dataPart.type === "data-chatConfirmed" &&
@@ -94,6 +115,10 @@ export function ChatSync({ id }: { id: string }) {
       );
     },
     onError: (error) => {
+      traceThread("primary-request", "stream.error", {
+        chatId: id,
+        error: error.message,
+      });
       const { message, description } = getStreamErrorToastContent(error);
       toast.error(message, description ? { description } : undefined);
     },

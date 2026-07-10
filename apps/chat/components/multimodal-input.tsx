@@ -48,6 +48,7 @@ import { useStartProvisionalChat } from "@/lib/start-provisional-chat";
 import { useChatActions, useChatStoreApi } from "@/lib/stores/base";
 import { useLastMessageId } from "@/lib/stores/hooks-base";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
+import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import { cn } from "@/lib/utils";
 import { useChatInput } from "@/providers/chat-input-provider";
@@ -338,8 +339,12 @@ function PureMultimodalInput({
   );
 
   const invalidatePersistedMessages = useCallback(async () => {
+    traceThread("query-sync", "composer.invalidateMessages.start", { chatId });
     await queryClient.invalidateQueries({
       queryKey: trpc.chat.getChatMessages.queryKey({ chatId }),
+    });
+    traceThread("query-sync", "composer.invalidateMessages.finish", {
+      chatId,
     });
   }, [chatId, queryClient, trpc]);
 
@@ -350,6 +355,15 @@ function PureMultimodalInput({
     const effectiveParentMessageId = isEditMode
       ? parentMessageId
       : lastMessageId;
+
+    traceThread("composer", "submit.begin", {
+      chatId,
+      effectiveParentMessageId,
+      inputLength: input.length,
+      isEditMode,
+      selectedModels: requestedModelIds,
+      visibleBefore: summarizeThreadMessages(storeApi.getState().messages),
+    });
 
     // In edit mode, trim messages to the parent message
     if (isEditMode) {
@@ -363,6 +377,11 @@ function PureMultimodalInput({
       parallelResponsesEnabled,
       parentMessageId: effectiveParentMessageId,
       selectedTool,
+    });
+
+    traceThread("composer", "submit.built", {
+      message: summarizeThreadMessages([message])[0],
+      requestSpecs,
     });
 
     onSendMessage?.(message);
@@ -384,6 +403,12 @@ function PureMultimodalInput({
     }
 
     if (primaryRequest) {
+      traceThread("composer", "primaryRequest.send", {
+        assistantMessageId: primaryRequest.assistantMessageId,
+        messageId: message.id,
+        parallelGroupId: primaryRequest.parallelGroupId,
+        parallelIndex: primaryRequest.parallelIndex,
+      });
       sendMessage(message, {
         body: {
           ...createParallelRequestBody(primaryRequest, true),
@@ -406,6 +431,12 @@ function PureMultimodalInput({
         requestSpecs: requestSpecs.slice(1),
       })
         .then(async (failedRequestSpecs) => {
+          traceThread("parallel-request", "secondaryRequests.settled", {
+            failedAssistantMessageIds: failedRequestSpecs.map(
+              (request) => request.assistantMessageId
+            ),
+            messageId: message.id,
+          });
           if (failedRequestSpecs.length > 0) {
             markParallelRequestSpecsFailed({
               addMessageToTree,
@@ -417,10 +448,17 @@ function PureMultimodalInput({
 
           await invalidatePersistedMessages();
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          traceThread("parallel-request", "secondaryRequests.error", {
+            error: error instanceof Error ? error.message : String(error),
+            messageId: message.id,
+          });
           toast.error("Failed to complete all parallel responses");
         });
     } else {
+      traceThread("composer", "fallbackRequest.send", {
+        messageId: message.id,
+      });
       sendMessage(
         message,
         currentRoute.projectId
@@ -450,9 +488,11 @@ function PureMultimodalInput({
     onSendMessage,
     parentMessageId,
     parallelResponsesEnabled,
+    requestedModelIds,
     selectedTool,
     sendMessage,
     startProvisionalChat,
+    storeApi,
     trimMessagesInEditMode,
   ]);
 

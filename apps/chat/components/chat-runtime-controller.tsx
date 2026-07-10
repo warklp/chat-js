@@ -16,6 +16,7 @@ import {
   usePendingChatConfirmation,
 } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
+import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 import { useTRPC } from "@/trpc/react";
 
 function ChatConfirmationEffects({ chatId }: { chatId: string }) {
@@ -38,7 +39,14 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
 
     handledConfirmationRef.current = true;
 
+    traceThread("confirmation", "persisted.start", {
+      chatId,
+      message: summarizeThreadMessages([pendingConfirmation.message])[0],
+      requestSpecs: pendingConfirmation.requestSpecs,
+    });
+
     const invalidatePersistedChatQueries = async () => {
+      traceThread("query-sync", "confirmation.invalidate.start", { chatId });
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: trpc.chat.getChatMessages.queryKey({
@@ -55,6 +63,7 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
           exact: false,
         }),
       ]);
+      traceThread("query-sync", "confirmation.invalidate.finish", { chatId });
     };
 
     const secondaryRequestSpecs = pendingConfirmation.requestSpecs.slice(1);
@@ -75,6 +84,12 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
       requestSpecs: secondaryRequestSpecs,
     })
       .then((failedRequestSpecs) => {
+        traceThread("confirmation", "secondaryRequests.settled", {
+          chatId,
+          failedAssistantMessageIds: failedRequestSpecs.map(
+            (request) => request.assistantMessageId
+          ),
+        });
         if (failedRequestSpecs.length > 0) {
           markParallelRequestSpecsFailed({
             addMessageToTree,
@@ -84,7 +99,11 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
           toast.error("Failed to complete all parallel responses");
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        traceThread("confirmation", "secondaryRequests.error", {
+          chatId,
+          error: error instanceof Error ? error.message : String(error),
+        });
         markParallelRequestSpecsFailed({
           addMessageToTree,
           message: pendingConfirmation.message,

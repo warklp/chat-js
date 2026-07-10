@@ -28,6 +28,11 @@ import {
 } from "@/lib/chat-runtime-id";
 import { useRuntime, useRuntimeActions } from "@/lib/runtime-registry";
 import { useRuntimeIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
+import {
+  summarizeThreadMessages,
+  summarizeThreadTree,
+  traceThread,
+} from "@/lib/thread-debug";
 import { useChatModels } from "@/providers/chat-models-provider";
 import {
   type ParsedChatIdFromPathname,
@@ -391,6 +396,34 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
   const liveStore = existingStore;
   const hasLiveRuntime = !!(liveRuntime && liveStore);
   const liveRuntimeMessages = liveStore?.getState().messages;
+
+  useEffect(() => {
+    const storeState = liveStore?.getState();
+    traceThread("route-query", "messagesQuery.state", {
+      chatId: persistedChatId,
+      dataUpdatedAt: messagesQuery.dataUpdatedAt,
+      isFetchedAfterMount: messagesQuery.isFetchedAfterMount,
+      isFetching: messagesQuery.isFetching,
+      queryMessages: Array.isArray(messagesQuery.data)
+        ? summarizeThreadMessages(messagesQuery.data)
+        : null,
+      storeStatus: storeState?.status ?? null,
+      storeTree: storeState
+        ? summarizeThreadTree(storeState.treeSnapshot)
+        : null,
+      storeVisible: storeState
+        ? summarizeThreadMessages(storeState.messages)
+        : null,
+    });
+  }, [
+    liveStore,
+    messagesQuery.data,
+    messagesQuery.dataUpdatedAt,
+    messagesQuery.isFetchedAfterMount,
+    messagesQuery.isFetching,
+    persistedChatId,
+  ]);
+
   const initialMessages =
     liveRuntimeMessages ?? persistedInitialState.initialMessages;
   const initialTool =

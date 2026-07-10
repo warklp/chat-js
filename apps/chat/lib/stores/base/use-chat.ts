@@ -12,6 +12,11 @@ import {
   useThread as useOriginalChat,
 } from "@chatjs/thread/react";
 import { useCallback, useEffect, useRef } from "react";
+import {
+  summarizeThreadMessages,
+  summarizeThreadTree,
+  traceThread,
+} from "@/lib/thread-debug";
 import { type StoreState, useChatStoreApi } from "./hooks";
 
 export type {
@@ -194,6 +199,10 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
           ? messagesOrUpdater(currentMessages)
           : messagesOrUpdater;
 
+      traceThread("runtime-bridge", "setMessages.forwardToRuntime", {
+        current: summarizeThreadMessages(currentMessages),
+        incoming: summarizeThreadMessages(nextMessages),
+      });
       chatHelpers.setMessages(nextMessages);
     },
     [chatHelpers.messages, chatHelpers.setMessages, store]
@@ -209,9 +218,21 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
       return;
     }
 
+    traceThread("runtime-bridge", "externalMessages.changed", {
+      external: summarizeThreadMessages(externalMessages),
+      runtime: summarizeThreadMessages(chatHelpers.messages),
+    });
     lastExternalMessagesRef.current = externalSignature;
     if (messageIds(externalMessages) !== messageIds(chatHelpers.messages)) {
+      traceThread("runtime-bridge", "externalMessages.apply", {
+        externalIds: messageIds(externalMessages),
+        runtimeIds: messageIds(chatHelpers.messages),
+      });
       setMessages(externalMessages);
+    } else {
+      traceThread("runtime-bridge", "externalMessages.skipSameIds", {
+        ids: messageIds(externalMessages),
+      });
     }
   }, [externalMessages, chatHelpers.messages, setMessages]);
 
@@ -245,6 +266,12 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
 
     if (lastSyncedStateRef.current !== syncSignature) {
       lastSyncedStateRef.current = syncSignature;
+      traceThread("runtime-bridge", "runtimeState.changed", {
+        activeStreams: chatHelpers.tree.activeStreams,
+        id: chatHelpers.id,
+        lastEvent: chatHelpers.lastEvent,
+        status: chatHelpers.status,
+      });
 
       if (enableBatching) {
         // Use requestAnimationFrame for batching if available
@@ -252,11 +279,29 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
           typeof window !== "undefined" &&
           typeof window.requestAnimationFrame === "function"
         ) {
-          window.requestAnimationFrame(() => syncState(chatState));
+          traceThread("runtime-bridge", "storeState.scheduleAnimationFrame", {
+            id: chatHelpers.id,
+            status: chatHelpers.status,
+          });
+          window.requestAnimationFrame(() => {
+            traceThread("runtime-bridge", "storeState.applyAnimationFrame", {
+              id: chatHelpers.id,
+              status: chatHelpers.status,
+            });
+            syncState(chatState);
+          });
         } else {
+          traceThread("runtime-bridge", "storeState.applyImmediate", {
+            id: chatHelpers.id,
+            status: chatHelpers.status,
+          });
           syncState(chatState);
         }
       } else {
+        traceThread("runtime-bridge", "storeState.applyUnbatched", {
+          id: chatHelpers.id,
+          status: chatHelpers.status,
+        });
         syncState(chatState);
       }
     }
@@ -268,6 +313,10 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
 
       if (lastSyncedTreeRef.current !== signature) {
         lastSyncedTreeRef.current = signature;
+        traceThread("runtime-bridge", "treeSnapshot.pushToStore", {
+          lastEvent: chatHelpers.lastEvent,
+          tree: summarizeThreadTree(snapshot),
+        });
         setTreeSnapshot(snapshot);
       }
     }
