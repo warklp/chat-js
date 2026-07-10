@@ -1,6 +1,7 @@
 import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { DevLoginTool } from "@/components/dev-login-tool";
 import { ElectronTransferUser } from "@/components/electron-auth-ui";
 import { InternalLink } from "@/components/internal-link";
 import { LoginForm } from "@/components/login-form";
@@ -43,6 +44,7 @@ export default async function LoginPage({
         <ChevronLeft className="mr-2 h-4 w-4" />
         Back
       </InternalLink>
+      <DevLoginTool />
       <div className="mx-auto flex w-full flex-col items-center justify-center sm:w-[420px]">
         {session?.user && isElectronTransfer ? (
           <ElectronTransferUser query={query} session={session} />
