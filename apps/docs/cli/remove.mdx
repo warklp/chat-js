@@ -1,0 +1,56 @@
+---
+title: remove
+description: Remove a tool from an existing ChatJS project
+---
+
+```bash
+npx @chat-js/cli@latest remove [tools...] [options]
+```
+
+## Arguments
+
+| Argument   | Description                        |
+| ---------- | ---------------------------------- |
+| `tools...` | One or more tool names to remove. |
+
+## Options
+
+| Flag                   | Default | Description                                                               |
+| ---------------------- | ------- | ------------------------------------------------------------------------- |
+| `-y, --yes`            | `false` | Skip confirmation prompt.                                                 |
+| `-c, --cwd <cwd>`      | `cwd`   | Working directory (where `chat.config.ts` lives).                         |
+| `-r, --registry <url>` | -       | Registry URL or local path template. Overrides `CHATJS_REGISTRY_URL`.     |
+
+## Examples
+
+```bash
+# Remove a single tool
+npx @chat-js/cli@latest remove word-count
+
+# Remove multiple tools, skip confirmation
+npx @chat-js/cli@latest remove word-count get-weather --yes
+
+# Use a local registry (monorepo development)
+npx @chat-js/cli@latest remove word-count \
+  --registry ./packages/registry/items/{name}.json \
+  --cwd apps/chat
+```
+
+## What it does
+
+For each tool name, the command:
+
+1. Resolves the registry item metadata when available
+2. Removes the tool's own installed files from the path configured in `chat.config.ts`
+3. Removes imports and registrations from `tools/chatjs/tools.ts` and
+   `tools/chatjs/ui.ts`
+4. Leaves shared registry dependencies in place
+
+If registry metadata is unavailable, the command still removes the default
+`tool.ts` and `renderer.tsx` files for that tool and updates the managed
+registry indexes.
+
+## Related
+
+- [add](/cli/add) - install a registry tool
+- [Tool Registry](/core/tool-registry) - registry architecture

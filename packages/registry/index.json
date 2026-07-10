@@ -9,6 +9,14 @@
     "hidden": true
   },
   {
+    "name": "generate-video",
+    "description": "Generate a short video clip from a text prompt"
+  },
+  {
+    "name": "generate-image",
+    "description": "Generate or edit an image from a text prompt"
+  },
+  {
     "name": "word-count",
     "description": "Count words, characters, and sentences in text"
   },

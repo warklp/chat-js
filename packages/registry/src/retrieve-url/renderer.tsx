@@ -2,7 +2,7 @@
 
 import { ChevronDown, ExternalLink, Globe, TextIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import type { TypelessToolPartFromTool } from "@toolkit/lib/tool-part";
 import type { retrieveUrl } from "./tool";
 
 type RetrieveUrlRendererTool = TypelessToolPartFromTool<

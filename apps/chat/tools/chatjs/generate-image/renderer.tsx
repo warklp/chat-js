@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import { ImageActions, ImageModal } from "@/components/image-modal";
-import type { ChatMessage } from "@/lib/ai/types";
+import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import type { generateImage } from "./tool";
 
-export type GenerateImageTool = Extract<
-  ChatMessage["parts"][number],
-  { type: "tool-generateImage" }
+type GenerateImageRendererTool = TypelessToolPartFromTool<
+  ReturnType<typeof generateImage.createTool>
 >;
 
-export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
+export function GenerateImageRenderer({
+  tool,
+}: {
+  tool: GenerateImageRendererTool;
+  messageId: string;
+  isReadonly: boolean;
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (tool.state === "input-available") {

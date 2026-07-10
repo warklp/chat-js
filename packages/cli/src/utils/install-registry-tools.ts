@@ -173,7 +173,7 @@ export async function installRegistryTools({
 		try {
 			toolsSource = await fs.readFile(toolsIndexPath, "utf8");
 		} catch {
-			toolsSource = createEmptyToolsTemplate();
+			toolsSource = createEmptyToolsTemplate(toolsAlias);
 		}
 		try {
 			uiSource = await fs.readFile(uiIndexPath, "utf8");

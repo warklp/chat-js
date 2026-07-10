@@ -1,0 +1,4 @@
+{
+  "description": "Generate or edit an image from a text prompt",
+  "registryDependencies": ["toolkit-renderer"]
+}

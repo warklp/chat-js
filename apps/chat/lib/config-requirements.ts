@@ -76,6 +76,10 @@ export const aiToolEnvRequirements: Partial<
     options: [["BLOB_READ_WRITE_TOKEN"]],
     description: "BLOB_READ_WRITE_TOKEN",
   },
+  video: {
+    options: [["BLOB_READ_WRITE_TOKEN"]],
+    description: "BLOB_READ_WRITE_TOKEN",
+  },
 };
 
 export const authEnvRequirements: Record<

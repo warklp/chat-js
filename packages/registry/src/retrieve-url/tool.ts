@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   defineTool,
   type ToolRuntimeContext,
-} from "@/tools/chatjs/_shared/lib/runtime";
+} from "@toolkit/lib/runtime";
 
 type ToolEnvVars = {
   description?: string;
