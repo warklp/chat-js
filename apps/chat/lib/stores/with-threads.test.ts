@@ -104,12 +104,19 @@ describe("withThreads", () => {
       siblingInfo?.siblings.map((message) => message.id),
       [userA.id, userB.id]
     );
+    const previousThread = store.getState().switchToSibling(userB.id, "prev");
+    const previousThreadIds = [userA.id, assistantA.id];
     assert.deepEqual(
-      store
-        .getState()
-        .switchToSibling(userB.id, "prev")
-        ?.map((message) => message.id),
-      [userA.id, assistantA.id]
+      previousThread?.map((message) => message.id),
+      previousThreadIds
+    );
+    assert.deepEqual(
+      store.getState().messages.map((message) => message.id),
+      previousThreadIds
+    );
+    assert.deepEqual(
+      store.getState()._throttledMessages?.map((message) => message.id),
+      previousThreadIds
     );
   });
 

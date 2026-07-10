@@ -354,18 +354,21 @@ export const withThreads =
           incoming: summarizeThreadMessages(messages),
           previousEpoch: get().threadEpoch,
         });
-        originalSetMessages(messages);
         set((state) => {
           const snapshot = buildTreeSnapshotFromMessages(
             state.allMessages,
             cursorId
           );
+          state._messageIndex.update(messages);
           traceThread("store", "setMessagesWithEpoch.apply", {
             nextEpoch: state.threadEpoch + 1,
             tree: summarizeThreadTree(snapshot),
           });
           return {
             ...state,
+            messages,
+            _memoizedSelectors: new Map(),
+            _throttledMessages: messages,
             threadEpoch: state.threadEpoch + 1,
             threadInitialMessages: messages,
             treeSnapshot: snapshot,
