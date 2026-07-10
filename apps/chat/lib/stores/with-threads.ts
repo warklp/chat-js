@@ -75,6 +75,35 @@ function getMetadataParentId<UM extends UIMessage>(message: UM) {
     | null;
 }
 
+function getMessageTimestamp<UM extends UIMessage>(message: UM) {
+  const createdAt = (message as UM & MessageNode).metadata?.createdAt;
+  if (!createdAt) {
+    return 0;
+  }
+  return createdAt instanceof Date
+    ? createdAt.getTime()
+    : new Date(createdAt).getTime();
+}
+
+function compareSiblingMessages<UM extends UIMessage>(a: UM, b: UM) {
+  const aMetadata = (a as UM & MessageNode).metadata;
+  const bMetadata = (b as UM & MessageNode).metadata;
+  const sameParallelGroup =
+    aMetadata?.parallelGroupId &&
+    aMetadata.parallelGroupId === bMetadata?.parallelGroupId;
+
+  if (
+    sameParallelGroup &&
+    typeof aMetadata.parallelIndex === "number" &&
+    typeof bMetadata?.parallelIndex === "number" &&
+    aMetadata.parallelIndex !== bMetadata.parallelIndex
+  ) {
+    return aMetadata.parallelIndex - bMetadata.parallelIndex;
+  }
+
+  return getMessageTimestamp(a) - getMessageTimestamp(b);
+}
+
 function buildTreeSnapshotFromMessages<UM extends UIMessage>(
   messages: UM[],
   cursorId: string | null = messages.at(-1)?.id ?? null
@@ -90,6 +119,12 @@ function buildTreeSnapshotFromMessages<UM extends UIMessage>(
 
     const key = parentKey(parentId);
     childrenByParentId[key] = [...(childrenByParentId[key] ?? []), message.id];
+  }
+
+  for (const childIds of Object.values(childrenByParentId)) {
+    childIds.sort((a, b) =>
+      compareSiblingMessages(messagesById[a] as UM, messagesById[b] as UM)
+    );
   }
 
   return {
@@ -354,12 +389,10 @@ export const withThreads =
           [],
           snapshot.parentById
         );
-        const mergedSnapshot = {
-          ...snapshot,
-          messagesById: Object.fromEntries(
-            mergedMessages.map((message) => [message.id, message])
-          ),
-        };
+        const mergedSnapshot = buildTreeSnapshotFromMessages(
+          mergedMessages,
+          snapshot.cursorId
+        );
         const signature = getSnapshotSignature(mergedSnapshot);
         if (state.treeSnapshotSignature === signature) {
           traceThread("store", "setTreeSnapshot.skipSameSignature", {

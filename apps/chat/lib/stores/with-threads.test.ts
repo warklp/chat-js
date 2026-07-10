@@ -55,6 +55,64 @@ function createThreadStore(initialMessages: ChatMessage[]) {
 }
 
 describe("withThreads", () => {
+  it("preserves hidden branches when the runtime publishes an active-path snapshot", () => {
+    const userA = createMessage({
+      id: "user-a",
+      role: "user",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    const assistantA = createMessage({
+      id: "assistant-a",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:01.000Z",
+      parentMessageId: userA.id,
+    });
+    const userB = createMessage({
+      id: "user-b",
+      role: "user",
+      createdAt: "2024-01-01T00:00:02.000Z",
+    });
+    const assistantB = createMessage({
+      id: "assistant-b",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:03.000Z",
+      parentMessageId: userB.id,
+    });
+    const store = createThreadStore([userB, assistantB]);
+
+    store.getState().setAllMessages([userA, assistantA, userB, assistantB]);
+    store.getState().setTreeSnapshot({
+      childrenByParentId: {
+        __root__: [userB.id],
+        [userB.id]: [assistantB.id],
+      },
+      cursorId: assistantB.id,
+      messagesById: {
+        [userB.id]: userB,
+        [assistantB.id]: assistantB,
+      },
+      parentById: {
+        [userB.id]: null,
+        [assistantB.id]: userB.id,
+      },
+      rootIds: [userB.id],
+      version: 1,
+    });
+
+    const siblingInfo = store.getState().getMessageSiblingInfo(userB.id);
+    assert.deepEqual(
+      siblingInfo?.siblings.map((message) => message.id),
+      [userA.id, userB.id]
+    );
+    assert.deepEqual(
+      store
+        .getState()
+        .switchToSibling(userB.id, "prev")
+        ?.map((message) => message.id),
+      [userA.id, assistantA.id]
+    );
+  });
+
   it("preserves local-only optimistic branch nodes across server syncs", () => {
     const rootUser = createMessage({
       id: "user-root",

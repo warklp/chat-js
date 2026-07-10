@@ -424,6 +424,18 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
     persistedChatId,
   ]);
 
+  useEffect(() => {
+    if (!(liveStore && persistedMessages)) {
+      return;
+    }
+
+    traceThread("query-sync", "persistedTree.applyToStore", {
+      chatId: persistedChatId,
+      messages: summarizeThreadMessages(persistedMessages),
+    });
+    liveStore.getState().setAllMessages(persistedMessages);
+  }, [liveStore, persistedChatId, persistedMessages]);
+
   const initialMessages =
     liveRuntimeMessages ?? persistedInitialState.initialMessages;
   const initialTool =
