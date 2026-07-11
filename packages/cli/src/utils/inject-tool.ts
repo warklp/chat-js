@@ -62,34 +62,6 @@ function injectIntoBlock(
   return source.slice(0, lineStart) + newLines + source.slice(lineStart);
 }
 
-function removeFromBlock(
-  source: string,
-  openMarker: string,
-  closeMarker: string,
-  shouldRemoveLine: (line: string) => boolean
-): string {
-  const openIdx = source.indexOf(openMarker);
-  const closeIdx = source.indexOf(closeMarker);
-
-  if (openIdx === -1 || closeIdx === -1) {
-    throw new Error(
-      `Registry markers not found: ${openMarker}\n` +
-        `Ensure the registry index contains the expected marker comments.`
-    );
-  }
-
-  const openLineEnd = source.indexOf("\n", openIdx);
-  const closeLineStart = source.lastIndexOf("\n", closeIdx) + 1;
-  const beforeBlock = source.slice(0, openLineEnd + 1);
-  const block = source.slice(openLineEnd + 1, closeLineStart);
-  const afterBlock = source.slice(closeLineStart);
-  const keptLines = block
-    .split(/(?<=\n)/)
-    .filter((line) => !shouldRemoveLine(line));
-
-  return beforeBlock + keptLines.join("") + afterBlock;
-}
-
 /**
  * Inject a tool's imports and registrations into the managed registry files.
  * Returns the updated source strings (pure — no file I/O).
@@ -156,57 +128,6 @@ export function injectTool(
     MARKERS.ui.close,
     uiLine,
     uiLine.trim()
-  );
-
-  return { toolsSource, uiSource };
-}
-
-/**
- * Remove a tool's imports and registrations from the managed registry files.
- * Returns the updated source strings (pure — no file I/O).
- */
-export function removeTool({
-  toolsSource,
-  uiSource,
-  name,
-  toolsAlias,
-}: {
-  toolsSource: string;
-  uiSource: string;
-  name: string;
-  toolsAlias: string;
-}): { toolsSource: string; uiSource: string } {
-  const camel = toCamelCase(name);
-  const pascal = toPascalCase(name);
-  const rendererName = `${pascal}Renderer`;
-  const toolImportLine = `import { ${camel} } from "${toolsAlias}/${name}/tool";`;
-  const toolLine = `${camel},`;
-  const uiImportLine = `import { ${rendererName} } from "${toolsAlias}/${name}/renderer";`;
-  const uiLine = `"tool-${camel}": ${rendererName},`;
-
-  toolsSource = removeFromBlock(
-    toolsSource,
-    MARKERS.toolImports.open,
-    MARKERS.toolImports.close,
-    (line) => line.trim() === toolImportLine
-  );
-  toolsSource = removeFromBlock(
-    toolsSource,
-    MARKERS.tools.open,
-    MARKERS.tools.close,
-    (line) => line.trim() === toolLine
-  );
-  uiSource = removeFromBlock(
-    uiSource,
-    MARKERS.uiImports.open,
-    MARKERS.uiImports.close,
-    (line) => line.trim() === uiImportLine
-  );
-  uiSource = removeFromBlock(
-    uiSource,
-    MARKERS.ui.open,
-    MARKERS.ui.close,
-    (line) => line.trim() === uiLine
   );
 
   return { toolsSource, uiSource };

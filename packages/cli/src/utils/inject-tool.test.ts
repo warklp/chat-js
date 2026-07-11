@@ -3,52 +3,27 @@ import {
   createEmptyToolsTemplate,
   createEmptyUiTemplate,
   injectTool,
-  removeTool,
 } from "./inject-tool";
 
-describe("registry index mutation", () => {
-  it("removes tool and renderer entries from managed marker blocks", () => {
-    const installed = injectTool({
-      toolsSource: createEmptyToolsTemplate(),
+describe("registry index injection", () => {
+  it("adds tool and renderer entries with the configured alias", () => {
+    const toolsAlias = "~/custom-tools";
+    const result = injectTool({
+      toolsSource: createEmptyToolsTemplate(toolsAlias),
       uiSource: createEmptyUiTemplate(),
       name: "word-count",
-      toolsAlias: "@/tools/chatjs",
+      toolsAlias,
     });
 
-    const removed = removeTool({
-      ...installed,
-      name: "word-count",
-      toolsAlias: "@/tools/chatjs",
-    });
-
-    expect(removed.toolsSource).not.toContain("wordCount");
-    expect(removed.uiSource).not.toContain("WordCountRenderer");
-    expect(removed.uiSource).not.toContain("tool-wordCount");
-  });
-
-  it("does not remove similarly named tools", () => {
-    let updated = injectTool({
-      toolsSource: createEmptyToolsTemplate(),
-      uiSource: createEmptyUiTemplate(),
-      name: "word-count",
-      toolsAlias: "@/tools/chatjs",
-    });
-    updated = injectTool({
-      ...updated,
-      name: "word-count-plus",
-      toolsAlias: "@/tools/chatjs",
-    });
-
-    const removed = removeTool({
-      ...updated,
-      name: "word-count",
-      toolsAlias: "@/tools/chatjs",
-    });
-
-    expect(removed.toolsSource).not.toContain("import { wordCount }");
-    expect(removed.toolsSource).not.toContain("\n  wordCount,\n");
-    expect(removed.toolsSource).toContain("wordCountPlus");
-    expect(removed.uiSource).toContain("WordCountPlusRenderer");
-    expect(removed.uiSource).toContain("tool-wordCountPlus");
+    expect(result.toolsSource).toContain(
+      'import { wordCount } from "~/custom-tools/word-count/tool";'
+    );
+    expect(result.toolsSource).toContain("  wordCount,");
+    expect(result.uiSource).toContain(
+      'import { WordCountRenderer } from "~/custom-tools/word-count/renderer";'
+    );
+    expect(result.uiSource).toContain(
+      '  "tool-wordCount": WordCountRenderer,'
+    );
   });
 });

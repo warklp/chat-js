@@ -4,7 +4,6 @@ import packageJson from "../package.json";
 import { add } from "./commands/add";
 import { config } from "./commands/config";
 import { create } from "./commands/create";
-import { remove } from "./commands/remove";
 
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
@@ -16,7 +15,6 @@ const program = new Command()
 
 program.addCommand(create, { isDefault: true });
 program.addCommand(add);
-program.addCommand(remove);
 program.addCommand(config);
 
 program.parse();
