@@ -126,7 +126,7 @@ export const create = new Command()
 	)
 	.option(
 		"--storage-config <json>",
-		"JSON object passed to the selected Files SDK adapter",
+		"non-secret JSON options for the Files SDK adapter; credentials use env vars",
 	)
 	.action(async (directory, opts) => {
 		try {

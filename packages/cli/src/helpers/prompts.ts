@@ -236,7 +236,7 @@ export async function promptStorage(
 	}
 
 	const value = await text({
-		message: `Adapter options as JSON (see adapter docs; hints: ${configKeys.join(", ")})`,
+		message: `Non-secret adapter options as JSON (credentials use env vars; hints: ${configKeys.join(", ")})`,
 		placeholder: '{ "providerOption": "value" }',
 		validate: (input) => {
 			try {
