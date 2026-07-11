@@ -1,6 +1,10 @@
 "use client";
 
-import { getMessageText, type MessageTreeSnapshot } from "@chatjs/thread";
+import {
+  getMessageText,
+  type MessageTreeSnapshot,
+  type ThreadRunHandle,
+} from "@chatjs/thread";
 import { type UseThreadHelpers, useThread } from "@chatjs/thread/react";
 import type { ChatTransport, UIMessage, UIMessageChunk } from "ai";
 import {
@@ -29,7 +33,7 @@ interface StreamBody {
   tree?: {
     assistantMessageId?: string;
     responseLabel?: string;
-    streamId?: string;
+    runId?: string;
   };
 }
 
@@ -167,8 +171,7 @@ class PlaygroundTransport implements ChatTransport<PlaygroundMessage> {
     const requestBody = body as StreamBody | undefined;
     const assistantMessageId =
       requestBody?.tree?.assistantMessageId ?? "assistant";
-    const streamId =
-      requestBody?.tree?.streamId ?? `stream:${assistantMessageId}`;
+    const runId = requestBody?.tree?.runId ?? `run:${assistantMessageId}`;
     const responseLabel = requestBody?.tree?.responseLabel ?? "Assistant";
     const userMessage = messages.at(-1);
     const prompt = userMessage ? getMessageText(userMessage) : "this branch";
@@ -182,7 +185,7 @@ class PlaygroundTransport implements ChatTransport<PlaygroundMessage> {
             controller.enqueue({
               messageId: assistantMessageId,
               messageMetadata: {
-                activeStreamId: streamId,
+                activeStreamId: runId,
                 createdAt: new Date().toISOString(),
                 title: responseLabel,
               },
@@ -482,8 +485,8 @@ function Conversation({
               <button
                 aria-label="Stop all responses"
                 className="grid size-8 place-items-center text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-                disabled={chat.tree.activeStreams.length === 0}
-                onClick={() => chat.tree.stopAllStreams()}
+                disabled={chat.tree.activeRuns.length === 0}
+                onClick={() => chat.tree.stopAll()}
                 title="Stop all responses"
                 type="button"
               >
@@ -521,8 +524,8 @@ function TreeCanvas({ chat }: { chat: PlaygroundChat }) {
     [chat.tree.childrenByParentId, chat.tree.rootIds]
   );
   const activeIds = new Set(chat.messages.map((message) => message.id));
-  const streamByMessageId = new Map(
-    chat.tree.activeStreams.map((stream) => [stream.assistantMessageId, stream])
+  const runByMessageId = new Map(
+    chat.tree.activeRuns.map((run) => [run.assistantMessageId, run])
   );
 
   return (
@@ -561,7 +564,7 @@ function TreeCanvas({ chat }: { chat: PlaygroundChat }) {
           if (!message) {
             return null;
           }
-          const stream = streamByMessageId.get(node.id);
+          const run = runByMessageId.get(node.id);
           const isActive = activeIds.has(node.id);
           const isCursor = chat.tree.cursorId === node.id;
           let nodeClass =
@@ -586,7 +589,7 @@ function TreeCanvas({ chat }: { chat: PlaygroundChat }) {
                   {message.role}
                 </span>
                 <span className="shrink-0 font-mono text-[9px] opacity-60">
-                  {stream?.status ?? "ready"}
+                  {run?.status ?? "ready"}
                 </span>
               </span>
               <span className="mt-1 block truncate text-[11px]">
@@ -614,7 +617,7 @@ function Playground() {
   }
 
   const chat = useThread<PlaygroundMessage>({
-    concurrency: { maxActiveStreams: 8 },
+    concurrency: { maxActiveRuns: 8 },
     generateId: generateMessageId,
     initialTree,
     transport: new PlaygroundTransport(),
@@ -639,27 +642,36 @@ function Playground() {
     }
     const userMessageId = generateMessageId();
     setDraft("");
-    await chat.sendMessage(
-      messageInput(text, "Playground message", userMessageId),
-      {
+    const primaryRun = await chat.tree.startRun({
+      message: messageInput(text, "Playground message", userMessageId),
+      request: {
         tree: {
           responseLabel:
             responseCount === 1
               ? "Assistant reply"
               : `Response 1 of ${responseCount}`,
         },
-      }
-    );
+      },
+    });
 
+    const siblingRuns: ThreadRunHandle[] = [];
     for (let index = 1; index < responseCount; index += 1) {
-      chat.sendMessage(undefined, {
-        tree: {
+      siblingRuns.push(
+        await chat.tree.startRun({
           follow: false,
           from: userMessageId,
-          responseLabel: `Response ${index + 1} of ${responseCount}`,
-        },
-      });
+          request: {
+            tree: {
+              responseLabel: `Response ${index + 1} of ${responseCount}`,
+            },
+          },
+        })
+      );
     }
+    await Promise.all([
+      primaryRun.finished,
+      ...siblingRuns.map((run) => run.finished),
+    ]);
   }
 
   function branchFrom(messageId: string) {
@@ -693,7 +705,7 @@ function Playground() {
           </p>
         </div>
         <p className="font-mono text-[10px] text-muted-foreground">
-          {chat.tree.activeStreams.length} active streams
+          {chat.tree.activeRuns.length} active runs
         </p>
       </div>
 
@@ -713,7 +725,7 @@ function Playground() {
               <p className="font-medium text-sm">Message tree</p>
               <p className="font-mono text-[11px] text-muted-foreground">
                 {Object.keys(chat.tree.messagesById).length} nodes ·{" "}
-                {chat.tree.activeStreams.length} streams
+                {chat.tree.activeRuns.length} runs
               </p>
             </div>
             <GitBranch className="size-4 text-muted-foreground" />

@@ -15,7 +15,7 @@ export type PocMetadata = {
 
 export type PocMessage = UIMessage<PocMetadata>;
 
-export type { TreeStream } from "@chatjs/thread";
+export type { ThreadRun } from "@chatjs/thread";
 
 export type TreeSendOptions = Parameters<
   BaseUseThreadHelpers<PocMessage>["sendMessage"]
@@ -28,8 +28,8 @@ export type TreeSendOptions = Parameters<
 };
 
 export type ThreadConcurrency = {
-  maxStreamsPerOrigin?: number;
-  maxStreamsTotal?: number;
+  maxRunsPerOrigin?: number;
+  maxRunsTotal?: number;
 };
 
 export type UseThreadOptions = {
@@ -42,7 +42,7 @@ type StreamBody = {
   tree?: {
     assistantMessageId?: string;
     responseLabel?: string;
-    streamId?: string;
+    runId?: string;
     userMessageId?: string;
   };
 };
@@ -98,8 +98,7 @@ class FakeTreeTransport implements ChatTransport<PocMessage> {
     const requestBody = body as StreamBody | undefined;
     const assistantMessageId =
       requestBody?.tree?.assistantMessageId ?? "assistant";
-    const streamId =
-      requestBody?.tree?.streamId ?? `stream:${assistantMessageId}`;
+    const runId = requestBody?.tree?.runId ?? `run:${assistantMessageId}`;
     const responseLabel = requestBody?.tree?.responseLabel ?? "response";
     const userText = getMessageText(messages.at(-1) as PocMessage);
     const text = `${responseLabel}: streaming from "${userText}". The cursor follows this response only while it remains the foreground stream.`;
@@ -112,7 +111,7 @@ class FakeTreeTransport implements ChatTransport<PocMessage> {
             controller.enqueue({
               messageId: assistantMessageId,
               messageMetadata: {
-                activeStreamId: streamId,
+                activeStreamId: runId,
                 createdAt: new Date().toISOString(),
                 title: responseLabel,
               },
@@ -207,8 +206,8 @@ export function readText(message: PocMessage) {
 export function useThread(options: UseThreadOptions = {}): UseThreadHelpers {
   const chat = useBaseThread<PocMessage>({
     concurrency: {
-      maxActiveStreams: options.concurrency?.maxStreamsTotal,
-      maxActiveStreamsPerParent: options.concurrency?.maxStreamsPerOrigin,
+      maxActiveRuns: options.concurrency?.maxRunsTotal,
+      maxActiveRunsPerMessage: options.concurrency?.maxRunsPerOrigin,
     },
     generateId: (() => {
       let counter = 100;

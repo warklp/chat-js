@@ -42,7 +42,7 @@ export function ChatSync({ id }: { id: string }) {
 
   useChat<ChatMessage>({
     concurrency: {
-      maxActiveStreamsPerParent: 1,
+      maxActiveRunsPerMessage: 1,
     },
     experimental_throttle: 100,
     id,

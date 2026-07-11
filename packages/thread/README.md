@@ -66,15 +66,42 @@ await chat.sendMessage({ text: "Create a branch here" });
 Request multiple assistant responses from the same user message:
 
 ```ts
-await Promise.all([
-  chat.sendMessage(undefined, {
-    tree: { from: userMessageId, follow: true },
-  }),
-  chat.sendMessage(undefined, {
-    tree: { from: userMessageId, follow: false },
-  }),
-]);
+const primary = await chat.tree.startRun({
+  follow: true,
+  from: userMessageId,
+});
+const alternative = await chat.tree.startRun({
+  follow: false,
+  from: userMessageId,
+});
+
+await Promise.all([primary.finished, alternative.finished]);
 ```
+
+`sendMessage` has the same completion contract as AI SDK: its promise resolves
+after the request and automatic tool follow-ups finish. `tree.startRun` returns a
+handle as soon as the request starts, which is useful for launching parallel
+responses and controlling them independently.
+
+The top-level state always describes the selected path. `status`, `error`,
+`stop`, `clearError`, and `resumeStream` target the run selected by
+`tree.cursorId`. Whole-tree state and controls live under `tree`:
+
+```ts
+chat.status; // selected path
+chat.tree.status; // aggregate status
+chat.tree.activeRuns;
+chat.tree.runs;
+
+await chat.tree.stopRun(runId);
+await chat.tree.stopRunForMessage(assistantMessageId);
+chat.tree.stopAll();
+await chat.tree.resumeRun(runId);
+```
+
+Tool outputs and approval responses keep the standard `useChat` signatures.
+The runtime routes each response to the run that emitted its tool or approval
+identifier.
 
 The package does not ship UI components. Build tree renderers, sibling
 switchers, branch pickers, canvases, or debug panels from the headless state:
@@ -85,11 +112,18 @@ chat.tree.messagesById;
 chat.tree.parentById;
 chat.tree.childrenByParentId;
 chat.tree.rootIds;
-chat.tree.activeStreams;
+chat.tree.activeRuns;
+chat.tree.runs;
+chat.tree.getRun(runId);
+chat.tree.getRunForMessage(messageId);
 chat.tree.getPath(messageId);
 chat.tree.getChildren(messageId);
 chat.tree.getSiblings(messageId);
 ```
+
+`setMessages` reconciles only the selected path. Truncating the array moves the
+cursor backward without deleting hidden descendants; a changed suffix creates
+a branch. Reusing an existing message ID under a different parent throws.
 
 Persist and restore the tree with snapshots:
 

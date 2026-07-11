@@ -267,7 +267,7 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
     if (lastSyncedStateRef.current !== syncSignature) {
       lastSyncedStateRef.current = syncSignature;
       traceThread("runtime-bridge", "runtimeState.changed", {
-        activeStreams: chatHelpers.tree.activeStreams,
+        activeRuns: chatHelpers.tree.activeRuns,
         id: chatHelpers.id,
         lastEvent: chatHelpers.lastEvent,
         status: chatHelpers.status,

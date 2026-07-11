@@ -6,7 +6,10 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import {
 	type MessageTreeSnapshot,
 	type ThreadConcurrency,
+	type ThreadRun,
+	type ThreadRunHandle,
 	ThreadRuntime,
+	type ThreadStartRunOptions,
 	type TreeSendOptions,
 } from "./runtime";
 
@@ -30,14 +33,20 @@ export type TreeHelpers<TMessage extends UIMessage = UIMessage> = {
 	messagesById: Record<string, TMessage>;
 	parentById: Record<string, string | null>;
 	rootIds: string[];
+	activeRuns: ThreadRun[];
+	runs: ThreadRun[];
+	status: ReturnType<ThreadRuntime<TMessage>["getSnapshot"]>["treeStatus"];
+	getRun: (runId: string) => ThreadRun | undefined;
+	getRunForMessage: (messageId: string) => ThreadRun | undefined;
+	resumeRun: (runId: string, options?: TreeSendOptions) => Promise<void>;
 	setCursor: (messageId: string | null) => void;
 	setCursorToParentOf: (messageId: string) => void;
-	stopAllStreams: () => void;
-	stopStream: (streamId: string) => void;
-	activeStreams: ReturnType<
-		ThreadRuntime<TMessage>["getSnapshot"]
-	>["activeStreams"];
-	treeStatus: ReturnType<ThreadRuntime<TMessage>["getSnapshot"]>["treeStatus"];
+	startRun: (
+		options?: ThreadStartRunOptions<TMessage>,
+	) => Promise<ThreadRunHandle>;
+	stopAll: () => Promise<void>;
+	stopRun: (runId: string) => Promise<void>;
+	stopRunForMessage: (messageId: string) => Promise<void>;
 };
 
 export type UseThreadHelpers<TMessage extends UIMessage = UIMessage> =
@@ -70,6 +79,7 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 	}
 
 	const runtime = runtimeRef.current;
+	runtime.updateCallbacks(options);
 	const snapshot = useRuntimeSnapshot(runtime);
 	const resumeRef = useRef(options.resume);
 
@@ -102,6 +112,7 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 		status: snapshot.status,
 		stop: runtime.stop,
 		tree: {
+			activeRuns: snapshot.activeRuns,
 			childrenByParentId: snapshot.childrenByParentId,
 			cursorId: snapshot.cursorId,
 			getChildren: (messageId) => runtime.getChildren(messageId),
@@ -109,17 +120,23 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 			getMessage: (messageId) => runtime.getMessage(messageId),
 			getParent: (messageId) => runtime.getParent(messageId),
 			getPath: (messageId) => runtime.getPath(messageId),
+			getRun: (runId) => runtime.getRun(runId),
+			getRunForMessage: (messageId) => runtime.getRunForMessage(messageId),
 			getSiblings: (messageId) => runtime.getSiblings(messageId),
 			messagesById: snapshot.messagesById,
 			parentById: snapshot.parentById,
 			rootIds: snapshot.rootIds,
+			runs: snapshot.runs,
+			status: snapshot.treeStatus,
+			resumeRun: (runId, requestOptions) =>
+				runtime.resumeRun(runId, requestOptions),
 			setCursor: (messageId) => runtime.setCursor(messageId),
 			setCursorToParentOf: (messageId) =>
 				runtime.setCursorToParentOf(messageId),
-			stopAllStreams: () => runtime.stopAllStreams(),
-			stopStream: (streamId) => runtime.stopStream(streamId),
-			activeStreams: snapshot.activeStreams,
-			treeStatus: snapshot.treeStatus,
+			startRun: (runOptions) => runtime.startRun(runOptions),
+			stopAll: () => runtime.stopAll(),
+			stopRun: (runId) => runtime.stopRun(runId),
+			stopRunForMessage: (messageId) => runtime.stopRunForMessage(messageId),
 		},
 	};
 }

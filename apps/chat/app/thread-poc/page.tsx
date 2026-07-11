@@ -551,8 +551,8 @@ function Stat({
 export default function ThreadPocPage() {
   const chat = useThread({
     concurrency: {
-      maxStreamsPerOrigin: 3,
-      maxStreamsTotal: 8,
+      maxRunsPerOrigin: 3,
+      maxRunsTotal: 8,
     },
   });
   const [draft, setDraft] = useState("");
@@ -679,7 +679,7 @@ export default function ThreadPocPage() {
             <p className="mt-1 max-w-3xl text-muted-foreground text-sm">
               Chat UI backed by a normalized message tree. The conversation
               shows the selected cursor path; the side panel exposes every node,
-              stream status, and aggregate content size.
+              run status, and aggregate content size.
             </p>
           </div>
           <div className="grid min-w-[280px] grid-cols-2 gap-3 rounded-lg border bg-muted/20 p-3 text-sm">
@@ -696,8 +696,8 @@ export default function ThreadPocPage() {
             />
             <Stat
               label="streams"
-              testId="active-stream-count"
-              value={chat.tree.activeStreams.length}
+              testId="active-run-count"
+              value={chat.tree.activeRuns.length}
             />
           </div>
         </header>
@@ -755,7 +755,7 @@ export default function ThreadPocPage() {
                 <button
                   className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted"
                   data-testid="stop-all"
-                  onClick={() => chat.tree.stopAllStreams()}
+                  onClick={() => chat.tree.stopAll()}
                   type="button"
                 >
                   <Square className="size-4" />
@@ -826,26 +826,23 @@ export default function ThreadPocPage() {
                   {messageCount} nodes
                 </span>
               </div>
-              {chat.tree.activeStreams.length > 0 ? (
+              {chat.tree.activeRuns.length > 0 ? (
                 <div
                   className="mt-3 space-y-2"
                   data-testid="active-streams-panel"
                 >
-                  {chat.tree.activeStreams.map((stream) => (
+                  {chat.tree.activeRuns.map((run) => (
                     <div
                       className="rounded-md border bg-muted/40 px-2.5 py-2 text-xs"
-                      data-testid={`active-stream-${stream.assistantMessageId}`}
-                      key={stream.streamId}
+                      data-testid={`active-run-${run.assistantMessageId}`}
+                      key={run.id}
                     >
                       <div className="flex justify-between gap-2">
-                        <span className="font-mono">{stream.streamId}</span>
-                        <span>
-                          {stream.follow ? "following" : "background"}
-                        </span>
+                        <span className="font-mono">{run.id}</span>
+                        <span>{run.follow ? "following" : "background"}</span>
                       </div>
                       <div className="mt-1 text-muted-foreground">
-                        {stream.status} · origin{" "}
-                        {stream.originCursorId ?? "root"}
+                        {run.status} · origin {run.originCursorId ?? "root"}
                       </div>
                     </div>
                   ))}

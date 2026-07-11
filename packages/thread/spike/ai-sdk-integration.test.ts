@@ -158,7 +158,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		const standardPromise = standardChat.sendMessage(input, {
 			body: { assistantMessageId: "assistant-same" },
 		});
-		await threadRuntime.sendMessage(input, {
+		const threadPromise = threadRuntime.sendMessage(input, {
 			body: { assistantMessageId: "assistant-same" },
 		});
 		await waitFor(
@@ -170,7 +170,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		emitRichResponse(standardTransport, "assistant-same");
 		emitRichResponse(threadTransport, "assistant-same");
 		await standardPromise;
-		await waitFor(() => threadRuntime.getSnapshot().activeStreams.length === 0);
+		await threadPromise;
 
 		expect(threadRuntime.getMessage("assistant-same")).toEqual(
 			standardChat.messages.at(-1),
@@ -180,16 +180,18 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 	test("keeps the reserved assistant identity and forwards data and tool callbacks", async () => {
 		const transport = new ControlledTransport();
 		const dataParts: unknown[] = [];
+		const finishedMessageIds: string[] = [];
 		const toolCalls: unknown[] = [];
 		const runtime = new ThreadRuntime({
 			onData: (part) => dataParts.push(part),
+			onFinish: ({ message }) => finishedMessageIds.push(message.id),
 			onToolCall: ({ toolCall }) => {
 				toolCalls.push(toolCall);
 			},
 			transport,
 		});
 
-		await runtime.sendMessage(userMessage("user-a", "A"), {
+		const runPromise = runtime.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-reserved" },
 		});
 		await waitFor(() => transport.requests.has("assistant-reserved"));
@@ -212,9 +214,10 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		});
 		emitText(transport, "assistant-reserved", "text-1", "identity-safe");
 		transport.finish("assistant-reserved");
-		await waitFor(() => runtime.getSnapshot().activeStreams.length === 0);
+		await runPromise;
 
 		expect(runtime.getMessage("server-tried-to-replace-id")).toBeUndefined();
+		expect(finishedMessageIds).toEqual(["assistant-reserved"]);
 		expect(runtime.getMessage("assistant-reserved")).toEqual(
 			expect.objectContaining({ id: "assistant-reserved", role: "assistant" }),
 		);
@@ -233,14 +236,14 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 	test("streams concurrently into separate leaves and keeps cursor selection independent", async () => {
 		const transport = new ControlledTransport();
 		const runtime = new ThreadRuntime({
-			concurrency: { maxActiveStreamsPerParent: 1 },
+			concurrency: { maxActiveRunsPerMessage: 1 },
 			transport,
 		});
 
-		await runtime.sendMessage(userMessage("user-a", "A"), {
+		const runAPromise = runtime.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-a" },
 		});
-		await runtime.sendMessage(userMessage("user-b", "B"), {
+		const runBPromise = runtime.sendMessage(userMessage("user-b", "B"), {
 			body: { assistantMessageId: "assistant-b" },
 			tree: { follow: false, from: null },
 		});
@@ -252,7 +255,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		expect(
 			transport.requests.get("assistant-b")?.messages.map((m) => m.id),
 		).toEqual(["user-b"]);
-		expect(runtime.getSnapshot().activeStreams).toHaveLength(2);
+		expect(runtime.getSnapshot().activeRuns).toHaveLength(2);
 
 		emitText(transport, "assistant-a", "text-a", "alpha");
 		emitText(transport, "assistant-b", "text-b", "beta");
@@ -293,31 +296,102 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 
 		transport.finish("assistant-a");
 		transport.finish("assistant-b");
-		await waitFor(() => runtime.getSnapshot().activeStreams.length === 0);
+		await Promise.all([runAPromise, runBPromise]);
 	});
 
 	test("stopping one branch does not abort another branch", async () => {
 		const transport = new ControlledTransport();
 		const runtime = new ThreadRuntime({ transport });
 
-		await runtime.sendMessage(userMessage("user-a", "A"), {
+		const runAPromise = runtime.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-a" },
 		});
-		await runtime.sendMessage(userMessage("user-b", "B"), {
+		const runBPromise = runtime.sendMessage(userMessage("user-b", "B"), {
 			body: { assistantMessageId: "assistant-b" },
 			tree: { follow: false, from: null },
 		});
 		await waitFor(() => transport.requests.size === 2);
 
-		runtime.stopStream("stream:assistant-a");
+		await runtime.stopRun("run:assistant-a");
 		await waitFor(() => transport.aborted.has("assistant-a"));
 		expect(transport.aborted.has("assistant-b")).toBe(false);
 
 		emitText(transport, "assistant-b", "text-b", "still-running");
 		transport.finish("assistant-b");
-		await waitFor(() => runtime.getSnapshot().activeStreams.length === 0);
+		await Promise.all([runAPromise, runBPromise]);
 		expect(getMessageText(runtime.getMessage("assistant-b") as UIMessage)).toBe(
 			"still-running",
+		);
+	});
+
+	test("keeps selected-path status separate from aggregate run status", async () => {
+		const transport = new ControlledTransport();
+		const runtime = new ThreadRuntime({ transport });
+		const run = await runtime.startRun({
+			message: userMessage("user-a", "A"),
+			request: { body: { assistantMessageId: "assistant-a" } },
+		});
+		await waitFor(() => transport.requests.has("assistant-a"));
+
+		expect(runtime.getSnapshot().status).toBe("submitted");
+		expect(runtime.getSnapshot().treeStatus).toBe("submitted");
+		runtime.setCursor("user-a");
+		expect(runtime.getSnapshot().status).toBe("ready");
+		expect(runtime.getSnapshot().treeStatus).toBe("submitted");
+
+		transport.finish("assistant-a");
+		await run.finished;
+		expect(run.getSnapshot()?.state).toBe("completed");
+	});
+
+	test("routes tool output to the run that owns the tool call", async () => {
+		const transport = new ControlledTransport();
+		const runtime = new ThreadRuntime({ transport });
+		const runA = await runtime.startRun({
+			message: userMessage("user-a", "A"),
+			request: { body: { assistantMessageId: "assistant-a" } },
+		});
+		const runB = await runtime.startRun({
+			follow: false,
+			from: null,
+			message: userMessage("user-b", "B"),
+			request: { body: { assistantMessageId: "assistant-b" } },
+		});
+		await waitFor(() => transport.requests.size === 2);
+
+		for (const [assistantMessageId, toolCallId] of [
+			["assistant-a", "tool-a"],
+			["assistant-b", "tool-b"],
+		] as const) {
+			transport.emit(assistantMessageId, {
+				dynamic: true,
+				input: { branch: assistantMessageId },
+				toolCallId,
+				toolName: "branch-tool",
+				type: "tool-input-available",
+			});
+		}
+		await waitFor(
+			() =>
+				runtime.getMessage("assistant-a")?.parts.length === 1 &&
+				runtime.getMessage("assistant-b")?.parts.length === 1,
+		);
+
+		transport.finish("assistant-a");
+		transport.finish("assistant-b");
+		await Promise.all([runA.finished, runB.finished]);
+
+		await runtime.addToolOutput({
+			output: "A only",
+			tool: "branch-tool",
+			toolCallId: "tool-a",
+		});
+
+		expect(runtime.getMessage("assistant-a")?.parts).toContainEqual(
+			expect.objectContaining({ output: "A only", toolCallId: "tool-a" }),
+		);
+		expect(runtime.getMessage("assistant-b")?.parts).toContainEqual(
+			expect.not.objectContaining({ output: "A only" }),
 		);
 	});
 });

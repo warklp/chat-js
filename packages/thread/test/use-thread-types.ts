@@ -17,7 +17,12 @@ function useCompatibilityCheck() {
 	thread.tree.getPath(messageId);
 	thread.tree.getChildren(null);
 	thread.tree.getSiblings(messageId);
-	thread.tree.stopAllStreams();
+	thread.tree.stopAll();
+	thread.tree.activeRuns;
+	thread.tree.runs;
+	thread.tree.status;
+	thread.tree.getRunForMessage(messageId);
+	thread.tree.startRun({ from: messageId, message: { text: "branch" } });
 
 	const explicitHelpers: UseThreadHelpers<UIMessage> = thread;
 	explicitHelpers.exportTree();
