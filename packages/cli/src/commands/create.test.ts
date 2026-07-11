@@ -89,4 +89,27 @@ describe("create command", () => {
     ).toBeUndefined();
     expect(packageJson.overrides?.["@better-auth/core"]).toBe("1.5.6");
   });
+
+  it("treats storage config as an explicit storage request", async () => {
+    const tempParent = makeTempDir("storage-config-app");
+    const appName = "storage-config-chat-app";
+    const originalCwd = process.cwd();
+
+    await mkdir(tempParent, { recursive: true });
+    process.chdir(tempParent);
+    try {
+      await create.parseAsync(
+        [appName, "--yes", "--no-install", "--storage-config", "{}"],
+        { from: "user" }
+      );
+    } finally {
+      process.chdir(originalCwd);
+    }
+
+    const provider = await readFile(
+      join(tempParent, appName, "lib", "storage-provider.ts"),
+      "utf8"
+    );
+    expect(provider).toContain('from "files-sdk/vercel-blob"');
+  });
 });

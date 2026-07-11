@@ -187,6 +187,9 @@ export const storageProvider = {
 	);
 
 	const envPath = join(destination, ".env.example");
+	if (!existsSync(envPath)) {
+		return;
+	}
 	const env = await readFile(envPath, "utf8");
 	const start = env.indexOf(STORAGE_ENV_START);
 	const end = env.indexOf(STORAGE_ENV_END);

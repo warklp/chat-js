@@ -456,6 +456,9 @@ export async function scaffoldFromGit(
     process.cwd()
   );
   await rm(join(destination, ".git"), { recursive: true, force: true });
+  if (!existsSync(join(destination, "lib", "storage-provider.ts"))) {
+    return;
+  }
   await configureStorageProvider(
     destination,
     options?.storage ?? { provider: "vercel-blob", options: {} }

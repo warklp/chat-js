@@ -3,7 +3,7 @@ import { config } from "@/lib/config";
 import { getAllAttachmentUrls } from "@/lib/db/queries";
 import { env } from "@/lib/env";
 import { deleteFilesByUrls, listFiles } from "@/lib/file-storage";
-import { keyFromFileUrl } from "@/lib/file-url";
+import { isFileStorageKey, keyFromFileUrl } from "@/lib/file-url";
 
 const ORPHANED_ATTACHMENTS_RETENTION_TIME = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -63,6 +63,9 @@ async function cleanupOrphanedAttachments() {
     const orphanedUrls: string[] = [];
 
     for (const file of files) {
+      if (!isFileStorageKey(file.pathname)) {
+        continue;
+      }
       const fileDate = new Date(file.uploadedAt);
       const isOld = fileDate < retentionCutoff;
       const isUnused = !usedAttachmentKeys.has(file.pathname);

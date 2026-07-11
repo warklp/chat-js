@@ -10,7 +10,7 @@ export type StorageEnvironmentRequirement = {
   options: StorageEnvironmentVariable[][];
 };
 
-const STORAGE_OPTION_HINT = /or pass `([^`]+)`/;
+const STORAGE_OPTION_HINT = /(?:or )?pass `([^`]+)`/;
 
 export function getStorageEnvironmentRequirements(
   provider: ProviderSlug,
@@ -43,15 +43,22 @@ export function getStorageEnvironmentRequirements(
     });
   }
 
-  const credentialModes = metadata.env.credentialModes?.map((mode) =>
-    mode.vars
+  const credentialModes: StorageEnvironmentVariable[][] = [];
+  let hasUnvalidatedCredentialMode = false;
+  for (const mode of metadata.env.credentialModes ?? []) {
+    const variables = mode.vars
       .filter((variable) => variable.readBy === "files-sdk")
-      .map(toVariable)
-  );
-  if (
-    credentialModes?.length &&
-    credentialModes.every((mode) => mode.length > 0)
-  ) {
+      .map(toVariable);
+    if (variables.length > 0) {
+      credentialModes.push(variables);
+      continue;
+    }
+
+    const optionName = STORAGE_OPTION_HINT.exec(mode.label)?.[1];
+    hasUnvalidatedCredentialMode ||=
+      optionName === undefined || adapterOptions[optionName] !== undefined;
+  }
+  if (credentialModes.length > 0 && !hasUnvalidatedCredentialMode) {
     requirements.push({
       description: `${metadata.name} credentials`,
       options: credentialModes,

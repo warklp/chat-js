@@ -3,6 +3,10 @@ export const FILE_CONTENT_PATH = "/api/files/content";
 const STORAGE_KEY = /^[A-Za-z0-9_-]{24}(?:\.[a-z0-9]{1,10})?$/;
 const URL_PARSE_BASE = "http://chatjs.local";
 
+export function isFileStorageKey(value: string): boolean {
+  return STORAGE_KEY.test(value);
+}
+
 function parseFileUrl(value: string): URL | null {
   try {
     const url = new URL(value, URL_PARSE_BASE);
@@ -10,7 +14,7 @@ function parseFileUrl(value: string): URL | null {
     return url.pathname === FILE_CONTENT_PATH &&
       url.searchParams.size === 1 &&
       key &&
-      STORAGE_KEY.test(key)
+      isFileStorageKey(key)
       ? url
       : null;
   } catch {

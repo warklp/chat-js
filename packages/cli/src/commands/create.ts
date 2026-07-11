@@ -195,7 +195,8 @@ export const create = new Command()
 				coreFeatures.attachments ||
 				assistantTools.builtInTools.imageGeneration ||
 				assistantTools.builtInTools.videoGeneration ||
-				options.storageProvider !== undefined;
+				options.storageProvider !== undefined ||
+				options.storageConfig !== undefined;
 			const storage = usesStorage
 				? await promptStorage(
 						options.yes,

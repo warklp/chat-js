@@ -76,6 +76,42 @@ describe("storage provider configuration", () => {
 		]);
 	});
 
+	it("requires R2 env credentials unless a binding is configured", () => {
+		expect(storageEnvRequirements("r2")).toEqual([
+			{
+				description: "Cloudflare R2 credentials",
+				options: [["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]],
+			},
+		]);
+		expect(storageEnvRequirements("r2", { binding: {} })).toEqual([]);
+	});
+
+	it("configures repositories without an env example", async () => {
+		const destination = await mkdtemp(join(tmpdir(), "chat-js-storage-no-env-"));
+		try {
+			await mkdir(join(destination, "lib"));
+			await writeFile(
+				join(destination, "package.json"),
+				JSON.stringify({ dependencies: { "files-sdk": "2.1.0" } }),
+			);
+			await writeFile(
+				join(destination, "lib", "storage-provider.ts"),
+				'import { memory } from "files-sdk/memory";\n',
+			);
+
+			await configureStorageProvider(destination, {
+				provider: "vercel-blob",
+				options: {},
+			});
+
+			expect(
+				await readFile(join(destination, "lib", "storage-provider.ts"), "utf8"),
+			).toContain('from "files-sdk/vercel-blob"');
+		} finally {
+			await rm(destination, { recursive: true, force: true });
+		}
+	});
+
 	it("removes only dependencies owned by the previous storage provider", async () => {
 		const destination = await mkdtemp(join(tmpdir(), "chat-js-storage-"));
 		try {
