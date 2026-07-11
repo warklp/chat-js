@@ -68,12 +68,6 @@ apps/electron/release/
 apps/electron/out/
 apps/electron/branding.json
 
-/.skillz
-/AGENTS.md
-/AGENTS.md.bak
-/CLAUDE.md
-/CLAUDE.md.bak
-# END Skiller Generated Files
 .devtools
 .cursor/hooks/state
 .codex/environments/

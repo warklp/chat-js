@@ -27,6 +27,8 @@
     "VERCEL_TOKEN",
     "VERCEL_SANDBOX_RUNTIME",
     "APP_URL",
+    "ELECTRON_APP_URL",
+    "PORT",
     "VERCEL_URL"
   ],
   "tasks": {
@@ -61,9 +63,6 @@
       "cache": false
     },
     "test:e2e": {
-      "cache": false
-    },
-    "skiller:apply": {
       "cache": false
     },
     "electron:build": {
