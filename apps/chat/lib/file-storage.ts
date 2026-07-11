@@ -2,21 +2,18 @@ import { type Body, Files, FilesError } from "files-sdk";
 import { nanoid } from "nanoid";
 import { FILE_STORAGE_PREFIX } from "./constants";
 import { storageProvider } from "./storage-provider";
+import { getBaseUrl } from "./url";
 
 const FILE_CONTENT_PATH = "/api/files/content";
 const SAFE_EXTENSION = /^\.[a-z0-9]{1,10}$/;
 const STORAGE_KEY = /^[A-Za-z0-9_-]{24}(?:\.[a-z0-9]{1,10})?$/;
 const PATH_SEPARATOR = /[\\/]/;
 
-export function createStorageAdapter() {
-  return storageProvider.createAdapter();
-}
-
 let files: Files | undefined;
 
 function getFiles(): Files {
   files ??= new Files({
-    adapter: createStorageAdapter(),
+    adapter: storageProvider.createAdapter(),
     prefix: FILE_STORAGE_PREFIX,
     retries: 2,
   });
@@ -43,21 +40,20 @@ function createStorageKey(filename: string): string {
 }
 
 function createFileUrl(key: string): string {
-  const url = new URL(FILE_CONTENT_PATH, getFileBaseUrl());
+  const url = new URL(FILE_CONTENT_PATH, getBaseUrl());
   url.searchParams.set("key", key);
   return url.toString();
 }
 
 export function keyFromFileUrl(value: string): string | null {
-  return parseFileUrl(value, new URL(getFileBaseUrl()).origin);
+  return parseFileUrl(value);
 }
 
-function parseFileUrl(value: string, expectedOrigin?: string): string | null {
+function parseFileUrl(value: string): string | null {
   try {
     const url = new URL(value);
     const key = url.searchParams.get("key");
-    return (!expectedOrigin || url.origin === expectedOrigin) &&
-      url.pathname === FILE_CONTENT_PATH &&
+    return url.pathname === FILE_CONTENT_PATH &&
       url.searchParams.size === 1 &&
       key &&
       STORAGE_KEY.test(key)
@@ -66,16 +62,6 @@ function parseFileUrl(value: string, expectedOrigin?: string): string | null {
   } catch {
     return null;
   }
-}
-
-function getFileBaseUrl(): string {
-  if (process.env.APP_URL) {
-    return process.env.APP_URL;
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
 }
 
 export function keyFromFileRequest(value: string): string | null {
@@ -117,8 +103,10 @@ export async function listFiles() {
 
 export async function deleteFilesByUrls(urls: string[]): Promise<void> {
   const keys = [
-    ...new Set(urls.map(keyFromFileUrl).filter(Boolean)),
-  ] as string[];
+    ...new Set(
+      urls.map(keyFromFileUrl).filter((key): key is string => key !== null)
+    ),
+  ];
   if (keys.length === 0) {
     return;
   }

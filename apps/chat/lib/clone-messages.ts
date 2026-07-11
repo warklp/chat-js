@@ -1,7 +1,7 @@
 import type { FileUIPart } from "ai";
 import type { ChatMessage } from "./ai/types";
 import { FILE_STORAGE_PREFIX } from "./constants";
-import { keyFromFileUrl, uploadFile } from "./file-storage";
+import { downloadFile, keyFromFileUrl, uploadFile } from "./file-storage";
 import { generateUUID } from "./utils";
 
 function cloneMessages<
@@ -243,7 +243,8 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
     }
 
     // Skip external files that are not managed by this ChatJS instance.
-    if (!keyFromFileUrl(part.url)) {
+    const key = keyFromFileUrl(part.url);
+    if (!key) {
       console.warn(
         "Attachment is not a managed file, skipping clone:",
         part.url
@@ -251,13 +252,7 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
       return part;
     }
 
-    // Fetch the original file
-    const response = await fetch(part.url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch attachment: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
+    const storedFile = await downloadFile(key);
 
     // Extract just the base filename without any path components
     let filename = part.filename || "attachment";
@@ -274,7 +269,7 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
 
     const uploadedFile = await uploadFile(
       filename,
-      Buffer.from(await blob.arrayBuffer())
+      Buffer.from(await storedFile.arrayBuffer())
     );
 
     return {

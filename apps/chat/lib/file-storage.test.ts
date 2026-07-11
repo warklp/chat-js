@@ -16,6 +16,10 @@ vi.mock("./storage-provider", async () => {
   };
 });
 
+vi.mock("./url", () => ({
+  getBaseUrl: () => "https://chat.example",
+}));
+
 import {
   deleteFilesByUrls,
   keyFromFileRequest,
@@ -25,8 +29,6 @@ import {
 
 describe("file storage", () => {
   it("uploads, lists, and deletes through Files SDK", async () => {
-    vi.stubEnv("APP_URL", "https://chat.example");
-
     const uploaded = await uploadFile("../hello.txt", "hello", "text/plain");
     const key = keyFromFileRequest(uploaded.url);
 
@@ -38,7 +40,11 @@ describe("file storage", () => {
       [key]
     );
 
-    await deleteFilesByUrls([uploaded.url]);
+    const previousDeploymentUrl = uploaded.url.replace(
+      "https://chat.example",
+      "https://old-chat.example"
+    );
+    await deleteFilesByUrls([previousDeploymentUrl]);
     assert.equal((await listFiles()).files.length, 0);
   });
 });

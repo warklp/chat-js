@@ -16,12 +16,15 @@ vi.mock("./storage-provider", async () => {
   };
 });
 
+vi.mock("./url", () => ({
+  getBaseUrl: () => "https://chat.example",
+}));
+
 import { createFileContentResponse } from "./file-content-response";
 import { uploadFile } from "./file-storage";
 
 describe("file content response", () => {
   it("serves byte ranges", async () => {
-    vi.stubEnv("APP_URL", "https://chat.example");
     const uploaded = await uploadFile("hello.txt", "hello", "text/plain");
 
     const response = await createFileContentResponse(
@@ -39,7 +42,6 @@ describe("file content response", () => {
   });
 
   it("rejects unsatisfiable ranges", async () => {
-    vi.stubEnv("APP_URL", "https://chat.example");
     const uploaded = await uploadFile("short.txt", "hi", "text/plain");
 
     const response = await createFileContentResponse(

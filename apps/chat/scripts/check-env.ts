@@ -21,7 +21,6 @@ import {
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
-import { createStorageAdapter } from "../lib/file-storage";
 import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
 import { storageProvider } from "../lib/storage-provider";
 import {
@@ -250,7 +249,7 @@ function validateStorage(env: NodeJS.ProcessEnv): ValidationError | null {
   }
 
   try {
-    createStorageAdapter();
+    storageProvider.createAdapter();
   } catch (error) {
     return {
       feature: `fileStorage (${metadata.name})`,

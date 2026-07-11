@@ -2,11 +2,22 @@ import assert from "node:assert/strict";
 import { describe, it, vi } from "vitest";
 import type { ChatMessage } from "./ai/types";
 
+const fileStorage = vi.hoisted(() => ({
+  downloadFile: vi.fn(),
+  keyFromFileUrl: vi.fn(),
+  uploadFile: vi.fn(),
+}));
+
 vi.mock("@/lib/config", () => ({
   config: { appPrefix: "test" },
 }));
 
-import { cloneMessagesWithDocuments } from "./clone-messages";
+vi.mock("./file-storage", () => fileStorage);
+
+import {
+  cloneAttachmentsInMessages,
+  cloneMessagesWithDocuments,
+} from "./clone-messages";
 
 function createMessage({
   id,
@@ -214,5 +225,37 @@ describe("cloneMessagesWithDocuments", () => {
         assert.equal(part.output.documentId, newDocumentId);
       }
     }
+  });
+});
+
+describe("cloneAttachmentsInMessages", () => {
+  it("copies managed files through the configured storage provider", async () => {
+    fileStorage.keyFromFileUrl.mockReturnValue("stored-key");
+    fileStorage.downloadFile.mockResolvedValue({
+      arrayBuffer: async () => new TextEncoder().encode("contents").buffer,
+    });
+    fileStorage.uploadFile.mockResolvedValue({
+      url: "https://chat.example/api/files/content?key=cloned-key",
+    });
+
+    const [message] = await cloneAttachmentsInMessages([
+      {
+        parts: [
+          {
+            type: "file",
+            filename: "attachment.txt",
+            mediaType: "text/plain",
+            url: "https://old-chat.example/api/files/content?key=stored-key",
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(fileStorage.downloadFile.mock.calls, [["stored-key"]]);
+    assert.equal(fileStorage.uploadFile.mock.calls[0]?.[0], "attachment.txt");
+    assert.equal(
+      message.parts[0]?.type === "file" ? message.parts[0].url : null,
+      "https://chat.example/api/files/content?key=cloned-key"
+    );
   });
 });
