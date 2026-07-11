@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { deleteFilesByUrls, keyFromFileRequest, listFiles } from "@/lib/blob";
 import { config } from "@/lib/config";
 import { getAllAttachmentUrls } from "@/lib/db/queries";
 import { env } from "@/lib/env";
+import {
+  deleteFilesByUrls,
+  keyFromFileRequest,
+  listFiles,
+} from "@/lib/file-storage";
 
 const ORPHANED_ATTACHMENTS_RETENTION_TIME = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -58,21 +62,21 @@ async function cleanupOrphanedAttachments() {
     const usedAttachmentKeys = new Set(parsedAttachmentKeys);
 
     // Get all files from the configured storage provider
-    const { blobs } = await listFiles();
+    const { files } = await listFiles();
 
     // Find old files that are not referenced in any message
-    const oneHourAgo = new Date(
+    const retentionCutoff = new Date(
       Date.now() - ORPHANED_ATTACHMENTS_RETENTION_TIME
     );
     const orphanedUrls: string[] = [];
 
-    for (const blob of blobs) {
-      const blobDate = new Date(blob.uploadedAt);
-      const isOld = blobDate < oneHourAgo;
-      const isUnused = !usedAttachmentKeys.has(blob.pathname);
+    for (const file of files) {
+      const fileDate = new Date(file.uploadedAt);
+      const isOld = fileDate < retentionCutoff;
+      const isUnused = !usedAttachmentKeys.has(file.pathname);
 
       if (isOld && isUnused) {
-        orphanedUrls.push(blob.url);
+        orphanedUrls.push(file.url);
       }
     }
 

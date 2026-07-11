@@ -7,6 +7,6 @@ export const isPlaywrightTestEnvironment = getIsPlaywrightTestEnvironment(
   process.env
 );
 
-export const BLOB_FILE_PREFIX = `${config.appPrefix}/files/`;
+export const FILE_STORAGE_PREFIX = `${config.appPrefix}/files/`;
 
 export const ANONYMOUS_SESSION_COOKIES_KEY = "anonymous-session";

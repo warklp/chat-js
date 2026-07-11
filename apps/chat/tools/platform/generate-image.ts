@@ -2,9 +2,9 @@ import { type FileUIPart, generateImage, generateText, tool } from "ai";
 import { z } from "zod";
 import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
 import { getImageModel, getMultimodalImageModel } from "@/lib/ai/providers";
-import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
+import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
 
 interface GenerateImageProps {

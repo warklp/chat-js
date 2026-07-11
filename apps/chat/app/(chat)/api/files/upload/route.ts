@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
+import { uploadFile } from "@/lib/file-storage";
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({

@@ -13,7 +13,6 @@ import { getProvider } from "files-sdk/providers";
 import * as ts from "typescript";
 import type { GatewayType } from "../lib/ai/gateways/registry";
 import { generatedForGateway } from "../lib/ai/models.generated";
-import { createStorageAdapter } from "../lib/blob";
 import { config } from "../lib/config";
 import {
   aiToolEnvRequirements,
@@ -22,6 +21,7 @@ import {
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
+import { createStorageAdapter } from "../lib/file-storage";
 import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
 import { storageProvider } from "../lib/storage-provider";
 import {

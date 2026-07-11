@@ -17,7 +17,7 @@ import type {
   ToolOutput,
 } from "@/lib/ai/types";
 import { isSelectedModelValue } from "@/lib/ai/types";
-import { deleteFilesByUrls } from "@/lib/blob";
+import { deleteFilesByUrls } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
 import { chatMessageToDbMessage } from "@/lib/message-conversion";
 

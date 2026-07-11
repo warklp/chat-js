@@ -1,7 +1,7 @@
 import type { FileUIPart } from "ai";
 import type { ChatMessage } from "./ai/types";
-import { uploadFile } from "./blob";
-import { BLOB_FILE_PREFIX } from "./constants";
+import { FILE_STORAGE_PREFIX } from "./constants";
+import { keyFromFileUrl, uploadFile } from "./file-storage";
 import { generateUUID } from "./utils";
 
 function cloneMessages<
@@ -242,10 +242,10 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
       return part;
     }
 
-    // Skip if URL is not a blob URL (might be external)
-    if (!part.url.includes("blob.vercel-storage.com")) {
+    // Skip external files that are not managed by this ChatJS instance.
+    if (!keyFromFileUrl(part.url)) {
       console.warn(
-        "Attachment is not a Vercel blob, skipping clone:",
+        "Attachment is not a managed file, skipping clone:",
         part.url
       );
       return part;
@@ -268,18 +268,18 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
     }
 
     // Remove any existing prefix if it somehow got into the filename
-    if (filename.startsWith(BLOB_FILE_PREFIX)) {
-      filename = filename.replace(BLOB_FILE_PREFIX, "");
+    if (filename.startsWith(FILE_STORAGE_PREFIX)) {
+      filename = filename.replace(FILE_STORAGE_PREFIX, "");
     }
 
-    const newBlob = await uploadFile(
+    const uploadedFile = await uploadFile(
       filename,
       Buffer.from(await blob.arrayBuffer())
     );
 
     return {
       ...part,
-      url: newBlob.url,
+      url: uploadedFile.url,
     };
   } catch (error) {
     console.error("Failed to clone attachment:", error);

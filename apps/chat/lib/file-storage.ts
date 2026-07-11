@@ -1,12 +1,13 @@
 import { type Body, Files, FilesError } from "files-sdk";
 import { nanoid } from "nanoid";
-import { BLOB_FILE_PREFIX } from "./constants";
+import { FILE_STORAGE_PREFIX } from "./constants";
 import { storageProvider } from "./storage-provider";
 
 const FILE_CONTENT_PATH = "/api/files/content";
 const SAFE_EXTENSION = /^\.[a-z0-9]{1,10}$/;
 const STORAGE_KEY = /^[A-Za-z0-9_-]{24}(?:\.[a-z0-9]{1,10})?$/;
 const PATH_SEPARATOR = /[\\/]/;
+
 export function createStorageAdapter() {
   return storageProvider.createAdapter();
 }
@@ -16,7 +17,7 @@ let files: Files | undefined;
 function getFiles(): Files {
   files ??= new Files({
     adapter: createStorageAdapter(),
-    prefix: BLOB_FILE_PREFIX,
+    prefix: FILE_STORAGE_PREFIX,
     retries: 2,
   });
   return files;
@@ -99,19 +100,19 @@ export async function uploadFile(
 }
 
 export async function listFiles() {
-  const blobs: Array<{
+  const files: Array<{
     pathname: string;
     uploadedAt: Date;
     url: string;
   }> = [];
   for await (const file of getFiles().listAll()) {
-    blobs.push({
+    files.push({
       pathname: file.key,
       uploadedAt: new Date(file.lastModified ?? Date.now()),
       url: createFileUrl(file.key),
     });
   }
-  return { blobs };
+  return { files };
 }
 
 export async function deleteFilesByUrls(urls: string[]): Promise<void> {
