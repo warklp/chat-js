@@ -5,21 +5,35 @@ import type { UIMessage } from "ai";
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import {
 	type MessageTreeSnapshot,
-	type ThreadConcurrency,
 	type ThreadRun,
 	type ThreadRunHandle,
 	ThreadRuntime,
+	type ThreadRuntimeOptions,
 	type ThreadStartRunOptions,
 	type TreeSendOptions,
 } from "./runtime";
 
+type ThreadHookOptions = {
+	experimental_throttle?: number;
+	resume?: boolean;
+};
+
+type ExternalThreadOptions<TMessage extends UIMessage> = ThreadHookOptions & {
+	runtime: ThreadRuntime<TMessage>;
+};
+
 export type UseThreadOptions<TMessage extends UIMessage = UIMessage> =
-	ConstructorParameters<typeof ThreadRuntime<TMessage>>[0] & {
-		concurrency?: ThreadConcurrency;
-		experimental_throttle?: number;
-		initialTree?: MessageTreeSnapshot<TMessage>;
-		resume?: boolean;
-	};
+	| ExternalThreadOptions<TMessage>
+	| (ThreadHookOptions &
+			ThreadRuntimeOptions<TMessage> & {
+				runtime?: never;
+			});
+
+function hasSuppliedRuntime<TMessage extends UIMessage>(
+	options: UseThreadOptions<TMessage>,
+): options is ExternalThreadOptions<TMessage> {
+	return "runtime" in options && options.runtime !== undefined;
+}
 
 export type TreeHelpers<TMessage extends UIMessage = UIMessage> = {
 	childrenByParentId: Record<string, string[]>;
@@ -38,6 +52,7 @@ export type TreeHelpers<TMessage extends UIMessage = UIMessage> = {
 	status: ReturnType<ThreadRuntime<TMessage>["getSnapshot"]>["treeStatus"];
 	getRun: (runId: string) => ThreadRun | undefined;
 	getRunForMessage: (messageId: string) => ThreadRun | undefined;
+	getSnapshot: () => MessageTreeSnapshot<TMessage>;
 	resumeRun: (runId: string, options?: TreeSendOptions) => Promise<void>;
 	setCursor: (messageId: string | null) => void;
 	setCursorToParentOf: (messageId: string) => void;
@@ -51,7 +66,6 @@ export type TreeHelpers<TMessage extends UIMessage = UIMessage> = {
 
 export type UseThreadHelpers<TMessage extends UIMessage = UIMessage> =
 	UseChatHelpers<TMessage> & {
-		exportTree: () => MessageTreeSnapshot<TMessage>;
 		lastEvent: string;
 		sendMessage: (
 			message?: Parameters<UseChatHelpers<TMessage>["sendMessage"]>[0],
@@ -62,9 +76,46 @@ export type UseThreadHelpers<TMessage extends UIMessage = UIMessage> =
 
 function useRuntimeSnapshot<TMessage extends UIMessage>(
 	runtime: ThreadRuntime<TMessage>,
+	throttleWaitMs?: number,
 ) {
+	const subscribe = useCallback(
+		(listener: () => void) => {
+			if (!throttleWaitMs) {
+				return runtime.subscribe(listener);
+			}
+
+			let lastCall = 0;
+			let timeout: ReturnType<typeof setTimeout> | undefined;
+			const notify = () => {
+				const elapsed = Date.now() - lastCall;
+				if (elapsed >= throttleWaitMs) {
+					lastCall = Date.now();
+					listener();
+					return;
+				}
+				if (timeout) {
+					return;
+				}
+				timeout = setTimeout(() => {
+					timeout = undefined;
+					lastCall = Date.now();
+					listener();
+				}, throttleWaitMs - elapsed);
+			};
+
+			const unsubscribe = runtime.subscribe(notify);
+			return () => {
+				unsubscribe();
+				if (timeout) {
+					clearTimeout(timeout);
+				}
+			};
+		},
+		[runtime, throttleWaitMs],
+	);
+
 	return useSyncExternalStore(
-		runtime.subscribe,
+		subscribe,
 		runtime.getSnapshot,
 		runtime.getSnapshot,
 	);
@@ -74,21 +125,47 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 	options: UseThreadOptions<TMessage> = {},
 ): UseThreadHelpers<TMessage> {
 	const runtimeRef = useRef<ThreadRuntime<TMessage> | null>(null);
-	if (!runtimeRef.current) {
-		runtimeRef.current = new ThreadRuntime(options);
+	const suppliedRuntime = hasSuppliedRuntime(options)
+		? options.runtime
+		: undefined;
+	const runtimeOptions = hasSuppliedRuntime(options) ? undefined : options;
+	if (suppliedRuntime) {
+		runtimeRef.current = suppliedRuntime;
+	} else if (
+		!runtimeRef.current ||
+		(runtimeOptions?.id !== undefined &&
+			runtimeRef.current.chatId !== runtimeOptions.id)
+	) {
+		runtimeRef.current = new ThreadRuntime(runtimeOptions);
 	}
 
 	const runtime = runtimeRef.current;
-	runtime.updateCallbacks(options);
-	const snapshot = useRuntimeSnapshot(runtime);
-	const resumeRef = useRef(options.resume);
+	if (runtimeOptions) {
+		runtime.updateCallbacks(runtimeOptions);
+	}
+	const snapshot = useRuntimeSnapshot(runtime, options.experimental_throttle);
+	const status = useSyncExternalStore(
+		runtime.subscribe,
+		() => runtime.getSnapshot().status,
+		() => runtime.getSnapshot().status,
+	);
+	const treeStatus = useSyncExternalStore(
+		runtime.subscribe,
+		() => runtime.getSnapshot().treeStatus,
+		() => runtime.getSnapshot().treeStatus,
+	);
+	const error = useSyncExternalStore(
+		runtime.subscribe,
+		() => runtime.getSnapshot().error,
+		() => runtime.getSnapshot().error,
+	);
 
 	useEffect(() => {
-		if (!resumeRef.current) {
+		if (!options.resume) {
 			return;
 		}
 		runtime.resumeStream();
-	}, [runtime]);
+	}, [options.resume, runtime]);
 
 	const setMessages = useCallback<UseChatHelpers<TMessage>["setMessages"]>(
 		(messages) => runtime.setMessages(messages),
@@ -100,8 +177,7 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 		addToolOutput: runtime.addToolOutput,
 		addToolResult: runtime.addToolResult,
 		clearError: runtime.clearError,
-		error: snapshot.error,
-		exportTree: () => runtime.exportTree(),
+		error,
 		id: runtime.chatId,
 		lastEvent: snapshot.lastEvent,
 		messages: snapshot.messages,
@@ -109,7 +185,7 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 		resumeStream: runtime.resumeStream,
 		sendMessage: runtime.sendMessage,
 		setMessages,
-		status: snapshot.status,
+		status,
 		stop: runtime.stop,
 		tree: {
 			activeRuns: snapshot.activeRuns,
@@ -122,12 +198,13 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 			getPath: (messageId) => runtime.getPath(messageId),
 			getRun: (runId) => runtime.getRun(runId),
 			getRunForMessage: (messageId) => runtime.getRunForMessage(messageId),
+			getSnapshot: () => runtime.getTreeSnapshot(),
 			getSiblings: (messageId) => runtime.getSiblings(messageId),
 			messagesById: snapshot.messagesById,
 			parentById: snapshot.parentById,
 			rootIds: snapshot.rootIds,
 			runs: snapshot.runs,
-			status: snapshot.treeStatus,
+			status: treeStatus,
 			resumeRun: (runId, requestOptions) =>
 				runtime.resumeRun(runId, requestOptions),
 			setCursor: (messageId) => runtime.setCursor(messageId),

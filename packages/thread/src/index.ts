@@ -8,7 +8,6 @@ export {
 	type ThreadEvent,
 	type ThreadRun,
 	type ThreadRunHandle,
-	type ThreadRunState,
 	ThreadRuntime,
 	type ThreadRuntimeOptions,
 	type ThreadStartRunOptions,

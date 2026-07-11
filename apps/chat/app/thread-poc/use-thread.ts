@@ -42,7 +42,6 @@ type StreamBody = {
   tree?: {
     assistantMessageId?: string;
     responseLabel?: string;
-    runId?: string;
     userMessageId?: string;
   };
 };
@@ -98,7 +97,7 @@ class FakeTreeTransport implements ChatTransport<PocMessage> {
     const requestBody = body as StreamBody | undefined;
     const assistantMessageId =
       requestBody?.tree?.assistantMessageId ?? "assistant";
-    const runId = requestBody?.tree?.runId ?? `run:${assistantMessageId}`;
+    const runId = assistantMessageId;
     const responseLabel = requestBody?.tree?.responseLabel ?? "response";
     const userText = getMessageText(messages.at(-1) as PocMessage);
     const text = `${responseLabel}: streaming from "${userText}". The cursor follows this response only while it remains the foreground stream.`;

@@ -1,6 +1,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { type UseThreadHelpers, useThread } from "../src/react";
+import { ThreadRuntime } from "../src/runtime";
 
 declare const messageId: string;
 
@@ -22,11 +23,17 @@ function useCompatibilityCheck() {
 	thread.tree.runs;
 	thread.tree.status;
 	thread.tree.getRunForMessage(messageId);
+	thread.tree.getSnapshot();
 	thread.tree.startRun({ from: messageId, message: { text: "branch" } });
 
 	const explicitHelpers: UseThreadHelpers<UIMessage> = thread;
-	explicitHelpers.exportTree();
 	return explicitHelpers;
 }
 
+function useExternalRuntimeCheck() {
+	const runtime = new ThreadRuntime<UIMessage>();
+	return useThread({ runtime });
+}
+
 void useCompatibilityCheck;
+void useExternalRuntimeCheck;

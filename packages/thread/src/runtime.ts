@@ -14,8 +14,6 @@ import {
 
 export const ROOT_PARENT_ID = "__root__";
 
-export type ThreadRunState = "active" | "aborted" | "completed" | "failed";
-
 export type ThreadRun = {
 	assistantMessageId: string;
 	error: Error | undefined;
@@ -23,7 +21,6 @@ export type ThreadRun = {
 	id: string;
 	originCursorId: string | null;
 	parentMessageId: string | null;
-	state: ThreadRunState;
 	status: ChatStatus;
 	userMessageId: string;
 };
@@ -87,7 +84,7 @@ export type TreeStateSnapshot<TMessage extends UIMessage = UIMessage> =
 
 export type MessageTreeStore<TMessage extends UIMessage = UIMessage> = {
 	addMessage: (message: TMessage, parentId: string | null) => void;
-	exportTree: () => MessageTreeSnapshot<TMessage>;
+	getSnapshot: () => MessageTreeSnapshot<TMessage>;
 	getChildren: (messageId: string | null) => TMessage[];
 	getLeaves: (messageId?: string | null) => TMessage[];
 	getMessage: (messageId: string) => TMessage | undefined;
@@ -116,7 +113,6 @@ type RunRecord<TMessage extends UIMessage> = {
 	error: Error | undefined;
 	finished: Promise<void>;
 	spec: RunSpec;
-	state: ThreadRunState;
 	status: ChatStatus;
 };
 
@@ -422,17 +418,23 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 	addToolApprovalResponse: AbstractChat<TMessage>["addToolApprovalResponse"] =
 		async (response) => {
 			const run = this.getRunForApproval(response.id);
-			await run.chat.addToolApprovalResponse(response);
+			await run.chat.addToolApprovalResponse({
+				...response,
+				options: this.withRunRequestBody(run.spec, response.options),
+			});
 		};
 
 	addToolOutput: AbstractChat<TMessage>["addToolOutput"] = async (output) => {
 		const run = this.getRunForToolCall(output.toolCallId);
-		await run.chat.addToolOutput(output);
+		await run.chat.addToolOutput({
+			...output,
+			options: this.withRunRequestBody(run.spec, output.options),
+		});
 	};
 
 	addToolResult: AbstractChat<TMessage>["addToolResult"] = this.addToolOutput;
 
-	exportTree(): MessageTreeSnapshot<TMessage> {
+	getTreeSnapshot(): MessageTreeSnapshot<TMessage> {
 		const snapshot = this.buildSnapshot();
 		return {
 			childrenByParentId: snapshot.childrenByParentId,
@@ -536,6 +538,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			target.role === "assistant" ? this.#parentById.get(target.id) : target.id;
 		if (!userMessageId) {
 			return;
+		}
+		if (!this.canStartRun(userMessageId)) {
+			throw new Error(`Cannot start another run from ${userMessageId}`);
 		}
 
 		const run = this.startAssistantForUser({
@@ -697,6 +702,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 				this.emit("Select a user message before sending without input");
 				throw new Error("Select a user message before starting a run");
 			}
+			if (!this.canStartRun(originMessage.id)) {
+				throw new Error(`Cannot start another run from ${originMessage.id}`);
+			}
 
 			return this.startAssistantForUser({
 				follow,
@@ -714,6 +722,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		const existingMessage = this.#messagesById.get(userMessage.id);
 		if (existingMessage && existingMessage.role !== "user") {
 			throw new Error(`Message ${userMessage.id} is not a user message`);
+		}
+		if (!this.canStartRun(userMessage.id)) {
+			throw new Error(`Cannot start another run from ${userMessage.id}`);
 		}
 		const attachmentId = existingMessage
 			? (this.#parentById.get(userMessage.id) ?? null)
@@ -758,11 +769,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			return;
 		}
 		run.status = status;
-		if (status === "submitted" || status === "streaming") {
-			run.state = "active";
-		} else if (status === "ready" && run.state === "active") {
-			run.state = run.aborted ? "aborted" : "completed";
-		}
 		this.emit(`${runId} is ${status}`);
 		this.emitRunEvent(run, "run-updated");
 	}
@@ -791,6 +797,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		parentId: string | null,
 		options: { silent?: boolean } = {},
 	) {
+		if (parentId !== null && !this.#messagesById.has(parentId)) {
+			throw new Error(`Unknown parent message ${parentId}`);
+		}
 		const previousParentId = this.#parentById.get(message.id);
 		this.#messagesById.set(message.id, clone(message));
 		this.#parentById.set(message.id, parentId);
@@ -835,7 +844,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		const runs = Array.from(this.#runsById.values()).map((run) =>
 			this.toRunSnapshot(run),
 		);
-		const activeRuns = runs.filter((run) => run.state === "active");
+		const activeRuns = runs.filter(
+			(run) => run.status === "submitted" || run.status === "streaming",
+		);
 		const selectedRun = this.getSelectedRunRecord();
 		const error = selectedRun?.error;
 
@@ -854,7 +865,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			runs,
 			treeStatus: this.resolveStatus(
 				Array.from(this.#runsById.values()).filter(
-					(run) => run.state === "active" || run.state === "failed",
+					(run) => run.status !== "ready",
 				),
 			),
 			version: 1,
@@ -900,7 +911,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			follow: true,
 			originCursorId: assistantMessage.id,
 			parentMessageId: this.#parentById.get(userMessageId) ?? null,
-			runId: `run:${assistantMessage.id}`,
+			runId: assistantMessage.id,
 			userMessageId,
 		};
 		const record: RunRecord<TMessage> = {
@@ -909,7 +920,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			error: undefined,
 			finished: Promise.resolve(),
 			spec,
-			state: "completed",
 			status: "ready",
 		};
 		this.#runsById.set(spec.runId, record);
@@ -924,21 +934,16 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		if (!run) {
 			return;
 		}
-		run.state = run.aborted ? "aborted" : run.error ? "failed" : "completed";
 		this.emit(
-			run.state === "aborted"
+			run.aborted
 				? `Stopped ${runId}`
-				: run.state === "failed"
+				: run.error
 					? `Failed ${runId}`
 					: `Finished ${runId}`,
 		);
 		this.emitRunEvent(
 			run,
-			run.state === "aborted"
-				? "run-aborted"
-				: run.state === "failed"
-					? "run-failed"
-					: "run-completed",
+			run.aborted ? "run-aborted" : run.error ? "run-failed" : "run-completed",
 		);
 	}
 
@@ -968,7 +973,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 
 	private getActiveRunRecords() {
 		return Array.from(this.#runsById.values()).filter(
-			(run) => run.state === "active",
+			(run) => run.status === "submitted" || run.status === "streaming",
 		);
 	}
 
@@ -986,7 +991,8 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			runs.find(
 				(candidate) =>
 					candidate.spec.userMessageId === messageId &&
-					candidate.state === "active",
+					(candidate.status === "submitted" ||
+						candidate.status === "streaming"),
 			) ??
 			runs.find((candidate) => candidate.spec.userMessageId === messageId);
 		return run ? this.toRunSnapshot(run) : undefined;
@@ -1029,6 +1035,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 	indexMessageOwnership(runId: string, message: TMessage) {
 		for (const part of message.parts) {
 			if ("toolCallId" in part && typeof part.toolCallId === "string") {
+				// TODO: add run-scoped routing if a transport permits non-global tool IDs.
 				this.#runIdByToolCallId.set(part.toolCallId, runId);
 			}
 			if (
@@ -1076,19 +1083,9 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 		parentMessageId: string | null;
 		userMessageId: string;
 	}): ThreadRunHandle {
-		if (!this.canStartRun(userMessageId)) {
-			throw new Error(`Cannot start another run from ${userMessageId}`);
-		}
-
 		const assistantMessageId =
 			getAssistantMessageIdFromOptions(options) ?? this.generateMessageId();
-		const runId = `run:${assistantMessageId}`;
-		if (
-			this.#runsById.has(runId) ||
-			this.#messagesById.has(assistantMessageId)
-		) {
-			throw new Error(`Assistant message ${assistantMessageId} already exists`);
-		}
+		const runId = assistantMessageId;
 		const assistantShell = createEmptyAssistantMessage<TMessage>({
 			id: assistantMessageId,
 		});
@@ -1120,7 +1117,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			error: undefined,
 			finished: Promise.resolve(),
 			spec,
-			state: "active",
 			status: "submitted",
 		};
 		this.#runsById.set(spec.runId, record);
@@ -1160,7 +1156,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 	) {
 		run.aborted = false;
 		run.error = undefined;
-		run.state = "active";
 		const finished = run.chat
 			.resumeStream(this.withRunRequestBody(run.spec, options))
 			.finally(() => this.completeRun(run.spec.runId));
@@ -1184,7 +1179,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			id: run.spec.runId,
 			originCursorId: run.spec.originCursorId,
 			parentMessageId: run.spec.parentMessageId,
-			state: run.state,
 			status: run.status,
 			userMessageId: run.spec.userMessageId,
 		};
@@ -1202,6 +1196,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 			...options,
 			body: {
 				...options.body,
+				assistantMessageId: spec.assistantMessageId,
 				tree: {
 					...treeOptions,
 					assistantMessageId: spec.assistantMessageId,
@@ -1209,7 +1204,6 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 					originCursorId: spec.originCursorId,
 					parentMessageId: spec.parentMessageId,
 					pathIds: this.getPathIds(spec.userMessageId),
-					runId: spec.runId,
 					userMessageId: spec.userMessageId,
 				},
 			},

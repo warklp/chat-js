@@ -79,21 +79,28 @@ export function ChatSync({ id }: { id: string }) {
           },
         };
       },
-      prepareReconnectToStreamRequest({ id: chatId }) {
+      prepareReconnectToStreamRequest({ body, id: chatId }) {
         const current = lastMessageRef.current;
         const activeStreamId = current?.metadata?.activeStreamId ?? null;
-        const partialMessageId = isResumableActiveStreamId(activeStreamId)
-          ? (current?.id ?? null)
-          : null;
+        const runMessageId =
+          typeof body?.assistantMessageId === "string"
+            ? body.assistantMessageId
+            : null;
+        const partialMessageId =
+          runMessageId ??
+          (isResumableActiveStreamId(activeStreamId)
+            ? (current?.id ?? null)
+            : null);
 
         traceThread("primary-request", "transport.prepareReconnect", {
           activeStreamId,
           chatId,
           partialMessageId,
+          runMessageId,
         });
 
         return {
-          api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
+          api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${encodeURIComponent(partialMessageId)}` : ""}`,
         };
       },
     }),

@@ -17,6 +17,7 @@ type PendingRequest = {
 class ControlledTransport implements ChatTransport<UIMessage> {
 	readonly requests = new Map<string, PendingRequest>();
 	readonly aborted = new Set<string>();
+	readonly requestCountByAssistant = new Map<string, number>();
 
 	sendMessages: ChatTransport<UIMessage>["sendMessages"] = (options) => {
 		const body = options.body as
@@ -34,6 +35,10 @@ class ControlledTransport implements ChatTransport<UIMessage> {
 		return Promise.resolve(
 			new ReadableStream<UIMessageChunk>({
 				start: (controller) => {
+					this.requestCountByAssistant.set(
+						assistantMessageId,
+						(this.requestCountByAssistant.get(assistantMessageId) ?? 0) + 1,
+					);
 					this.requests.set(assistantMessageId, {
 						abortSignal: options.abortSignal,
 						controller,
@@ -312,7 +317,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		});
 		await waitFor(() => transport.requests.size === 2);
 
-		await runtime.stopRun("run:assistant-a");
+		await runtime.stopRun("assistant-a");
 		await waitFor(() => transport.aborted.has("assistant-a"));
 		expect(transport.aborted.has("assistant-b")).toBe(false);
 
@@ -341,7 +346,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 
 		transport.finish("assistant-a");
 		await run.finished;
-		expect(run.getSnapshot()?.state).toBe("completed");
+		expect(run.getSnapshot()?.status).toBe("ready");
 	});
 
 	test("routes tool output to the run that owns the tool call", async () => {
@@ -371,6 +376,11 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 				type: "tool-input-available",
 			});
 		}
+		transport.emit("assistant-a", {
+			approvalId: "approval-a",
+			toolCallId: "tool-a",
+			type: "tool-approval-request",
+		});
 		await waitFor(
 			() =>
 				runtime.getMessage("assistant-a")?.parts.length === 1 &&
@@ -380,6 +390,17 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		transport.finish("assistant-a");
 		transport.finish("assistant-b");
 		await Promise.all([runA.finished, runB.finished]);
+		await runtime.addToolApprovalResponse({
+			approved: true,
+			id: "approval-a",
+		});
+		expect(runtime.getMessage("assistant-a")?.parts).toContainEqual(
+			expect.objectContaining({
+				approval: { approved: true, id: "approval-a", reason: undefined },
+				state: "approval-responded",
+				toolCallId: "tool-a",
+			}),
+		);
 
 		await runtime.addToolOutput({
 			output: "A only",
@@ -393,6 +414,66 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 		expect(runtime.getMessage("assistant-b")?.parts).toContainEqual(
 			expect.not.objectContaining({ output: "A only" }),
 		);
+	});
+
+	test("keeps automatic tool resubmission on the owning run", async () => {
+		const transport = new ControlledTransport();
+		const automaticChecks: string[][] = [];
+		let didRequestFollowup = false;
+		const runtime = new ThreadRuntime({
+			sendAutomaticallyWhen: ({ messages }) => {
+				automaticChecks.push(
+					messages
+						.at(-1)
+						?.parts.flatMap((part) =>
+							"state" in part && typeof part.state === "string"
+								? [part.state]
+								: [],
+						) ?? [],
+				);
+				const hasOutput =
+					messages
+						.at(-1)
+						?.parts.some(
+							(part) => "state" in part && part.state === "output-available",
+						) ?? false;
+				if (hasOutput && !didRequestFollowup) {
+					didRequestFollowup = true;
+					return true;
+				}
+				return false;
+			},
+			transport,
+		});
+		const run = await runtime.startRun({
+			message: userMessage("user-a", "A"),
+			request: { body: { assistantMessageId: "assistant-a" } },
+		});
+		await waitFor(() => transport.requests.has("assistant-a"));
+		transport.emit("assistant-a", {
+			dynamic: true,
+			input: { branch: "A" },
+			toolCallId: "tool-a",
+			toolName: "branch-tool",
+			type: "tool-input-available",
+		});
+		transport.finish("assistant-a");
+		await run.finished;
+
+		await runtime.addToolOutput({
+			output: "continue",
+			tool: "branch-tool",
+			toolCallId: "tool-a",
+		});
+		await waitFor(() => automaticChecks.length >= 2);
+		expect(automaticChecks).toContainEqual(["output-available"]);
+		await waitFor(
+			() => transport.requestCountByAssistant.get("assistant-a") === 2,
+		);
+		emitText(transport, "assistant-a", "text-2", "follow-up");
+		transport.finish("assistant-a");
+		await waitFor(() => runtime.getRun("assistant-a")?.status === "ready");
+		expect(runtime.getSnapshot().activeRuns).toHaveLength(0);
 	});
 });
 

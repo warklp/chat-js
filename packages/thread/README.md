@@ -83,6 +83,10 @@ after the request and automatic tool follow-ups finish. `tree.startRun` returns 
 handle as soon as the request starts, which is useful for launching parallel
 responses and controlling them independently.
 
+Each run uses its reserved assistant message ID as its public identity. A
+backend may keep a separate resumable stream ID in message metadata; that
+transport detail does not need to enter the hook API.
+
 The top-level state always describes the selected path. `status`, `error`,
 `stop`, `clearError`, and `resumeStream` target the run selected by
 `tree.cursorId`. Whole-tree state and controls live under `tree`:
@@ -99,9 +103,29 @@ chat.tree.stopAll();
 await chat.tree.resumeRun(runId);
 ```
 
+Runs use the same `submitted`, `streaming`, `ready`, and `error` statuses as
+`useChat`. `activeRuns` contains runs whose status is `submitted` or
+`streaming`; aborting a run returns it to `ready` like AI SDK.
+
 Tool outputs and approval responses keep the standard `useChat` signatures.
 The runtime routes each response to the run that emitted its tool or approval
 identifier.
+
+For resumable HTTP streams, route reconnects by assistant message ID with AI
+SDK's native transport hook. The server can load that message and resolve its
+current infrastructure stream ID:
+
+```ts
+new DefaultChatTransport({
+  prepareReconnectToStreamRequest({ body, id }) {
+    const messageId = body?.assistantMessageId;
+
+    return {
+      api: `/api/chat/${id}/stream?messageId=${messageId}`,
+    };
+  },
+});
+```
 
 The package does not ship UI components. Build tree renderers, sibling
 switchers, branch pickers, canvases, or debug panels from the headless state:
@@ -125,10 +149,18 @@ chat.tree.getSiblings(messageId);
 cursor backward without deleting hidden descendants; a changed suffix creates
 a branch. Reusing an existing message ID under a different parent throws.
 
+Pass an externally owned runtime when the application needs the instance-level
+equivalent of `useChat({ chat })`:
+
+```ts
+const runtime = createThreadRuntime({ transport });
+const chat = useThread({ runtime });
+```
+
 Persist and restore the tree with snapshots:
 
 ```ts
-const snapshot = chat.exportTree();
+const snapshot = chat.tree.getSnapshot();
 
 const restored = useThread({
   initialTree: snapshot,

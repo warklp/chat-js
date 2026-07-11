@@ -166,27 +166,17 @@ ChatTransport
 `readUIMessageStream` should remain a documented alternative, not the initial
 engine.
 
-## Gaps before shipping
+## Implementation follow-up
 
-The spike validates the core direction but exposes incomplete package behavior:
+The package now routes tool output and approval responses to durable runs,
+reconciles `setMessages` without deleting hidden branches, and exposes AI SDK
+statuses per run. Runs use their assistant message ID as identity. HTTP
+reconnection should route that message ID through
+`prepareReconnectToStreamRequest`; the server can then resolve its private
+resumable stream ID.
 
-1. `addToolOutput`, `addToolApprovalResponse`, and `addToolResult` are currently
-   unimplemented. They need deterministic routing to the owning `BranchRun`.
-2. Completed runs may need to remain addressable while client-side tools await
-   output or approval.
-3. `resumeStream` needs a stream-specific identity contract. AI SDK's transport
-   reconnect API is chat-scoped by default.
-4. `onData`, `onToolCall`, `onFinish`, and `onError` need optional branch context
-   in addition to their `useChat`-compatible callbacks.
-5. Active-path `status`, `error`, and `stop` semantics must be defined when the
-   cursor points to a user node or moves while its response streams.
-6. `setMessages` cannot remain an unconstrained alias for merging a mutable
-   linear path into the canonical tree.
-7. Error and abort behavior must define whether empty assistant shells remain,
-   become failed nodes, or are removed.
-8. Differential compatibility tests should cover tool approvals, automatic
-   resubmission, regeneration, reconnection, metadata schemas, malformed
-   streams, and abort timing.
+Remaining differential coverage should focus on metadata schemas, malformed
+streams, and abort timing.
 
 ## Decision
 

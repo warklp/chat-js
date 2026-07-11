@@ -33,7 +33,6 @@ interface StreamBody {
   tree?: {
     assistantMessageId?: string;
     responseLabel?: string;
-    runId?: string;
   };
 }
 
@@ -171,7 +170,7 @@ class PlaygroundTransport implements ChatTransport<PlaygroundMessage> {
     const requestBody = body as StreamBody | undefined;
     const assistantMessageId =
       requestBody?.tree?.assistantMessageId ?? "assistant";
-    const runId = requestBody?.tree?.runId ?? `run:${assistantMessageId}`;
+    const runId = assistantMessageId;
     const responseLabel = requestBody?.tree?.responseLabel ?? "Assistant";
     const userMessage = messages.at(-1);
     const prompt = userMessage ? getMessageText(userMessage) : "this branch";

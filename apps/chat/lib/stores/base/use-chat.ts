@@ -5,12 +5,17 @@ import {
   type UseChatHelpers,
   type UseChatOptions,
 } from "@ai-sdk/react";
-import { type MessageTreeSnapshot, ROOT_PARENT_ID } from "@chatjs/thread";
+import {
+  type MessageTreeSnapshot,
+  ROOT_PARENT_ID,
+  type ThreadRuntimeOptions,
+} from "@chatjs/thread";
 import {
   type UseThreadHelpers,
   type UseThreadOptions,
   useThread as useOriginalChat,
 } from "@chatjs/thread/react";
+import type { ChatInit } from "ai";
 import { useCallback, useEffect, useRef } from "react";
 import {
   summarizeThreadMessages,
@@ -35,8 +40,10 @@ export interface CompatibleChatStore<TMessage extends UIMessage = UIMessage> {
 
 export type UseChatOptionsWithPerformance<
   TMessage extends UIMessage = UIMessage,
-> = UseChatOptions<TMessage> &
-  Pick<UseThreadOptions<TMessage>, "concurrency" | "initialTree"> & {
+> = ChatInit<TMessage> & {
+  experimental_throttle?: number;
+  resume?: boolean;
+} & Pick<ThreadRuntimeOptions<TMessage>, "concurrency" | "initialTree"> & {
     store?: CompatibleChatStore<TMessage>;
     // Additional performance options
     enableBatching?: boolean;
@@ -308,7 +315,7 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
 
     const setTreeSnapshot = (store as any).getState?.().setTreeSnapshot;
     if (typeof setTreeSnapshot === "function") {
-      const snapshot = chatHelpers.exportTree();
+      const snapshot = chatHelpers.tree.getSnapshot();
       const signature = treeSignature(snapshot);
 
       if (lastSyncedTreeRef.current !== signature) {
