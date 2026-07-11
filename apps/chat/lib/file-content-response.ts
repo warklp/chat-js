@@ -3,9 +3,9 @@ import {
   downloadFile,
   getFileMetadata,
   getFileProviderUrl,
-  keyFromFileRequest,
   storageSupportsRange,
 } from "./file-storage";
+import { keyFromFileUrl } from "./file-url";
 
 const RANGE_HEADER = /^bytes=(?:(\d+)-(\d*)|-(\d+))$/;
 
@@ -33,7 +33,7 @@ function parseRange(value: string, size: number) {
 }
 
 export async function createFileContentResponse(request: Request) {
-  const key = keyFromFileRequest(request.url);
+  const key = keyFromFileUrl(request.url);
   if (!key) {
     return new Response("Invalid file URL", { status: 400 });
   }

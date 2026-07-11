@@ -1,12 +1,11 @@
 import { type Body, Files, FilesError } from "files-sdk";
 import { nanoid } from "nanoid";
 import { FILE_STORAGE_PREFIX } from "./constants";
+import { FILE_CONTENT_PATH, keyFromFileUrl } from "./file-url";
 import { storageProvider } from "./storage-provider";
 import { getBaseUrl } from "./url";
 
-const FILE_CONTENT_PATH = "/api/files/content";
 const SAFE_EXTENSION = /^\.[a-z0-9]{1,10}$/;
-const STORAGE_KEY = /^[A-Za-z0-9_-]{24}(?:\.[a-z0-9]{1,10})?$/;
 const PATH_SEPARATOR = /[\\/]/;
 
 let files: Files | undefined;
@@ -43,29 +42,6 @@ function createFileUrl(key: string): string {
   const url = new URL(FILE_CONTENT_PATH, getBaseUrl());
   url.searchParams.set("key", key);
   return url.toString();
-}
-
-export function keyFromFileUrl(value: string): string | null {
-  return parseFileUrl(value);
-}
-
-function parseFileUrl(value: string): string | null {
-  try {
-    const url = new URL(value);
-    const key = url.searchParams.get("key");
-    return url.pathname === FILE_CONTENT_PATH &&
-      url.searchParams.size === 1 &&
-      key &&
-      STORAGE_KEY.test(key)
-      ? key
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-export function keyFromFileRequest(value: string): string | null {
-  return parseFileUrl(value);
 }
 
 export async function uploadFile(

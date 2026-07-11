@@ -4,7 +4,6 @@ import type { ChatMessage } from "./ai/types";
 
 const fileStorage = vi.hoisted(() => ({
   downloadFile: vi.fn(),
-  keyFromFileUrl: vi.fn(),
   uploadFile: vi.fn(),
 }));
 
@@ -230,9 +229,9 @@ describe("cloneMessagesWithDocuments", () => {
 
 describe("cloneAttachmentsInMessages", () => {
   it("copies managed files through the configured storage provider", async () => {
-    fileStorage.keyFromFileUrl.mockReturnValue("stored-key");
     fileStorage.downloadFile.mockResolvedValue({
       arrayBuffer: async () => new TextEncoder().encode("contents").buffer,
+      type: "text/plain",
     });
     fileStorage.uploadFile.mockResolvedValue({
       url: "https://chat.example/api/files/content?key=cloned-key",
@@ -245,14 +244,17 @@ describe("cloneAttachmentsInMessages", () => {
             type: "file",
             filename: "attachment.txt",
             mediaType: "text/plain",
-            url: "https://old-chat.example/api/files/content?key=stored-key",
+            url: "https://old-chat.example/api/files/content?key=l_u0a2bkphKLFKsBI4q5Tue9.png",
           },
         ],
       },
     ]);
 
-    assert.deepEqual(fileStorage.downloadFile.mock.calls, [["stored-key"]]);
+    assert.deepEqual(fileStorage.downloadFile.mock.calls, [
+      ["l_u0a2bkphKLFKsBI4q5Tue9.png"],
+    ]);
     assert.equal(fileStorage.uploadFile.mock.calls[0]?.[0], "attachment.txt");
+    assert.equal(fileStorage.uploadFile.mock.calls[0]?.[2], "text/plain");
     assert.equal(
       message.parts[0]?.type === "file" ? message.parts[0].url : null,
       "https://chat.example/api/files/content?key=cloned-key"

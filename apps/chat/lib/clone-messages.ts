@@ -1,7 +1,8 @@
 import type { FileUIPart } from "ai";
 import type { ChatMessage } from "./ai/types";
 import { FILE_STORAGE_PREFIX } from "./constants";
-import { downloadFile, keyFromFileUrl, uploadFile } from "./file-storage";
+import { downloadFile, uploadFile } from "./file-storage";
+import { keyFromFileUrl } from "./file-url";
 import { generateUUID } from "./utils";
 
 function cloneMessages<
@@ -269,7 +270,8 @@ async function cloneFileUIPart(part: FileUIPart): Promise<FileUIPart> {
 
     const uploadedFile = await uploadFile(
       filename,
-      Buffer.from(await storedFile.arrayBuffer())
+      Buffer.from(await storedFile.arrayBuffer()),
+      storedFile.type
     );
 
     return {

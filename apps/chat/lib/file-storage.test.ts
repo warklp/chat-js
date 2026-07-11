@@ -20,17 +20,13 @@ vi.mock("./url", () => ({
   getBaseUrl: () => "https://chat.example",
 }));
 
-import {
-  deleteFilesByUrls,
-  keyFromFileRequest,
-  listFiles,
-  uploadFile,
-} from "./file-storage";
+import { deleteFilesByUrls, listFiles, uploadFile } from "./file-storage";
+import { keyFromFileUrl } from "./file-url";
 
 describe("file storage", () => {
   it("uploads, lists, and deletes through Files SDK", async () => {
     const uploaded = await uploadFile("../hello.txt", "hello", "text/plain");
-    const key = keyFromFileRequest(uploaded.url);
+    const key = keyFromFileUrl(uploaded.url);
 
     assert(key);
     assert.equal(uploaded.pathname, "hello.txt");

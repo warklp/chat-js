@@ -123,7 +123,7 @@ export const generateVideoTool = ({
         const timestamp = Date.now();
         const ext = resolveVideoExtension(video.mediaType);
         const filename = `generated-video-${timestamp}.${ext}`;
-        const uploaded = await uploadFile(filename, buffer);
+        const uploaded = await uploadFile(filename, buffer, video.mediaType);
 
         costAccumulator?.addAPICost("generateVideo", COST_CENTS);
 

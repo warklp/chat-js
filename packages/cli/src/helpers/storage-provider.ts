@@ -58,8 +58,13 @@ function isProviderSlug(value: string): value is ProviderSlug {
 }
 
 export function resolveStorageProvider(value: string): ProviderSlug {
-	if (!isProviderSlug(value) || UNSUPPORTED_SCAFFOLD_PROVIDERS.has(value)) {
+	if (!isProviderSlug(value)) {
 		throw new Error(`Unknown Files SDK provider: ${value}`);
+	}
+	if (UNSUPPORTED_SCAFFOLD_PROVIDERS.has(value)) {
+		throw new Error(
+			`Provider "${value}" is not supported for generated Next.js apps. Choose one of: ${INSTALLABLE_STORAGE_PROVIDERS.join(", ")}.`,
+		);
 	}
 	return value;
 }

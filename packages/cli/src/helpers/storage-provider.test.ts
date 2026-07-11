@@ -17,9 +17,16 @@ describe("storage provider configuration", () => {
 		for (const provider of INSTALLABLE_STORAGE_PROVIDERS) {
 			expect(resolveStorageProvider(provider)).toBe(provider);
 		}
-		expect(() => resolveStorageProvider("bun-s3")).toThrow("Unknown");
-		expect(() => resolveStorageProvider("convex")).toThrow("Unknown");
-		expect(() => resolveStorageProvider("memory")).toThrow("Unknown");
+		expect(() => resolveStorageProvider("bun-s3")).toThrow(
+			'Provider "bun-s3" is not supported',
+		);
+		expect(() => resolveStorageProvider("convex")).toThrow(
+			'Provider "convex" is not supported',
+		);
+		expect(() => resolveStorageProvider("memory")).toThrow(
+			'Provider "memory" is not supported',
+		);
+		expect(() => resolveStorageProvider("not-a-provider")).toThrow("Unknown");
 	});
 
 	it("derives an exported factory for every installable provider", async () => {

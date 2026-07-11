@@ -2,11 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { getAllAttachmentUrls } from "@/lib/db/queries";
 import { env } from "@/lib/env";
-import {
-  deleteFilesByUrls,
-  keyFromFileRequest,
-  listFiles,
-} from "@/lib/file-storage";
+import { deleteFilesByUrls, listFiles } from "@/lib/file-storage";
+import { keyFromFileUrl } from "@/lib/file-url";
 
 const ORPHANED_ATTACHMENTS_RETENTION_TIME = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -50,16 +47,11 @@ async function cleanupOrphanedAttachments() {
 
   try {
     const attachmentUrls = await getAllAttachmentUrls();
-    const parsedAttachmentKeys = attachmentUrls.map(keyFromFileRequest);
-    if (parsedAttachmentKeys.some((key) => key === null)) {
-      return {
-        deletedCount: 0,
-        deletedUrls: [],
-        skipped: true,
-        reason: "Some stored attachment URLs do not contain a stable file key",
-      };
-    }
-    const usedAttachmentKeys = new Set(parsedAttachmentKeys);
+    const usedAttachmentKeys = new Set(
+      attachmentUrls
+        .map(keyFromFileUrl)
+        .filter((key): key is string => key !== null)
+    );
 
     // Get all files from the configured storage provider
     const { files } = await listFiles();

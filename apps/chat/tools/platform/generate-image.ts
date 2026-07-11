@@ -187,7 +187,7 @@ async function runGenerateImageTraditional({
   const buffer = Buffer.from(res.images[0].base64, "base64");
   const timestamp = Date.now();
   const filename = `generated-image-${timestamp}.png`;
-  const result = await uploadFile(filename, buffer);
+  const result = await uploadFile(filename, buffer, "image/png");
 
   if (res.usage) {
     costAccumulator?.addLLMCost(
@@ -322,7 +322,7 @@ async function runGenerateImageMultimodal({
   const timestamp = Date.now();
   const ext = imageFile.mediaType.split("/")[1] || "png";
   const filename = `generated-image-${timestamp}.${ext}`;
-  const result = await uploadFile(filename, buffer);
+  const result = await uploadFile(filename, buffer, imageFile.mediaType);
 
   log.info(
     {
