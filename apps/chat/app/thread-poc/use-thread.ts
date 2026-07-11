@@ -139,6 +139,19 @@ class FakeTreeTransport implements ChatTransport<PocMessage> {
             });
             controller.close();
           } catch (error) {
+            if (abortSignal?.aborted) {
+              controller.enqueue({
+                finishReason: "stop",
+                messageMetadata: {
+                  activeStreamId: null,
+                  createdAt: new Date().toISOString(),
+                  title: responseLabel,
+                },
+                type: "finish",
+              });
+              controller.close();
+              return;
+            }
             controller.error(error);
           }
         },
