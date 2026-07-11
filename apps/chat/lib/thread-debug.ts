@@ -162,5 +162,5 @@ export function traceThread(scope: string, event: string, data: unknown = {}) {
   if (buffer.length > MAX_TRACE_ENTRIES) {
     buffer.splice(0, buffer.length - MAX_TRACE_ENTRIES);
   }
-  console.info(TRACE_PREFIX, JSON.stringify(entry));
+  console.info(TRACE_PREFIX, entry);
 }

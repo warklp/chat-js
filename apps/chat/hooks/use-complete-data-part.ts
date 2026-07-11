@@ -5,7 +5,6 @@ import type { ChatMessage } from "@/lib/ai/types";
 import { useChatActions } from "@/lib/stores/base";
 import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
 import { useDataStream } from "@/lib/stores/hooks-data-stream";
-import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 
 export function mergeCompletedMessageIntoVisiblePath(
   currentMessages: ChatMessage[],
@@ -62,12 +61,6 @@ export function useCompleteDataPart() {
         currentMessages,
         message
       );
-
-      traceThread("primary-request", "appendMessage.complete", {
-        appliedToVisiblePath: nextMessages !== null,
-        current: summarizeThreadMessages(currentMessages),
-        message: summarizeThreadMessages([message])[0],
-      });
 
       if (nextMessages) {
         setMessages(nextMessages);

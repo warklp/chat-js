@@ -1,7 +1,7 @@
 "use client";
 
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
@@ -32,23 +32,6 @@ export function ChatSync({ id }: { id: string }) {
   const threadInitialMessages = useThreadInitialMessages();
   const addMessageToTree = useAddMessageToTree();
   const hasReportedConfirmationRef = useRef(false);
-  const syncInstanceIdRef = useRef(generateUUID());
-
-  useEffect(() => {
-    const syncInstanceId = syncInstanceIdRef.current;
-    traceThread("primary-request", "chatSync.mount", {
-      chatId: id,
-      resumeOnMount: resumeOnMountRef.current,
-      syncInstanceId,
-    });
-
-    return () => {
-      traceThread("primary-request", "chatSync.unmount", {
-        chatId: id,
-        syncInstanceId,
-      });
-    };
-  }, [id]);
 
   const lastMessage = threadInitialMessages.at(-1);
   const lastMessageRef = useRef(lastMessage);
@@ -80,50 +63,7 @@ export function ChatSync({ id }: { id: string }) {
     resume: resumeOnMountRef.current,
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      fetch: async (input, init) => {
-        const syncInstanceId = syncInstanceIdRef.current;
-        const signal = init?.signal;
-        let assistantMessageId: string | null = null;
-
-        if (typeof init?.body === "string") {
-          try {
-            const body = JSON.parse(init.body) as Record<string, unknown>;
-            assistantMessageId =
-              typeof body.assistantMessageId === "string"
-                ? body.assistantMessageId
-                : null;
-          } catch {
-            // The transport owns body serialization; tracing must not affect it.
-          }
-        }
-
-        traceThread("primary-request", "transport.fetch.start", {
-          assistantMessageId,
-          chatId: id,
-          signalAborted: signal?.aborted ?? false,
-          syncInstanceId,
-        });
-
-        try {
-          const response = await fetchWithErrorHandlers(input, init);
-          traceThread("primary-request", "transport.fetch.response", {
-            assistantMessageId,
-            chatId: id,
-            responseStatus: response.status,
-            syncInstanceId,
-          });
-          return response;
-        } catch (error) {
-          traceThread("primary-request", "transport.fetch.error", {
-            assistantMessageId,
-            chatId: id,
-            error: error instanceof Error ? error.message : String(error),
-            signalAborted: signal?.aborted ?? false,
-            syncInstanceId,
-          });
-          throw error;
-        }
-      },
+      fetch: fetchWithErrorHandlers as typeof fetch,
       prepareSendMessagesRequest({ messages, id: requestId, body }) {
         traceThread("primary-request", "transport.prepareSend", {
           body,
