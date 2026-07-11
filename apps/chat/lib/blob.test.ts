@@ -9,7 +9,7 @@ vi.mock("./storage-provider", async () => {
   const { memory } = await import("files-sdk/memory");
   return {
     storageProvider: {
-      module: { memory },
+      createAdapter: () => memory(),
       options: {},
       slug: "memory",
     },

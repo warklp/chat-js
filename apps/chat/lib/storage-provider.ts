@@ -1,9 +1,10 @@
 // This file is rewritten by `chat-js create --storage-provider`.
-// biome-ignore lint/performance/noNamespaceImport: provider factories have provider-specific names
-import * as storageProviderModule from "files-sdk/vercel-blob";
+import { vercelBlob } from "files-sdk/vercel-blob";
+
+const options = {} satisfies Parameters<typeof vercelBlob>[0];
 
 export const storageProvider = {
-  module: storageProviderModule as Record<string, unknown>,
-  options: {},
+  createAdapter: () => vercelBlob(options),
+  options,
   slug: "vercel-blob",
 } as const;

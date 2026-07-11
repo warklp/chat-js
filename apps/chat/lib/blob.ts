@@ -1,4 +1,4 @@
-import { type Adapter, type Body, Files, FilesError } from "files-sdk";
+import { type Body, Files, FilesError } from "files-sdk";
 import { nanoid } from "nanoid";
 import { BLOB_FILE_PREFIX } from "./constants";
 import { storageProvider } from "./storage-provider";
@@ -7,45 +7,8 @@ const FILE_CONTENT_PATH = "/api/files/content";
 const SAFE_EXTENSION = /^\.[a-z0-9]{1,10}$/;
 const STORAGE_KEY = /^[A-Za-z0-9_-]{24}(?:\.[a-z0-9]{1,10})?$/;
 const PATH_SEPARATOR = /[\\/]/;
-const ADAPTER_METHODS = [
-  "copy",
-  "delete",
-  "download",
-  "exists",
-  "head",
-  "list",
-  "upload",
-  "url",
-] as const;
-
-function isAdapter(value: unknown): value is Adapter {
-  if (!(value && typeof value === "object")) {
-    return false;
-  }
-  const candidate = value as Record<string, unknown>;
-  return ADAPTER_METHODS.every(
-    (method) => typeof candidate[method] === "function"
-  );
-}
-
-export function createStorageAdapter(): Adapter {
-  const factoryName = storageProvider.slug.replace(
-    /-([a-z0-9])/g,
-    (_, character: string) => character.toUpperCase()
-  );
-  const factory =
-    storageProvider.module[factoryName] ??
-    storageProvider.module[`${factoryName}Adapter`];
-  const adapter =
-    typeof factory === "function" ? factory(storageProvider.options) : null;
-
-  if (!isAdapter(adapter)) {
-    throw new Error(
-      `Files SDK provider "${storageProvider.slug}" does not export the expected "${factoryName}" adapter factory`
-    );
-  }
-
-  return adapter;
+export function createStorageAdapter() {
+  return storageProvider.createAdapter();
 }
 
 let files: Files | undefined;

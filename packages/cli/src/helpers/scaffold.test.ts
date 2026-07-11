@@ -181,7 +181,9 @@ describe("scaffoldFromTemplate", () => {
 		expect(packageJson.dependencies["@aws-sdk/s3-request-presigner"]).toBe(
 			"^3.700.0",
 		);
-		expect(providerSource).toContain('from "files-sdk/s3"');
+		expect(providerSource).toContain('import { s3 } from "files-sdk/s3"');
+		expect(providerSource).toContain("createAdapter: () => s3(options)");
+		expect(providerSource).not.toContain("storageProviderModule");
 		expect(providerSource).toContain('"bucket": "uploads"');
 	});
 
