@@ -105,10 +105,7 @@ const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
 	videoGeneration: "Generate videos inside chat",
 };
 
-function isSupportedBuiltInTool(
-	gateway: Gateway,
-	key: BuiltInToolKey,
-): boolean {
+function isSupportedBuiltInTool(gateway: Gateway, key: BuiltInToolKey): boolean {
 	const gatewayToolDefaults = GATEWAY_MODEL_DEFAULTS[gateway].tools;
 
 	if (key === "imageGeneration") {
