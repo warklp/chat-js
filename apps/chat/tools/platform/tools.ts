@@ -100,12 +100,12 @@ function createToolRuntimeContext({
             );
           })
           .map(fileUiPartToFilePart),
-      previous: async ({ kind, limit } = {}) => {
+      previous: ({ kind, limit } = {}) => {
         if (kind && kind !== "image") {
-          return [];
+          return Promise.resolve([]);
         }
         if (!lastGeneratedImage) {
-          return [];
+          return Promise.resolve([]);
         }
         const file: FilePart = {
           data: new URL(lastGeneratedImage.imageUrl),
@@ -113,7 +113,7 @@ function createToolRuntimeContext({
           mediaType: "image/png",
           type: "file",
         };
-        return [file].slice(0, limit);
+        return Promise.resolve([file].slice(0, limit));
       },
     },
     media: {
@@ -129,11 +129,13 @@ function createToolRuntimeContext({
       },
     },
     models: {
-      image: async ({ model } = {}) => {
+      image: ({ model } = {}) => {
         if (!config.ai.tools.image.enabled) {
           throw new Error("Image generation is not enabled");
         }
-        return getImageModel(model ?? config.ai.tools.image.default);
+        return Promise.resolve(
+          getImageModel(model ?? config.ai.tools.image.default)
+        );
       },
       imageGeneration: async ({ model } = {}) => {
         if (!config.ai.tools.image.enabled) {
@@ -164,11 +166,13 @@ function createToolRuntimeContext({
       },
       language: async ({ model } = {}) =>
         getLanguageModel((model ?? config.ai.workflows.chat) as AppModelId),
-      video: async ({ model } = {}) => {
+      video: ({ model } = {}) => {
         if (!config.ai.tools.video.enabled) {
           throw new Error("Video generation is not enabled");
         }
-        return getVideoModel(model ?? config.ai.tools.video.default);
+        return Promise.resolve(
+          getVideoModel(model ?? config.ai.tools.video.default)
+        );
       },
     },
     cost: {

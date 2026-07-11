@@ -53,6 +53,7 @@ Avoid:
       inputSchema: z.object({
         url: z.string().describe("The URL to retrieve the information from."),
       }),
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Retrieval fallbacks are kept together to preserve the provider response flow.
       execute: async ({ url }: { url: string }) => {
         try {
           if (!app) {

@@ -29,7 +29,7 @@ async function filePartToBuffer(file: FilePart): Promise<Buffer> {
   return Buffer.from(file.data);
 }
 
-async function collectEditImageBuffers(files: FilePart[]): Promise<Buffer[]> {
+function collectEditImageBuffers(files: FilePart[]): Promise<Buffer[]> {
   return Promise.all(files.map((file) => filePartToBuffer(file)));
 }
 
@@ -60,6 +60,7 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
             "The user's image prompt. The original intent, message, and meaning must remain unchanged. No new ideas, claims, or content may be introduced."
           ),
       }),
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Provider-specific image generation paths share setup and output handling.
       execute: async ({ prompt }, { abortSignal }) => {
         const [attachments, previousImages] = await Promise.all([
           ctx.files.attachments({ mediaTypes: ["image/"] }),
