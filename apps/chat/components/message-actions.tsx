@@ -1,4 +1,3 @@
-import { useChatStoreApi } from "@ai-sdk-tools/store";
 import { Copy, Pencil, PencilOff } from "lucide-react";
 import { memo } from "react";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import {
   MessageActions as Actions,
 } from "@/components/ai-elements/message";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useChatStoreApi } from "@/lib/stores/base";
 import { useMessageRoleById } from "@/lib/stores/hooks-base";
 import { useChatVotes } from "./chat/use-chat-votes";
 import { FeedbackActions } from "./feedback-actions";

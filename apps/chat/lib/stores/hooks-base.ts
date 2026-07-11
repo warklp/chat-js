@@ -1,9 +1,9 @@
-// This file has hooks that are enabled by the @ai-sdk-tools/store
+// This file has hooks that are enabled by the @/lib/stores/base
 
-import { type StoreState, useChatStoreApi } from "@ai-sdk-tools/store";
 import equal from "fast-deep-equal";
 import { shallow } from "zustand/shallow";
 import { useStoreWithEqualityFn } from "zustand/traditional";
+import { type StoreState, useChatStoreApi } from "@/lib/stores/base";
 import type { ChatMessage } from "../ai/types";
 
 function useBaseChatStore<T = StoreState<ChatMessage>>(
@@ -50,6 +50,18 @@ export const useMessageRoleById = (messageId: string): ChatMessage["role"] =>
     }
     return message.role;
   });
+
+export const useMessagePartsById = (messageId: string): ChatMessage["parts"] =>
+  useBaseChatStore((state) => {
+    const message = state
+      .getThrottledMessages()
+      .find((m) => m.id === messageId);
+    if (!message) {
+      throw new Error(`Message not found for id: ${messageId}`);
+    }
+    return message.parts;
+  }, equal);
+
 export const useMessageResearchUpdatePartsById = (
   messageId: string
 ): Extract<ChatMessage["parts"][number], { type: "data-researchUpdate" }>[] =>

@@ -392,7 +392,7 @@ export async function saveMessageIfNotExists({
         .returning({ id: message.id });
 
       if (insertedMessages.length === 0) {
-        return;
+        return false;
       }
 
       const mappedDBParts = mapUIMessagePartsToDBParts(chatMessage.parts, id);
@@ -401,6 +401,7 @@ export async function saveMessageIfNotExists({
       }
 
       await updateChatUpdatedAt({ chatId });
+      return true;
     });
   } catch (error) {
     logger.error({ error, chatId, id }, "saveMessageIfNotExists failed");

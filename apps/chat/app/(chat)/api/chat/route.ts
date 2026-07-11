@@ -184,7 +184,14 @@ async function handleChatValidation({
 
   if (chat) {
     if (chat.userId !== userId) {
-      log.warn("Unauthorized - chat ownership mismatch");
+      log.warn(
+        {
+          chatId,
+          userId,
+          chatUserId: chat.userId,
+        },
+        "Unauthorized - chat ownership mismatch"
+      );
       return {
         error: new Response("Unauthorized", { status: 401 }),
         isNewChat,
@@ -202,7 +209,14 @@ async function handleChatValidation({
   const [existentMessage] = await getMessageById({ id: userMessage.id });
 
   if (existentMessage && existentMessage.chatId !== chatId) {
-    log.warn("Unauthorized - message chatId mismatch");
+    log.warn(
+      {
+        chatId,
+        userMessageId: userMessage.id,
+        existentMessageChatId: existentMessage.chatId,
+      },
+      "Unauthorized - message chatId mismatch"
+    );
     return { error: new Response("Unauthorized", { status: 401 }), isNewChat };
   }
 
@@ -468,6 +482,20 @@ async function createChatStream({
   return stream;
 }
 
+function emptyChatStreamResponse() {
+  const stream = createUIMessageStream<ChatMessage>({
+    execute: () => undefined,
+  });
+
+  return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
 async function executeChatRequest({
   chatId,
   userMessage,
@@ -506,9 +534,9 @@ async function executeChatRequest({
   const streamId = generateUUID();
 
   if (!isAnonymous) {
-    // The bootstrap request can be replayed before chatConfirmed arrives, so
-    // creating the placeholder must be idempotent.
-    await saveMessageIfNotExists({
+    // The first provisional request can replay before chatConfirmed arrives, so
+    // placeholder creation must be idempotent.
+    const insertedMessage = await saveMessageIfNotExists({
       id: messageId,
       chatId,
       message: {
@@ -527,6 +555,11 @@ async function executeChatRequest({
         },
       },
     });
+
+    if (!insertedMessage) {
+      clearTimeout(timeoutId);
+      return emptyChatStreamResponse();
+    }
 
     await updateMessageActiveStreamId({
       id: messageId,
@@ -1041,20 +1074,6 @@ export async function POST(request: NextRequest) {
       isPrimaryParallel,
     } = bodyResult.body;
 
-    log.info(
-      {
-        chatId,
-        userMessageId: userMessage.id,
-        projectId: projectId ?? null,
-        assistantMessageId: assistantMessageId ?? null,
-        requestSelectedModelId: requestSelectedModelId ?? null,
-        parallelGroupId: parallelGroupId ?? null,
-        parallelIndex: parallelIndex ?? null,
-        isPrimaryParallel: isPrimaryParallel ?? null,
-      },
-      "POST /api/chat received"
-    );
-
     const selectedModelId = resolveSelectedModelId({
       requestSelectedModelId,
       selectedModel: userMessage.metadata.selectedModel,
@@ -1064,15 +1083,6 @@ export async function POST(request: NextRequest) {
       log.warn("No selectedModel in user message metadata");
       return new ChatSDKError("bad_request:api").toResponse();
     }
-
-    log.info(
-      {
-        chatId,
-        selectedModelId,
-        selectedTool: userMessage.metadata.selectedTool ?? null,
-      },
-      "POST /api/chat resolved selection"
-    );
 
     const sessionSetup = await validateAndSetupSession({
       request,

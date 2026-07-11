@@ -1,6 +1,5 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { useChatActions, type useChatStoreApi } from "@ai-sdk-tools/store";
 import { ArrowUp, Square } from "lucide-react";
 import {
   AnimatePresence,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ArtifactKind } from "@/lib/artifacts/artifact-kind";
+import { useChatActions, type useChatStoreApi } from "@/lib/stores/base";
 import { cn } from "@/lib/utils";
 import { useChatInput } from "@/providers/chat-input-provider";
 import { artifactDefinitions } from "./artifact-panel";

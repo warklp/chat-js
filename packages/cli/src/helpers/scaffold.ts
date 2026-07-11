@@ -1,9 +1,13 @@
 import { existsSync } from "node:fs";
-import { cp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PackageManager } from "../types";
 import { normalizeScaffoldedPackageJson } from "./package-manifest";
+import {
+  createEmptyToolsTemplate,
+  createEmptyUiTemplate,
+} from "../utils/inject-tool";
 import { runCommand } from "../utils/run-command";
 
 const CHAT_APP_EXCLUDED_SEGMENTS = new Set([
@@ -39,6 +43,16 @@ const ELECTRON_EXCLUDED_FILES = new Set([
   "bun.lockb",
   "branding.json",
 ]);
+
+const PNPM_BUILD_SCRIPT_ALLOWLIST = [
+  "better-sqlite3",
+  "electron",
+  "electron-winstaller",
+  "esbuild",
+  "fs-xattr",
+  "macos-alias",
+  "sharp",
+] as const;
 
 function getCliPackageRoot(): string {
   const __dir = dirname(fileURLToPath(import.meta.url));
@@ -115,6 +129,43 @@ async function replaceInFile(
     content = content.replaceAll(search, replacement);
   }
   await writeFile(filePath, content);
+}
+
+async function resetInstallableTools(destination: string): Promise<void> {
+  const toolsDir = join(destination, "tools", "chatjs");
+  await rm(toolsDir, { recursive: true, force: true });
+  await mkdir(toolsDir, { recursive: true });
+  await writeFile(join(toolsDir, "tools.ts"), createEmptyToolsTemplate());
+  await writeFile(join(toolsDir, "ui.ts"), createEmptyUiTemplate());
+}
+
+async function writePnpmWorkspaceConfig(
+  destination: string,
+  options?: { blockExoticSubdeps?: boolean }
+): Promise<void> {
+  const packageLines = ["packages:", "  - ."];
+  const pnpm10Lines = [
+    "onlyBuiltDependencies:",
+    ...PNPM_BUILD_SCRIPT_ALLOWLIST.map((name) => `  - ${name}`),
+  ];
+  const pnpm11Lines = [
+    "allowBuilds:",
+    ...PNPM_BUILD_SCRIPT_ALLOWLIST.map((name) => `  ${name}: true`),
+  ];
+  const supplyChainLines =
+    typeof options?.blockExoticSubdeps === "boolean"
+      ? [`blockExoticSubdeps: ${options.blockExoticSubdeps}`]
+      : [];
+
+  await writeFile(
+    join(destination, "pnpm-workspace.yaml"),
+    `${[
+      ...packageLines,
+      ...pnpm10Lines,
+      ...pnpm11Lines,
+      ...supplyChainLines,
+    ].join("\n")}\n`,
+  );
 }
 
 async function applyChatTemplateSourceTransforms(
@@ -263,6 +314,12 @@ async function normalizeChatAppFiles(
   vercelJson.installCommand = `${packageManager} install`;
   vercelJson.buildCommand = runScript(packageManager, "build");
   await writeFile(vercelJsonPath, `${JSON.stringify(vercelJson, null, 2)}\n`);
+
+  if (packageManager === "pnpm") {
+    await writePnpmWorkspaceConfig(destination);
+  }
+
+  await resetInstallableTools(destination);
 }
 
 async function normalizeElectronFiles(
@@ -295,6 +352,22 @@ async function normalizeElectronFiles(
     ["bun run make:win", runScript(packageManager, "make:win")],
     ["bun run make:linux", runScript(packageManager, "make:linux")],
   ]);
+
+  if (packageManager === "pnpm") {
+    await writePnpmWorkspaceConfig(destination, { blockExoticSubdeps: false });
+  }
+}
+
+async function excludeElectronFromRootTypecheck(projectDir: string): Promise<void> {
+  const tsconfigPath = join(projectDir, "tsconfig.json");
+  const tsconfig = JSON.parse(await readFile(tsconfigPath, "utf8")) as {
+    exclude?: string[];
+  };
+
+  tsconfig.exclude = Array.from(
+    new Set([...(tsconfig.exclude ?? []), "electron"])
+  );
+  await writeFile(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`);
 }
 
 export async function scaffoldFromTemplate(
@@ -358,6 +431,7 @@ export async function scaffoldElectron(
   );
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
   await normalizeElectronFiles(destination, packageManager);
+  await excludeElectronFromRootTypecheck(projectDir);
 }
 
 export async function scaffoldFromGit(

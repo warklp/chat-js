@@ -20,7 +20,6 @@ import type { AppModelId } from "./app-models";
 import type { InstalledTools } from "./installed-tools";
 
 export const toolNameSchema = z.enum([
-  "getWeather",
   "createTextDocument",
   "createCodeDocument",
   "createSheetDocument",
@@ -28,7 +27,6 @@ export const toolNameSchema = z.enum([
   "editCodeDocument",
   "editSheetDocument",
   "readDocument",
-  "retrieveUrl",
   "webSearch",
   "codeExecution",
   "generateImage",
@@ -196,9 +194,9 @@ export type ChatMessage = Omit<
   metadata: MessageMetadata;
 };
 
-export type ToolName = keyof ChatTools;
+export type ToolName = keyof ChatTools | ToolNameInternal;
 
-export type ToolOutput<T extends ToolName> = ChatTools[T]["output"];
+export type ToolOutput<T extends keyof ChatTools> = ChatTools[T]["output"];
 
 export type StreamWriter = UIMessageStreamWriter<ChatMessage>;
 

@@ -4,7 +4,9 @@ import type { ImageModel, LanguageModel } from "ai";
 import { createModuleLogger } from "@/lib/logger";
 import {
   type AiGatewayModel,
-  aiGatewayModelsResponseSchema,
+  aiGatewayModelDiscriminatorSchema,
+  aiGatewayModelSchema,
+  aiGatewayModelsEnvelopeSchema,
   isAiGatewayModelType,
 } from "../ai-gateway-models-schemas";
 import { getFallbackModels } from "./fallback-models";
@@ -79,16 +81,18 @@ export class VercelGateway
       }
 
       const bodyRaw = await response.json();
-      const body = aiGatewayModelsResponseSchema.parse(bodyRaw);
+      const body = aiGatewayModelsEnvelopeSchema.parse(bodyRaw);
       const unsupportedTypes = new Set<string>();
       const models: AiGatewayModel[] = [];
 
-      for (const model of body.data) {
-        if (!isAiGatewayModelType(model.type)) {
-          unsupportedTypes.add(model.type);
+      for (const candidate of body.data) {
+        const { type } = aiGatewayModelDiscriminatorSchema.parse(candidate);
+        if (!isAiGatewayModelType(type)) {
+          unsupportedTypes.add(type);
           continue;
         }
-        models.push({ ...model, type: model.type });
+        const model = aiGatewayModelSchema.parse(candidate);
+        models.push({ ...model, type });
       }
 
       if (unsupportedTypes.size > 0) {

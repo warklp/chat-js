@@ -1,59 +1,82 @@
-export type ChatIdType = "chat" | "provisional";
+export type ChatRouteSource = "chat" | "home" | "project" | "share";
 
 export type ParsedChatIdFromPathname =
   | {
-      type: "chat";
-      id: string;
-      source: "share" | "project" | "chat";
-      projectId: string | null;
+      type: "home";
+      id: null;
+      source: "home";
+      projectId: null;
     }
   | {
-      type: "provisional";
+      type: "projectHome";
       id: null;
-      source: "project" | "home";
-      projectId: string | null;
+      source: "project";
+      projectId: string;
+    }
+  | {
+      type: "chat";
+      id: string;
+      source: "chat";
+      projectId: null;
+    }
+  | {
+      type: "projectChat";
+      id: string;
+      source: "project";
+      projectId: string;
+    }
+  | {
+      type: "share";
+      id: string;
+      source: "share";
+      projectId: null;
+    }
+  | {
+      type: "passthrough";
+      id: null;
+      source: null;
+      projectId: null;
     };
 
-const SHARE_ROUTE_PATTERN = /^\/share\/(.+)$/;
-const PROJECT_ROUTE_PATTERN = /^\/project\/([^/]+)(?:\/chat\/(.+))?$/;
-const CHAT_ROUTE_PATTERN = /^\/chat\/(.+)$/;
+const SHARE_ROUTE_PATTERN = /^\/share\/([^/]+)$/;
+const PROJECT_ROUTE_PATTERN = /^\/project\/([^/]+)(?:\/chat\/([^/]+))?$/;
+const CHAT_ROUTE_PATTERN = /^\/chat\/([^/]+)$/;
 
 /**
- * Parse a Next.js pathname into a persisted chat id (if present).
- * Pure function - no side effects, easy to test.
+ * Parse a Next.js pathname into the chat route shape.
+ * Unknown paths are passthrough routes and must not become draft chats.
  */
 export function parseChatIdFromPathname(
   pathname: string | null
 ): ParsedChatIdFromPathname {
-  // /share/:id → shared chat
   const shareMatch = pathname?.match(SHARE_ROUTE_PATTERN);
   if (shareMatch) {
     return {
-      type: "chat",
+      type: "share",
       id: shareMatch[1],
       source: "share",
       projectId: null,
     };
   }
 
-  // /project/:projectId/chat/:chatId → chat
-  // /project/:projectId → provisional (no chat id in path)
   const projectMatch = pathname?.match(PROJECT_ROUTE_PATTERN);
   if (projectMatch) {
     const projectId = projectMatch[1];
     const chatId = projectMatch[2];
     if (chatId) {
-      return { type: "chat", id: chatId, source: "project", projectId };
+      return { type: "projectChat", id: chatId, source: "project", projectId };
     }
-    return { type: "provisional", id: null, source: "project", projectId };
+    return { type: "projectHome", id: null, source: "project", projectId };
   }
 
-  // /chat/:id → chat
   const chatMatch = pathname?.match(CHAT_ROUTE_PATTERN);
   if (chatMatch) {
     return { type: "chat", id: chatMatch[1], source: "chat", projectId: null };
   }
 
-  // / or anything else → provisional
-  return { type: "provisional", id: null, source: "home", projectId: null };
+  if (pathname === "/") {
+    return { type: "home", id: null, source: "home", projectId: null };
+  }
+
+  return { type: "passthrough", id: null, source: null, projectId: null };
 }

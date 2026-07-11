@@ -71,7 +71,7 @@ Exactly one gateway must be active. Set `ai.gateway` in `chat.config.ts` to sele
 
 ```typescript title="chat.config.ts"
 ai: {
-  gateway: "vercel", // "vercel" | "openrouter" | "openai" | "openai-compatible"
+  gateway: "vercel", // "vercel" | "openrouter" | "openai" | "openai-compatible" | "litellm"
 }
 ```
 
@@ -120,6 +120,17 @@ Works with any endpoint that follows the OpenAI API format: Ollama, LM Studio, v
 | `OPENAI_COMPATIBLE_API_KEY` | Yes | API key for the compatible provider |
 
 **Setup:** Start your compatible server (for example, run `ollama serve` for Ollama), set `OPENAI_COMPATIBLE_BASE_URL` to its `/v1` endpoint, and provide `OPENAI_COMPATIBLE_API_KEY`.
+
+### LiteLLM
+
+Routes requests through a LiteLLM proxy for centralized model access, key management, routing, and spend tracking.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `LITELLM_BASE_URL` | Yes | Base URL of the LiteLLM proxy (e.g., `http://localhost:4000`) |
+| `LITELLM_API_KEY` | Optional | Master key or virtual key if your LiteLLM proxy requires authentication |
+
+**Setup:** Start your LiteLLM proxy, set `LITELLM_BASE_URL` to the proxy root URL without `/v1`, and provide `LITELLM_API_KEY` only when the proxy requires auth.
 
 ---
 
@@ -278,6 +289,8 @@ All variables in one place:
 | `OPENAI_API_KEY` | Gateway | OpenAI gateway |
 | `OPENAI_COMPATIBLE_BASE_URL` | Gateway | OpenAI-compatible gateway |
 | `OPENAI_COMPATIBLE_API_KEY` | Gateway | OpenAI-compatible gateway |
+| `LITELLM_BASE_URL` | Gateway | LiteLLM gateway |
+| `LITELLM_API_KEY` | Gateway | Optional for LiteLLM gateway |
 | `AUTH_GITHUB_ID` | Auth | If `authentication.github: true` |
 | `AUTH_GITHUB_SECRET` | Auth | If `authentication.github: true` |
 | `AUTH_GOOGLE_ID` | Auth | If `authentication.google: true` |

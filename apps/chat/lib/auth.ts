@@ -12,14 +12,27 @@ import {
   ELECTRON_AUTH_COOKIE_PREFIX,
   ELECTRON_TRUSTED_ORIGINS,
 } from "./electron-auth";
+import { getBaseUrl } from "./url";
+
+type BetterAuthOptions = Parameters<typeof betterAuth>[0];
+type BetterAuthPlugin = NonNullable<BetterAuthOptions["plugins"]>[number];
+
+const electronAuthPlugin = electron({
+  clientID: ELECTRON_AUTH_CLIENT_ID,
+  cookiePrefix: ELECTRON_AUTH_COOKIE_PREFIX,
+}) as unknown as BetterAuthPlugin;
+const baseUrl =
+  env.APP_URL ||
+  (process.env.VERCEL_ENV === "production" ? config.appUrl : getBaseUrl());
 
 export const auth = betterAuth({
+  baseURL: baseUrl,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
   }),
   trustedOrigins: [
-    "http://localhost:3000",
+    baseUrl,
     // Vercel URL for preview branches
     ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
     config.appUrl,
@@ -71,14 +84,7 @@ export const auth = betterAuth({
   plugins: [
     lastLoginMethod(),
     nextCookies(),
-    ...(config.desktopApp.enabled
-      ? [
-          electron({
-            clientID: ELECTRON_AUTH_CLIENT_ID,
-            cookiePrefix: ELECTRON_AUTH_COOKIE_PREFIX,
-          }),
-        ]
-      : []),
+    ...(config.desktopApp.enabled ? [electronAuthPlugin] : []),
   ],
 });
 

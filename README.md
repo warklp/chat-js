@@ -74,10 +74,17 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 
 ## Development
 
-- `bun dev:chat`: run chat app
+- `bun dev`: run chat app
+- `bun dev:info`: print this worktree's assigned app URLs
 - `bun dev:docs`: run docs
 - `bun lint`: run workspace lint
 - `bun test:types`: run chat app typecheck
+
+Set `CHATJS_DEV_SLOT` in `.env.worktree.local` to reserve a stable range of ten
+ports per worktree. Within each range, chat uses offset `0`, Electron uses `1`,
+and the site uses `2`, as configured in `.worktree-env.json`. The local file is
+ignored by Git and kept separate from Vercel-managed `.env.local`. Run
+`bun dev:info` instead of assuming a port.
 
 ## Releases
 

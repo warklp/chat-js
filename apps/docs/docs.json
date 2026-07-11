@@ -106,6 +106,7 @@
                   "gateways/openrouter",
                   "gateways/openai",
                   "gateways/openai-compatible",
+                  "gateways/litellm",
                   "gateways/custom"
                 ]
               }
@@ -125,7 +126,7 @@
               "cookbook/tool-part",
               "cookbook/tools",
               "cookbook/add-tools",
-              "cookbook/provisional-ids",
+              "cookbook/next-chat-transition",
               "cookbook/credit-tracking",
               "cookbook/neon-branching",
               "cookbook/dev-auth-bypass",

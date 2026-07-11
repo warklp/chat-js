@@ -1,16 +1,17 @@
 "use client";
 
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { ChatMessage } from "@/lib/ai/types";
-import {
-  createChatBootstrapEntry,
-  setChatBootstrap,
-} from "@/lib/chat-bootstrap";
 import { useCurrentChatRoute } from "@/lib/chat-route";
-import { resetDraftChatId } from "@/lib/draft-chat";
 import type { ParallelRequestSpec } from "@/lib/draft-chat-submission";
+import {
+  addPendingAssistantMessages,
+  createParallelRequestBody,
+} from "@/lib/parallel-chat-requests";
+import { useCustomChatStoreApi } from "@/lib/stores/custom-store-provider";
+import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
+import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
 import { useModelChange } from "@/providers/default-model-provider";
 import { useSession } from "@/providers/session-provider";
 
@@ -30,34 +31,22 @@ function getProvisionalChatHref({
   return `/chat/${chatId}` as Route;
 }
 
+function isInitialRoute(
+  route: ReturnType<typeof useCurrentChatRoute>
+): route is Extract<
+  ReturnType<typeof useCurrentChatRoute>,
+  { type: "home" | "projectHome" }
+> {
+  return route.type === "home" || route.type === "projectHome";
+}
+
 export function useStartProvisionalChat(chatId: string) {
-  const router = useRouter();
   const currentRoute = useCurrentChatRoute();
   const changeModel = useModelChange();
   const { data: session } = useSession();
-
-  useEffect(() => {
-    if (!(session?.user && currentRoute.type === "provisional")) {
-      return;
-    }
-
-    const href = getProvisionalChatHref({
-      chatId,
-      projectId: currentRoute.projectId,
-      source: currentRoute.source,
-    });
-
-    if (href) {
-      router.prefetch(href);
-    }
-  }, [
-    chatId,
-    currentRoute.projectId,
-    currentRoute.source,
-    currentRoute.type,
-    router,
-    session?.user,
-  ]);
+  const addMessageToTree = useAddMessageToTree();
+  const storeApi = useCustomChatStoreApi<ChatMessage>();
+  const { setPendingChatConfirmation } = useChatPersistenceActions();
 
   return useCallback(
     ({
@@ -69,23 +58,9 @@ export function useStartProvisionalChat(chatId: string) {
       onStarted?: () => void;
       requestSpecs: ParallelRequestSpec[];
     }) => {
-      if (!(session?.user && currentRoute.type === "provisional")) {
+      if (!(session?.user && isInitialRoute(currentRoute))) {
         return false;
       }
-
-      const primaryRequest = requestSpecs[0];
-      if (primaryRequest) {
-        changeModel(primaryRequest.modelId);
-      }
-
-      setChatBootstrap(
-        createChatBootstrapEntry({
-          chatId,
-          message,
-          projectId: currentRoute.projectId,
-          requestSpecs,
-        })
-      );
 
       const href = getProvisionalChatHref({
         chatId,
@@ -97,26 +72,62 @@ export function useStartProvisionalChat(chatId: string) {
         return false;
       }
 
-      router.push(href);
+      const primaryRequest = requestSpecs[0] ?? null;
+      const storeState = storeApi.getState();
+      const sendMessage = storeState.sendMessage;
 
-      if (currentRoute.source === "project") {
-        resetDraftChatId(currentRoute.projectId);
-      } else {
-        resetDraftChatId();
+      if (!sendMessage) {
+        return false;
       }
 
+      setPendingChatConfirmation({
+        message,
+        projectId: currentRoute.projectId,
+        requestSpecs,
+      });
+
+      if (primaryRequest) {
+        changeModel(primaryRequest.modelId);
+      }
+
+      let requestOptions: Parameters<typeof sendMessage>[1] | undefined;
+
+      if (primaryRequest) {
+        requestOptions = {
+          body: {
+            ...createParallelRequestBody(primaryRequest, true),
+            projectId: currentRoute.projectId ?? undefined,
+          },
+        };
+      } else if (currentRoute.projectId) {
+        requestOptions = {
+          body: { projectId: currentRoute.projectId },
+        };
+      }
+
+      sendMessage(message, requestOptions);
+
+      addMessageToTree(message);
+
+      addPendingAssistantMessages({
+        addMessageToTree,
+        message,
+        requestSpecs,
+      });
+
+      window.history.pushState(null, "", href);
       onStarted?.();
 
       return true;
     },
     [
+      addMessageToTree,
       changeModel,
       chatId,
-      currentRoute.projectId,
-      currentRoute.source,
-      currentRoute.type,
-      router,
+      currentRoute,
       session?.user,
+      setPendingChatConfirmation,
+      storeApi,
     ]
   );
 }

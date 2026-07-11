@@ -1,6 +1,7 @@
-import { useChatActions, useChatStoreApi } from "@ai-sdk-tools/store";
 import { RefreshCcwIcon } from "lucide-react";
 import type { ChatMessage } from "@/lib/ai/types";
+import { removeTrailingAssistantMessage } from "@/lib/chat-tree-actions";
+import { useChatActions, useChatStoreApi } from "@/lib/stores/base";
 import { Button } from "./ui/button";
 
 export function ResponseErrorMessage() {
@@ -31,10 +32,9 @@ export function ResponseErrorMessage() {
       <Button
         className=" "
         onClick={() => {
-          // Remove last message from assistant if exists
-          const messagesWithoutLastAssistant = chatStore
-            .getState()
-            .messages.slice(0, -1);
+          const messagesWithoutLastAssistant = removeTrailingAssistantMessage(
+            chatStore.getState().messages
+          );
           setMessages(messagesWithoutLastAssistant);
           regenerate();
         }}

@@ -2,13 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
-  cacheComponents: true,
+  cacheComponents: false,
   experimental: {
     optimizePackageImports: [
       "react-tweet",
       "echarts-for-react",
       "lucide-react",
     ],
+    staleTimes: {
+      dynamic: 0,
+      static: 30,
+    },
   },
   serverExternalPackages: ["pino", "pino-pretty"],
   images: {

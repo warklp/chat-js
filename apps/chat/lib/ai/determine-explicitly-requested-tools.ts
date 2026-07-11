@@ -1,4 +1,4 @@
-import type { ChatTools, ToolName } from "./types";
+import type { ToolName } from "./types";
 
 /**
  * Maps a selected tool (from UI) to the list of tool names that should be explicitly requested.
@@ -6,7 +6,7 @@ import type { ChatTools, ToolName } from "./types";
  */
 
 export function determineExplicitlyRequestedTools(
-  selectedTool: keyof ChatTools | null
+  selectedTool: ToolName | null
 ): ToolName[] | null {
   if (selectedTool === "deepResearch") {
     return ["deepResearch"];

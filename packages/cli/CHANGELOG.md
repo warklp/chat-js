@@ -1,5 +1,27 @@
 # @chat-js/cli
 
+## 0.7.0
+
+### Minor Changes
+
+- [#201](https://github.com/FranciscoMoretti/chat-js/pull/201) [`dbd6cb0`](https://github.com/FranciscoMoretti/chat-js/commit/dbd6cb0cfa8ed5ae497fa500e1f45a869974f235) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Add LiteLLM gateway scaffolding support, including generated config defaults,
+  environment checklist coverage for `LITELLM_BASE_URL`, and optional
+  `LITELLM_API_KEY` documentation for authenticated proxies.
+
+## 0.6.5
+
+### Patch Changes
+
+- [#198](https://github.com/FranciscoMoretti/chat-js/pull/198) [`e85a88f`](https://github.com/FranciscoMoretti/chat-js/commit/e85a88fe062a95f28a6c68898e49a64b001da3cb) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Fix scaffold config validation, registry-tool install issues, and pnpm native build approvals across package managers and gateway/tool combinations.
+
+## 0.6.4
+
+### Patch Changes
+
+- [#186](https://github.com/FranciscoMoretti/chat-js/pull/186) [`f705f77`](https://github.com/FranciscoMoretti/chat-js/commit/f705f778bb6292b90d52dd49f018c45baa7169ae) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Revamp navigation
+
+- [#195](https://github.com/FranciscoMoretti/chat-js/pull/195) [`16654a2`](https://github.com/FranciscoMoretti/chat-js/commit/16654a293e0380a0d5a9457962c9556ebf4b989a) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Revamped navigation to handle multi route streaming and transitions
+
 ## 0.6.3
 
 ### Patch Changes

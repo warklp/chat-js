@@ -31,8 +31,14 @@ const aiGatewayModelTypeInputSchema = z.union([
   z.string(),
 ]);
 
+const pricingTierSchema = z.object({
+  cost: z.string(),
+  min: z.number().default(0),
+  max: z.number().optional(),
+});
+
 // Single model schema
-const aiGatewayModelSchema = z.object({
+export const aiGatewayModelSchema = z.object({
   id: z.string(),
   object: z.literal("model"),
   created: z.number(),
@@ -50,33 +56,9 @@ const aiGatewayModelSchema = z.object({
     input_cache_write: z.string().optional(),
     web_search: z.string().optional(),
     image: z.string().optional(),
-    input_tiers: z
-      .array(
-        z.object({
-          cost: z.string(),
-          min: z.number(),
-          max: z.number().optional(),
-        })
-      )
-      .optional(),
-    output_tiers: z
-      .array(
-        z.object({
-          cost: z.string(),
-          min: z.number(),
-          max: z.number().optional(),
-        })
-      )
-      .optional(),
-    input_cache_read_tiers: z
-      .array(
-        z.object({
-          cost: z.string(),
-          min: z.number(),
-          max: z.number().optional(),
-        })
-      )
-      .optional(),
+    input_tiers: z.array(pricingTierSchema).optional(),
+    output_tiers: z.array(pricingTierSchema).optional(),
+    input_cache_read_tiers: z.array(pricingTierSchema).optional(),
   }),
 });
 
@@ -90,8 +72,12 @@ export function isAiGatewayModelType(type: string): type is AiGatewayModelType {
   return supportedAiGatewayModelTypes.includes(type as AiGatewayModelType);
 }
 
-// Models response schema
-export const aiGatewayModelsResponseSchema = z.object({
+export const aiGatewayModelDiscriminatorSchema = z.object({
+  type: z.string(),
+});
+
+// Parse the response envelope before validating individual supported models.
+export const aiGatewayModelsEnvelopeSchema = z.object({
   object: z.literal("list"),
-  data: z.array(aiGatewayModelSchema),
+  data: z.array(z.unknown()),
 });
