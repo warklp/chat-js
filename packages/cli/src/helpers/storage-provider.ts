@@ -19,8 +19,10 @@ export type StorageSelection = {
 const STORAGE_ENV_START = "# <chatjs-storage-provider>";
 const STORAGE_ENV_END = "# </chatjs-storage-provider>";
 const UNSUPPORTED_SCAFFOLD_PROVIDERS = new Set<ProviderSlug>([
+	"box",
 	"bun-s3",
 	"convex",
+	"fs",
 	"memory",
 ]);
 const packageManifestSchema = z

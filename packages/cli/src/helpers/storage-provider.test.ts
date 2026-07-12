@@ -26,6 +26,12 @@ describe("storage provider configuration", () => {
 		expect(() => resolveStorageProvider("memory")).toThrow(
 			'Provider "memory" is not supported',
 		);
+		expect(() => resolveStorageProvider("fs")).toThrow(
+			'Provider "fs" is not supported',
+		);
+		expect(() => resolveStorageProvider("box")).toThrow(
+			'Provider "box" is not supported',
+		);
 		expect(() => resolveStorageProvider("not-a-provider")).toThrow("Unknown");
 	});
 

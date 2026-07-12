@@ -1,9 +1,8 @@
-import { type Body, Files, FilesError } from "files-sdk";
+import { type Body, Files } from "files-sdk";
 import { nanoid } from "nanoid";
 import { FILE_STORAGE_PREFIX } from "./constants";
 import { FILE_CONTENT_PATH, keyFromFileUrl } from "./file-url";
 import { storageProvider } from "./storage-provider";
-import { getBaseUrl } from "./url";
 
 const SAFE_EXTENSION = /^\.[a-z0-9]{1,10}$/;
 const PATH_SEPARATOR = /[\\/]/;
@@ -39,9 +38,8 @@ function createStorageKey(filename: string): string {
 }
 
 function createFileUrl(key: string): string {
-  const url = new URL(FILE_CONTENT_PATH, getBaseUrl());
-  url.searchParams.set("key", key);
-  return url.toString();
+  const search = new URLSearchParams({ key });
+  return `${FILE_CONTENT_PATH}?${search}`;
 }
 
 export async function uploadFile(
@@ -113,14 +111,11 @@ export function storageSupportsRange(): boolean {
 }
 
 export async function getFileProviderUrl(key: string): Promise<string | null> {
-  try {
-    const value = await getFiles().url(key);
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? value : null;
-  } catch (error) {
-    if (error instanceof FilesError && error.code === "NotFound") {
-      throw error;
-    }
+  const fileService = getFiles();
+  if (!fileService.capabilities.signedUrl.supported) {
     return null;
   }
+  const value = await fileService.url(key);
+  const url = new URL(value);
+  return url.protocol === "http:" || url.protocol === "https:" ? value : null;
 }

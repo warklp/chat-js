@@ -16,10 +16,6 @@ vi.mock("./storage-provider", async () => {
   };
 });
 
-vi.mock("./url", () => ({
-  getBaseUrl: () => "https://chat.example",
-}));
-
 import { deleteFilesByUrls, listFiles, uploadFile } from "./file-storage";
 import { keyFromFileUrl } from "./file-url";
 
@@ -31,15 +27,16 @@ describe("file storage", () => {
     assert(key);
     assert.equal(uploaded.pathname, "hello.txt");
     assert.equal(uploaded.contentType, "text/plain");
+    assert.equal(uploaded.url, `/api/files/content?key=${key}`);
     assert.deepEqual(
       (await listFiles()).files.map((file) => file.pathname),
       [key]
     );
 
-    const previousDeploymentUrl = uploaded.url.replace(
-      "https://chat.example",
+    const previousDeploymentUrl = new URL(
+      uploaded.url,
       "https://old-chat.example"
-    );
+    ).toString();
     await deleteFilesByUrls([previousDeploymentUrl]);
     assert.equal((await listFiles()).files.length, 0);
   });

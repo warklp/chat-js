@@ -6,6 +6,7 @@ import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/url";
 
 interface GenerateImageProps {
   attachments?: FileUIPart[];
@@ -59,7 +60,7 @@ async function resolveImageModel(selectedModel?: string): Promise<{
 }
 
 async function fetchImageBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url);
+  const response = await fetch(new URL(url, getBaseUrl()));
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);
 }
@@ -246,11 +247,14 @@ async function runGenerateImageMultimodal({
     if (lastGeneratedImage) {
       userContent.push({
         type: "image",
-        image: new URL(lastGeneratedImage.imageUrl),
+        image: new URL(lastGeneratedImage.imageUrl, getBaseUrl()),
       });
     }
     for (const part of imageParts) {
-      userContent.push({ type: "image", image: new URL(part.url) });
+      userContent.push({
+        type: "image",
+        image: new URL(part.url, getBaseUrl()),
+      });
     }
   }
 

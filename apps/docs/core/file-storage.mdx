@@ -42,6 +42,13 @@ from the Files SDK provider catalog. See the
 [Files SDK provider reference](https://files-sdk.dev/docs/providers) for the
 available providers and their configuration requirements.
 
+The installer omits adapters that are not suitable for its generated
+production runtime. This includes non-persistent or development-only adapters,
+runtime-specific adapters such as Convex and Bun S3, and adapters whose
+production credentials must be embedded in constructor options. You can still
+integrate those adapters manually when your runtime and secret-management model
+support them.
+
 <Note>
   `--storage-config` is only for non-secret adapter options such as a bucket,
   region, endpoint, or runtime binding. Keep tokens, passwords, private keys,
@@ -174,10 +181,6 @@ enabling the scheduled cleanup job.
     The new adapter cannot read objects that remain in the previous provider.
     Restore the previous adapter, then copy and verify the existing objects
     before switching again.
-  </Accordion>
-  <Accordion title="Generated file URLs use localhost in production">
-    Set `APP_URL` to your public application URL on non-Vercel deployments.
-    Vercel deployments use the platform-provided `VERCEL_URL` automatically.
   </Accordion>
 </AccordionGroup>
 
