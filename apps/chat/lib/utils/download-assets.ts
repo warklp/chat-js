@@ -5,6 +5,8 @@ import type {
   ModelMessage,
   TextPart,
 } from "ai";
+import { keyFromFileUrl } from "@/lib/file-url";
+import { getBaseUrl } from "@/lib/url";
 
 // Minimal utilities to download assets from URL-based parts and inline them.
 
@@ -35,7 +37,9 @@ function toHttpUrl(value: unknown): URL | null {
   }
   if (typeof value === "string") {
     try {
-      const url = new URL(value);
+      const url = keyFromFileUrl(value)
+        ? new URL(value, getBaseUrl())
+        : new URL(value);
       return url.protocol === "http:" || url.protocol === "https:" ? url : null;
     } catch {
       return null;

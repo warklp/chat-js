@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { deleteFilesByUrls, listFiles } from "@/lib/blob";
 import { config } from "@/lib/config";
 import { getAllAttachmentUrls } from "@/lib/db/queries";
 import { env } from "@/lib/env";
+import { deleteFilesByUrls, listFiles } from "@/lib/file-storage";
+import { isFileStorageKey, keyFromFileUrl } from "@/lib/file-url";
 
 const ORPHANED_ATTACHMENTS_RETENTION_TIME = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -45,25 +46,32 @@ async function cleanupOrphanedAttachments() {
   }
 
   try {
-    // Get all attachment URLs from all messages
-    const usedAttachmentUrls = new Set(await getAllAttachmentUrls());
+    const attachmentUrls = await getAllAttachmentUrls();
+    const usedAttachmentKeys = new Set(
+      attachmentUrls
+        .map(keyFromFileUrl)
+        .filter((key): key is string => key !== null)
+    );
 
-    // Get all blobs from Vercel Blob storage
-    const { blobs } = await listFiles();
+    // Get all files from the configured storage provider
+    const { files } = await listFiles();
 
-    // Find orphaned blobs (older than 1 hour and not referenced in any message)
-    const oneHourAgo = new Date(
+    // Find old files that are not referenced in any message
+    const retentionCutoff = new Date(
       Date.now() - ORPHANED_ATTACHMENTS_RETENTION_TIME
     );
     const orphanedUrls: string[] = [];
 
-    for (const blob of blobs) {
-      const blobDate = new Date(blob.uploadedAt);
-      const isOld = blobDate < oneHourAgo;
-      const isUnused = !usedAttachmentUrls.has(blob.url);
+    for (const file of files) {
+      if (!isFileStorageKey(file.pathname)) {
+        continue;
+      }
+      const fileDate = new Date(file.uploadedAt);
+      const isOld = fileDate < retentionCutoff;
+      const isUnused = !usedAttachmentKeys.has(file.pathname);
 
       if (isOld && isUnused) {
-        orphanedUrls.push(blob.url);
+        orphanedUrls.push(file.url);
       }
     }
 

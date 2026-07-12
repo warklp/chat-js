@@ -3,14 +3,17 @@ title: "Attachments"
 description: "Upload images and PDFs to conversations"
 ---
 
-ChatJS supports file attachments in conversations. Files are uploaded to Vercel Blob storage and processed by AI models that support multimodal input.
+ChatJS supports file attachments in conversations. Files are uploaded through
+the configured [file storage provider](../core/file-storage) and processed by AI
+models that support multimodal input.
 
 <Frame>
   <img src="/images/attachments.gif" alt="Uploading file attachments to a conversation" />
 </Frame>
 
 <Note>
-  File attachments require `BLOB_READ_WRITE_TOKEN`. If you don't need attachments, set `features.attachments: false` in `chat.config.ts` to run ChatJS without this env var.
+  File attachments require a durable Files SDK provider. If you don't need
+  attachments, set `features.attachments: false` in `chat.config.ts`.
 </Note>
 
 ## Supported File Types
@@ -23,8 +26,8 @@ ChatJS supports file attachments in conversations. Files are uploaded to Vercel 
 ## How It Works
 
 1. User attaches file in chat input
-2. File uploads to Vercel Blob
-3. URL/content included in message
+2. File uploads through the configured Files SDK provider
+3. A provider-agnostic ChatJS URL is included in the message
 4. Model processes based on type
 
 ## Configuration
@@ -35,7 +38,7 @@ Toggle attachments in `chat.config.ts`:
 
 ```ts
 features: {
-  attachments: true, // Requires BLOB_READ_WRITE_TOKEN
+  attachments: true, // Requires durable file storage
 }
 ```
 
@@ -44,15 +47,12 @@ When disabled:
 - Drag-and-drop and paste file handling are disabled
 - File upload API returns 503
 
-### Environment Variables
+### File Storage
 
-Requires `BLOB_READ_WRITE_TOKEN` from Vercel Blob:
-
-```bash
-BLOB_READ_WRITE_TOKEN=vercel_blob_...
-```
-
-On Vercel, this is auto-provided via the Blob integration.
+Choose a durable provider during installation and configure the environment
+variables generated for that provider. Vercel Blob uses
+`BLOB_READ_WRITE_TOKEN`, while other providers have their own credential modes.
+See [File storage](../core/file-storage) for setup and migration guidance.
 
 ### Attachment Settings
 

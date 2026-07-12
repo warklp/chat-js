@@ -1,9 +1,5 @@
 import type { GatewayType } from "./ai/gateways/registry";
-import type {
-  AiConfig,
-  AuthenticationConfig,
-  FeaturesConfig,
-} from "./config-schema";
+import type { AiConfig, AuthenticationConfig } from "./config-schema";
 
 type EnvVarName = keyof NodeJS.ProcessEnv;
 
@@ -44,15 +40,6 @@ export const gatewayEnvRequirements: Record<GatewayType, EnvRequirement> = {
   },
 };
 
-export const featureEnvRequirements: Partial<
-  Record<keyof FeaturesConfig, EnvRequirement>
-> = {
-  attachments: {
-    options: [["BLOB_READ_WRITE_TOKEN"]],
-    description: "BLOB_READ_WRITE_TOKEN",
-  },
-};
-
 export const aiToolEnvRequirements: Partial<
   Record<keyof AiConfig["tools"], EnvRequirement>
 > = {
@@ -75,10 +62,6 @@ export const aiToolEnvRequirements: Partial<
     ],
     description:
       "VERCEL_OIDC_TOKEN (auto on Vercel) or VERCEL_TEAM_ID + VERCEL_PROJECT_ID + VERCEL_TOKEN",
-  },
-  image: {
-    options: [["BLOB_READ_WRITE_TOKEN"]],
-    description: "BLOB_READ_WRITE_TOKEN",
   },
 };
 

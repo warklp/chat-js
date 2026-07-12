@@ -36,12 +36,6 @@ export const serverEnvSchema = {
     )
     .describe("NextAuth.js secret for signing session tokens"),
 
-  // Optional blob storage (enable in chat.config.ts)
-  BLOB_READ_WRITE_TOKEN: z
-    .string()
-    .optional()
-    .describe("Vercel Blob storage token for file uploads"),
-
   // Authentication providers (enable in chat.config.ts)
   AUTH_GOOGLE_ID: z.string().optional().describe("Google OAuth client ID"),
   AUTH_GOOGLE_SECRET: z

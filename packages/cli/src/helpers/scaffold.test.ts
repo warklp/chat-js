@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { existsSync } from "node:fs";
-import { readFile, rename, rm } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfigTs } from "./config-builder";
-import { scaffoldElectron, scaffoldFromTemplate } from "./scaffold";
+import { scaffoldElectron, scaffoldFromGit, scaffoldFromTemplate } from "./scaffold";
 
 const tempDirs: string[] = [];
 
@@ -154,6 +154,39 @@ describe("buildConfigTs", () => {
 });
 
 describe("scaffoldFromTemplate", () => {
+	it("installs only the selected Files SDK provider dependencies", async () => {
+		const destination = await makeTempDir("chat-app-s3");
+
+		await scaffoldFromTemplate(destination, {
+			storage: {
+				provider: "s3",
+				options: { bucket: "uploads", region: "us-east-1" },
+			},
+		});
+
+		const packageJson = JSON.parse(
+			await readFile(join(destination, "package.json"), "utf8"),
+		) as { dependencies: Record<string, string> };
+		const providerSource = await readFile(
+			join(destination, "lib", "storage-provider.ts"),
+			"utf8",
+		);
+
+		expect(packageJson.dependencies["files-sdk"]).toBe("2.1.0");
+		expect(packageJson.dependencies["@vercel/blob"]).toBeUndefined();
+		expect(packageJson.dependencies["@aws-sdk/client-s3"]).toBe("^3.700.0");
+		expect(packageJson.dependencies["@aws-sdk/s3-presigned-post"]).toBe(
+			"^3.700.0",
+		);
+		expect(packageJson.dependencies["@aws-sdk/s3-request-presigner"]).toBe(
+			"^3.700.0",
+		);
+		expect(providerSource).toContain('import { s3 } from "files-sdk/s3"');
+		expect(providerSource).toContain("createAdapter: () => s3(options)");
+		expect(providerSource).not.toContain("storageProviderModule");
+		expect(providerSource).toContain('"bucket": "uploads"');
+	});
+
 	it("writes a standalone-safe root package.json", async () => {
 		const destination = await makeTempDir("chat-app");
 
@@ -294,6 +327,43 @@ describe("scaffoldFromTemplate", () => {
 				await rename(backupDir, templatesDir);
 			}
 		}
+	});
+});
+
+describe("scaffoldFromGit", () => {
+	it("leaves repositories without the ChatJS storage seam untouched", async () => {
+		const source = await makeTempDir("plain-git-source");
+		const destination = await makeTempDir("plain-git-destination");
+		await mkdir(source, { recursive: true });
+		await writeFile(
+			join(source, "package.json"),
+			JSON.stringify({ name: "plain-template", dependencies: {} }),
+		);
+		for (const args of [
+			["init"],
+			["add", "package.json"],
+			[
+				"-c",
+				"user.name=ChatJS Test",
+				"-c",
+				"user.email=test@chatjs.dev",
+				"commit",
+				"-m",
+				"initial",
+			],
+		]) {
+			const result = Bun.spawnSync(["git", ...args], { cwd: source });
+			expect(result.exitCode).toBe(0);
+		}
+
+		await scaffoldFromGit(source, destination, {
+			storage: { provider: "vercel-blob", options: {} },
+		});
+
+		const packageJson = JSON.parse(
+			await readFile(join(destination, "package.json"), "utf8"),
+		) as { dependencies: Record<string, string> };
+		expect(packageJson.dependencies).toEqual({});
 	});
 });
 
