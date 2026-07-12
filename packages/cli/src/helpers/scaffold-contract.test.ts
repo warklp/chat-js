@@ -173,7 +173,10 @@ describe("scaffold contracts", () => {
 		const visibleTools = (await fetchRegistryIndex(localRegistryUrl))
 			.filter((item) => !item.hidden)
 			.map((item) => item.name);
-		const resolution = await resolveRegistryItems(visibleTools, localRegistryUrl);
+		const resolution = await resolveRegistryItems(
+			visibleTools,
+			localRegistryUrl,
+		);
 
 		for (const item of resolution.items) {
 			const importsSharedToolkit = item.files.some((file) =>
@@ -185,5 +188,38 @@ describe("scaffold contracts", () => {
 
 			expect(item.registryDependencies).toContain("toolkit-renderer");
 		}
+	});
+
+	it("rejects standalone registry tools without the shared runtime", async () => {
+		const cwd = await makeTempDir("registry-runtime");
+		await mkdir(cwd, { recursive: true });
+		const itemPath = join(cwd, "standalone.json");
+		await writeFile(
+			itemPath,
+			JSON.stringify({
+				name: "standalone",
+				files: [
+					{
+						path: "tool.ts",
+						target: "standalone/tool.ts",
+						type: "tool",
+						content: "export const standalone = {};",
+					},
+				],
+			}),
+		);
+
+		expect(
+			installRegistryTools({
+				tools: ["standalone"],
+				cwd,
+				toolsDir: join(cwd, "tools/chatjs"),
+				toolsAlias: "@/tools/chatjs",
+				uiDir: join(cwd, "components/ui"),
+				uiAlias: "@/components/ui",
+				registryUrl: itemPath,
+				installDependenciesNow: false,
+			}),
+		).rejects.toThrow('must declare "toolkit-renderer"');
 	});
 });

@@ -241,8 +241,10 @@ export const create = new Command()
 			let installableToolEnvRequirements: RegistryEnvRequirement[] = [];
 			if (assistantTools.installableTools.length > 0) {
 				const uiConfig = await loadProjectUiConfig(targetDir);
-				const toolsDir = resolveProjectPath("@/tools/chatjs", targetDir);
-				const uiDir = resolveProjectPath(uiConfig.alias, targetDir);
+				const [toolsDir, uiDir] = await Promise.all([
+					resolveProjectPath("@/tools/chatjs", targetDir),
+					resolveProjectPath(uiConfig.alias, targetDir),
+				]);
 				const registryInstall = await installRegistryTools({
 					tools: assistantTools.installableTools,
 					cwd: targetDir,

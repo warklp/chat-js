@@ -79,6 +79,8 @@ export default defineConfig({
 
 The CLI uses this path both to decide where files should be written and which import alias should be used inside the generated registry index.
 
+UI files use `aliases.ui` from `components.json`. Both aliases must resolve through `compilerOptions.paths` in the project's `tsconfig.json` or `jsconfig.json`; the CLI rejects aliases that resolve outside the project.
+
 ## Tool Environment Variables
 
 Installable tools can declare their own environment requirements directly in `tool.ts`.
@@ -106,6 +108,8 @@ npx @chat-js/cli@latest add word-count \
 ```
 
 You can also set a default registry URL template with `CHATJS_REGISTRY_URL`.
+
+Every tool item in a custom registry must declare `toolkit-renderer` in `registryDependencies`. The CLI-managed server registry imports the shared runtime from that item even when the tool itself is a plain AI SDK `tool()`. Custom registries must therefore publish `toolkit-renderer` alongside their tools.
 
 ## Manual Update And Troubleshooting
 

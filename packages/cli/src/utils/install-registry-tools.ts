@@ -68,6 +68,21 @@ export async function installRegistryTools({
 	let resolution: Awaited<ReturnType<typeof resolveRegistryItems>>;
 	try {
 		resolution = await resolveRegistryItems(tools, registryUrl);
+		const installsRegistryTool = resolution.items.some(
+			(item) =>
+				tools.includes(item.name) &&
+				item.files.some(
+					(file) => file.type === "tool" || file.type === "renderer",
+				),
+		);
+		const includesRuntimeItem = resolution.items.some(
+			(item) => item.name === "toolkit-renderer",
+		);
+		if (installsRegistryTool && !includesRuntimeItem) {
+			throw new Error(
+				'Registry tools must declare "toolkit-renderer" in registryDependencies',
+			);
+		}
 		fetchSpinner.succeed(
 			tools.length === 1
 				? `Fetched ${tools[0]}`

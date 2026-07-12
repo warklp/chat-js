@@ -67,8 +67,10 @@ export const add = new Command()
 				throw err;
 			}
 
-			const toolsDir = resolveProjectPath(config.paths.tools, cwd);
-			const uiDir = resolveProjectPath(uiConfig.alias, cwd);
+			const [toolsDir, uiDir] = await Promise.all([
+				resolveProjectPath(config.paths.tools, cwd),
+				resolveProjectPath(uiConfig.alias, cwd),
+			]);
 
 			if (!opts.yes) {
 				const answer = await confirm({

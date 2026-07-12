@@ -11,6 +11,8 @@ type ToolEnvVars = {
   options: string[][];
 }[];
 
+const SAFE_ERROR_NAME = /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/;
+
 export const toolEnvVars: ToolEnvVars = [
   {
     description: "FIRECRAWL_API_KEY",
@@ -30,18 +32,15 @@ function parseUrl(url: string): URL | null {
   }
 }
 
-function redactUrl(url: URL): string {
+function displayUrl(url: URL): string {
   return `${url.origin}${url.pathname}`;
 }
 
-function serializeError(error: unknown, sensitiveValues: string[]) {
-  let message = error instanceof Error ? error.message : String(error);
-  for (const value of sensitiveValues
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length)) {
-    message = message.replaceAll(value, "[REDACTED_URL]");
+function getErrorName(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return typeof error;
   }
-  return error instanceof Error ? { message, name: error.name } : { message };
+  return SAFE_ERROR_NAME.test(error.name) ? error.name : "Error";
 }
 
 export const retrieveUrl = defineTool({
@@ -65,8 +64,6 @@ Avoid:
       }),
       // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Retrieval fallbacks are kept together to preserve the provider response flow.
       execute: async ({ url }: { url: string }) => {
-        let safeUrl: string | undefined;
-        const sensitiveUrls: string[] = [];
         try {
           if (!app) {
             return {
@@ -81,10 +78,8 @@ Avoid:
             };
           }
 
-          const redactedUrl = redactUrl(parsedUrl);
-          safeUrl = redactedUrl;
+          const resultUrl = displayUrl(parsedUrl);
           const normalizedUrl = parsedUrl.toString();
-          sensitiveUrls.push(url, normalizedUrl);
           const content = await app.scrapeUrl(normalizedUrl);
           if (!(content.success && content.metadata)) {
             return {
@@ -125,7 +120,7 @@ Avoid:
               {
                 title: title || "Untitled",
                 content: extractedContent || "",
-                url: redactedUrl,
+                url: resultUrl,
                 description: description || "",
                 language: content.metadata.language,
               },
@@ -133,8 +128,7 @@ Avoid:
           };
         } catch (error) {
           console.error("retrieveUrl failed", {
-            error: serializeError(error, sensitiveUrls),
-            url: safeUrl,
+            errorName: getErrorName(error),
           });
           return { error: "Failed to retrieve content" };
         }

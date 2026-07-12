@@ -1,7 +1,19 @@
 [
   {
+    "name": "generate-image",
+    "description": "Generate or edit an image from a text prompt"
+  },
+  {
+    "name": "generate-video",
+    "description": "Generate a short video clip from a text prompt"
+  },
+  {
     "name": "get-weather",
     "description": "Get the current weather at a location"
+  },
+  {
+    "name": "retrieve-url",
+    "description": "Fetch structured information from a single URL"
   },
   {
     "name": "toolkit-renderer",
@@ -9,19 +21,7 @@
     "hidden": true
   },
   {
-    "name": "generate-video",
-    "description": "Generate a short video clip from a text prompt"
-  },
-  {
-    "name": "generate-image",
-    "description": "Generate or edit an image from a text prompt"
-  },
-  {
     "name": "word-count",
     "description": "Count words, characters, and sentences in text"
-  },
-  {
-    "name": "retrieve-url",
-    "description": "Fetch structured information from a single URL"
   }
 ]

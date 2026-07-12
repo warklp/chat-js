@@ -156,7 +156,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 async function main(): Promise<void> {
   await fs.mkdir(itemsDir, { recursive: true });
 
-  const entries = await fs.readdir(srcDir);
+  const entries = (await fs.readdir(srcDir)).sort();
   const dirs: string[] = [];
   for (const entry of entries) {
     const stat = await fs.stat(path.join(srcDir, entry));
