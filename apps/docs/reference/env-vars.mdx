@@ -183,23 +183,34 @@ openssl rand -base64 32
   The key must be exactly 44 characters (32 bytes encoded as base64). Changing this key after deployment will invalidate all stored MCP connector credentials.
 </Note>
 
-### Blob Storage (Attachments and Image Generation)
+### File Storage
 
-Required for file attachment uploads and AI image generation.
+Attachments, image generation, and video generation require a durable Files
+SDK provider. Storage requirements are generated from the selected provider and
+validated by `scripts/check-env.ts`.
 
 ```typescript title="chat.config.ts"
 features: {
-  attachments: true,      // Requires BLOB_READ_WRITE_TOKEN
-  imageGeneration: true,  // Requires BLOB_READ_WRITE_TOKEN
+  attachments: true,
+},
+ai: {
+  tools: {
+    image: { enabled: true },
+    video: { enabled: true },
+  },
 }
 ```
 
-| Variable | Required | Description | Get it |
-|----------|----------|-------------|--------|
-| `BLOB_READ_WRITE_TOKEN` | Yes (for these features) | Vercel Blob storage token | [Vercel Storage](https://vercel.com/docs/storage/vercel-blob) → Create → Blob |
+Provider credentials belong in environment variables or the provider SDK's
+credential chain. Non-secret adapter options belong in
+`lib/storage-provider.ts`. See [File storage](../core/file-storage) and the
+[Files SDK provider reference](https://files-sdk.dev/docs/providers) for the
+requirements of your selected provider.
 
 <Tip>
-  When using Vercel, connect a Blob store in your project dashboard under **Storage**. The token is added to your environment automatically.
+  When using Vercel Blob, connect a store in your project dashboard under
+  **Storage**. `BLOB_READ_WRITE_TOKEN` is added to your environment
+  automatically.
 </Tip>
 
 ### Code Execution Sandbox
@@ -240,7 +251,7 @@ Without `REDIS_URL`, streams work normally but cannot be resumed after disconnec
 
 ### Cron Job Secret
 
-Secures the `/api/cron/cleanup` endpoint that removes orphaned blob attachments.
+Secures the `/api/cron/cleanup` endpoint that removes orphaned managed files.
 
 | Variable | Description |
 |----------|-------------|
@@ -297,7 +308,7 @@ All variables in one place:
 | `AUTH_GOOGLE_SECRET` | Auth | If `authentication.google: true` |
 | `VERCEL_APP_CLIENT_ID` | Auth | If `authentication.vercel: true` |
 | `VERCEL_APP_CLIENT_SECRET` | Auth | If `authentication.vercel: true` |
-| `BLOB_READ_WRITE_TOKEN` | Feature | If `attachments` or `imageGeneration` enabled |
+| `BLOB_READ_WRITE_TOKEN` | Storage | When Vercel Blob is the selected provider |
 | `TAVILY_API_KEY` | Feature | If `webSearch` enabled (one search key required) |
 | `FIRECRAWL_API_KEY` | Feature | If `webSearch` or `urlRetrieval` enabled |
 | `EXA_API_KEY` | Optional | Recognized by env schema but not required by current validation |
@@ -320,3 +331,4 @@ All variables in one place:
 - [Deploy to Vercel](/deployment/vercel) — how Vercel auto-sets several of these variables
 - [Gateways Overview](/gateways/overview) — choosing and configuring an AI gateway
 - [Authentication](/core/authentication) — OAuth provider setup details
+- [File storage](/core/file-storage) — provider configuration and credentials

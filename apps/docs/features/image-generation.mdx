@@ -19,15 +19,15 @@ Toggle in `chat.config.ts`:
 ai: {
   tools: {
     image: {
-      enabled: true, // Requires BLOB_READ_WRITE_TOKEN
+      enabled: true, // Requires durable file storage
     },
   },
 }
 ```
 
 <Note>
-  Image generation requires `BLOB_READ_WRITE_TOKEN` since generated images are
-  uploaded to Vercel Blob storage.
+  Image generation requires a durable
+  [file storage provider](../core/file-storage) for generated images.
 </Note>
 
 Configure the default image model:
@@ -153,7 +153,8 @@ lib/ai/tools/generate-image.ts → components/part/generate-image.tsx
 return { imageUrl: result.url, prompt };
 ```
 
-The generated image is uploaded to blob storage and the URL returned.
+The generated image is uploaded through the configured Files SDK provider and
+the ChatJS file URL is returned.
 
 ### UI States
 

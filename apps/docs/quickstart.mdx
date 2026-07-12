@@ -117,14 +117,17 @@ Expand the sections below for setup instructions:
     3. Copy **Client ID** → `VERCEL_APP_CLIENT_ID`
     4. Copy **Client Secret** → `VERCEL_APP_CLIENT_SECRET`
   </Accordion>
-  <Accordion title="Blob Storage (Optional)">
-    Required for file attachments and image generation. Skip if you don't need these features.
+  <Accordion title="File Storage (Optional)">
+    Required for file attachments, image generation, and video generation. The
+    installer asks you to select a Files SDK provider when you enable one of
+    these capabilities.
 
-    1. Go to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)
-    2. Create a new blob store
-    3. Copy the token → `BLOB_READ_WRITE_TOKEN`
+    Configure the environment variables printed by the CLI for your selected
+    provider. For Vercel Blob, connect a Blob store and copy its token to
+    `BLOB_READ_WRITE_TOKEN` for local development.
 
-    To disable, set `features.attachments: false` and `ai.tools.image.enabled: false` in `chat.config.ts`.
+    See [File storage](./core/file-storage) for provider configuration,
+    credentials, and migration behavior.
   </Accordion>
 </AccordionGroup>
 
