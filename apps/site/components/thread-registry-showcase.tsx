@@ -268,7 +268,7 @@ function buildTreeLayout({
   };
 }
 
-function InstallCommand() {
+export function ThreadInstallCommand() {
   const [mode, setMode] = useState<InstallMode>("registry");
   const [copied, setCopied] = useState(false);
   const command = INSTALL_COMMANDS[mode];
@@ -605,7 +605,7 @@ function TreeCanvas({ chat }: { chat: PlaygroundChat }) {
   );
 }
 
-function Playground() {
+export function ThreadPlayground() {
   const [draft, setDraft] = useState("");
   const [responseCount, setResponseCount] = useState(1);
   const idCounter = useRef(100);
@@ -739,8 +739,8 @@ function Playground() {
 export function ThreadRegistryShowcase() {
   return (
     <>
-      <Playground />
-      <InstallCommand />
+      <ThreadPlayground />
+      <ThreadInstallCommand />
     </>
   );
 }
