@@ -221,7 +221,7 @@ export async function promptStorage(
 	if (!metadata) {
 		throw new Error(`Unknown Files SDK provider: ${provider}`);
 	}
-	if (explicitOptions) {
+	if (explicitOptions !== undefined) {
 		return { provider, options: parseStorageOptions(explicitOptions) };
 	}
 

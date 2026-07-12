@@ -2,7 +2,9 @@ import { getProvider, type ProviderSlug } from "files-sdk/providers";
 
 export type StorageEnvironmentVariable = {
   aliases: readonly string[];
+  description: string;
   key: string;
+  secret: boolean;
 };
 
 export type StorageEnvironmentRequirement = {
@@ -23,17 +25,25 @@ export function getStorageEnvironmentRequirements(
 
   const toVariable = (variable: {
     aliases?: readonly string[];
+    description: string;
     key: string;
+    secret: boolean;
   }): StorageEnvironmentVariable => ({
     aliases: variable.aliases ?? [],
+    description: variable.description,
     key: variable.key,
+    secret: variable.secret,
   });
   const requirements: StorageEnvironmentRequirement[] = [];
   const required = metadata.env.required?.filter((variable) => {
     const optionName = STORAGE_OPTION_HINT.exec(variable.description)?.[1];
     return (
       variable.readBy === "files-sdk" &&
-      !(optionName && adapterOptions[optionName] !== undefined)
+      !(
+        optionName &&
+        variable.secret === false &&
+        adapterOptions[optionName] !== undefined
+      )
     );
   });
   if (required?.length) {
