@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/franciscomoretti/workgrove/main/schema/workgrove.schema.json",
+  "version": 1,
+  "slot": {
+    "env": "CHATJS_DEV_SLOT",
+    "default": 0,
+    "file": ".env.worktree.local"
+  },
+  "range": {
+    "base": 3000,
+    "stride": 10
+  },
+  "url": "http://localhost:{port}",
+  "apps": {
+    "chat": {
+      "offset": 0,
+      "control": {
+        "label": "Chat",
+        "open": true,
+        "probe": "tcp",
+        "required": true
+      },
+      "exports": {
+        "APP_URL": "{url}",
+        "PORT": "{port}"
+      }
+    },
+    "electron": {
+      "offset": 1,
+      "control": {
+        "label": "Electron",
+        "open": false,
+        "probe": "none",
+        "required": false
+      },
+      "exports": {
+        "ELECTRON_APP_URL": "{apps.chat.url}"
+      }
+    },
+    "site": {
+      "offset": 2,
+      "control": {
+        "label": "Site",
+        "open": true,
+        "probe": "tcp",
+        "required": true
+      },
+      "exports": {
+        "PORT": "{port}"
+      }
+    }
+  },
+  "control": {
+    "start": {
+      "argv": ["bun", "run", "dev:all"]
+    },
+    "postCreate": {
+      "argv": ["bun", "install"]
+    }
+  }
+}

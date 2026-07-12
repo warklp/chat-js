@@ -1,12 +1,32 @@
 #!/usr/bin/env bun
 
+import { existsSync } from "node:fs";
+import { dirname, join, parse, resolve } from "node:path";
 import { spawn } from "bun";
-import { loadWorktreeConfig, resolveWorktreeRuntime } from "./worktree-runtime";
+import {
+  loadWorkgroveConfig,
+  resolveWorkgroveRuntime,
+} from "workgrove/config";
 
 const args = process.argv.slice(2);
-const configFile = ".worktree-env.json";
-const config = await loadWorktreeConfig(configFile);
-const runtime = resolveWorktreeRuntime(config, process.env);
+function findConfig(start: string): string {
+  let directory = resolve(start);
+  const root = parse(directory).root;
+  while (true) {
+    const candidate = join(directory, ".workgrove.json");
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    if (directory === root) {
+      throw new Error(`Missing worktree environment config above ${start}`);
+    }
+    directory = dirname(directory);
+  }
+}
+
+const configFile = findConfig(process.cwd());
+const config = loadWorkgroveConfig(configFile);
+const runtime = resolveWorkgroveRuntime(config, process.env);
 
 function fail(message: string): never {
   console.error(message);

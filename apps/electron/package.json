@@ -19,7 +19,7 @@
 		"prebuild": "bun scripts/write-branding.ts && bun run generate-icons",
 		"build": "bun build src/main.ts --target=node --format=cjs --outfile dist/main.js --external electron && bun build src/preload.ts --target=browser --format=cjs --outfile dist/preload.js --external electron",
 		"start": "bun run forge start",
-		"dev": "bun run start",
+		"dev": "bun ../../scripts/worktree-env.ts electron -- bun run start",
 		"package": "bun run forge package",
 		"make": "bun run forge make",
 		"make:mac": "bun run forge make --platform=darwin --arch=universal",
