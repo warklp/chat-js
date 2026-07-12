@@ -167,7 +167,6 @@ Avoid:
           }
           const failedUrl = parseUrl(url);
           console.error("retrieveUrl failed", {
-            error,
             errorName: getErrorName(error),
             url: failedUrl ? displayUrl(failedUrl) : "invalid",
           });

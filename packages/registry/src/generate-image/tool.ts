@@ -14,8 +14,13 @@ import {
 
 type ImageMode = "edit" | "generate";
 
-function decodeBase64(data: string): Uint8Array {
-  const decoded = atob(data);
+export function decodeBase64(data: string): Uint8Array {
+  const dataUrlPrefixEnd = data.indexOf(";base64,");
+  const encoded =
+    data.startsWith("data:") && dataUrlPrefixEnd !== -1
+      ? data.slice(dataUrlPrefixEnd + ";base64,".length)
+      : data;
+  const decoded = atob(encoded);
   return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
 }
 

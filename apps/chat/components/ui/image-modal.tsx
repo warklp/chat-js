@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyIcon, DownloadIcon, XIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, ImageOffIcon, XIcon } from "lucide-react";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 interface ImageModalProps {
@@ -122,6 +122,8 @@ export function ImageModal({
   showActions = true,
 }: ImageModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageUnavailable = failedImageUrl === imageUrl;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -160,20 +162,31 @@ export function ImageModal({
         >
           <XIcon aria-hidden="true" size={20} />
         </button>
-        {showActions && isOpen && (
+        {showActions && isOpen && !imageUnavailable && (
           <ImageActions
             className="absolute top-4 right-4 z-10"
             imageUrl={imageUrl}
           />
         )}
-        {/* biome-ignore lint/performance/noImgElement: Dynamic external images are not compatible with a reusable Next Image configuration. */}
-        <img
-          alt={imageName ?? "Expanded image"}
-          className="relative z-10 max-h-[90vh] max-w-[90vw] object-contain"
-          height={900}
-          src={imageUrl}
-          width={1600}
-        />
+        {imageUnavailable ? (
+          <span
+            className="relative z-10 flex flex-col items-center gap-3 text-white"
+            role="status"
+          >
+            <ImageOffIcon className="size-10" />
+            <span>Image unavailable</span>
+          </span>
+        ) : (
+          /* biome-ignore lint/performance/noImgElement lint/a11y/noNoninteractiveElementInteractions: Dynamic external images need a reusable loading-error state. */
+          <img
+            alt={imageName ?? "Expanded image"}
+            className="relative z-10 max-h-[90vh] max-w-[90vw] object-contain"
+            height={900}
+            onError={() => setFailedImageUrl(imageUrl)}
+            src={imageUrl}
+            width={1600}
+          />
+        )}
       </div>
     </dialog>
   );
