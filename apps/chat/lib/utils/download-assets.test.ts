@@ -130,6 +130,40 @@ describe("replaceFilePartUrlByBinaryDataInMessages", () => {
     assert.deepEqual(result, []);
   });
 
+  it("omits assistant messages exposed by an unavailable user turn", async () => {
+    downloadFile.mockRejectedValue(
+      new FilesError("NotFound", "File does not exist")
+    );
+
+    const result = await replaceFilePartUrlByBinaryDataInMessages([
+      {
+        role: "user",
+        content: [
+          {
+            type: "file",
+            data: "/api/files/content?key=l_u0a2bkphKLFKsBI4q5Tue9.png",
+            mediaType: "image/png",
+          },
+        ],
+      },
+      {
+        role: "assistant",
+        content: [{ type: "text", text: "Earlier response" }],
+      },
+      {
+        role: "user",
+        content: [{ type: "text", text: "Continue this conversation" }],
+      },
+    ]);
+
+    assert.deepEqual(result, [
+      {
+        role: "user",
+        content: [{ type: "text", text: "Continue this conversation" }],
+      },
+    ]);
+  });
+
   it("omits unavailable image parts from model messages", async () => {
     vi.stubGlobal(
       "fetch",
@@ -180,6 +214,31 @@ describe("replaceFilePartUrlByBinaryDataInMessages", () => {
         },
       ]),
       providerError
+    );
+  });
+
+  it("preserves non-404 HTTP failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(null, { status: 500 })))
+    );
+
+    await assert.rejects(
+      replaceFilePartUrlByBinaryDataInMessages([
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              data: "https://files.example/unavailable.png",
+              mediaType: "image/png",
+            },
+          ],
+        },
+      ]),
+      new Error(
+        "Failed to download asset: https://files.example/unavailable.png (500)"
+      )
     );
   });
 

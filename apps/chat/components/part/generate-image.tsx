@@ -3,6 +3,7 @@
 import { ImageOffIcon } from "lucide-react";
 import { useState } from "react";
 import { ImageActions, ImageModal } from "@/components/image-modal";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import type { ChatMessage } from "@/lib/ai/types";
 
 export type GenerateImageTool = Extract<
@@ -12,7 +13,8 @@ export type GenerateImageTool = Extract<
 
 export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const imageUrl = tool.output?.imageUrl;
+  const { handleImageError, imageUnavailable } = useImageLoadError(imageUrl);
 
   if (tool.state === "input-available") {
     return (
@@ -28,7 +30,6 @@ export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
   if (!output) {
     return null;
   }
-  const imageUnavailable = failedUrl === output.imageUrl;
 
   return (
     <>
@@ -54,10 +55,7 @@ export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
                   alt={output.prompt}
                   className="h-auto w-full max-w-full"
                   height={512}
-                  onError={() => {
-                    setFailedUrl(output.imageUrl);
-                    setDialogOpen(false);
-                  }}
+                  onError={handleImageError}
                   src={output.imageUrl}
                   width={512}
                 />

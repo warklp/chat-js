@@ -8,8 +8,8 @@ import {
   XIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import type { Attachment } from "@/lib/ai/types";
 import { getFileImageProps } from "@/lib/file-url";
 import { cn } from "@/lib/utils";
@@ -23,8 +23,8 @@ function LoadingPreview() {
 }
 
 function ImagePreview({ name, url }: { name: string; url: string }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  if (failedUrl === url) {
+  const { handleImageError, imageUnavailable } = useImageLoadError(url);
+  if (imageUnavailable) {
     return (
       <div
         className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground"
@@ -42,7 +42,7 @@ function ImagePreview({ name, url }: { name: string; url: string }) {
       alt={name || "attachment"}
       className="object-cover"
       fill
-      onError={() => setFailedUrl(url)}
+      onError={handleImageError}
       sizes="80px"
       src={imageProps.src}
       unoptimized={imageProps.unoptimized}

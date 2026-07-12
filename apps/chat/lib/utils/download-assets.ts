@@ -17,15 +17,17 @@ interface DownloadResult {
   mediaType: string | undefined;
 }
 
+type AssetDownloadResult = DownloadResult | null;
+
 export type DownloadImplementation = (args: {
   url: URL;
-}) => Promise<DownloadResult | null>;
+}) => Promise<AssetDownloadResult>;
 
 async function defaultDownload({
   url,
 }: {
   url: URL;
-}): Promise<DownloadResult | null> {
+}): Promise<AssetDownloadResult> {
   const isApplicationUrl = url.origin === new URL(getBaseUrl()).origin;
   const key = isApplicationUrl ? keyFromFileUrl(url.toString()) : null;
   if (key) {
@@ -81,7 +83,7 @@ function toHttpUrl(value: unknown): URL | null {
 async function downloadAssetsFromModelMessages(
   messages: ModelMessage[],
   downloadImplementation: DownloadImplementation = defaultDownload
-): Promise<Record<string, DownloadResult | null>> {
+): Promise<Record<string, AssetDownloadResult>> {
   const urlSet = new Set<string>();
 
   for (const message of messages) {
@@ -117,7 +119,7 @@ async function downloadAssetsFromModelMessages(
 
 function mapFilePart(
   part: FilePart,
-  downloaded: Record<string, DownloadResult | null>
+  downloaded: Record<string, AssetDownloadResult>
 ): FilePart | null {
   const url = toHttpUrl(part.data);
   if (url) {
@@ -138,7 +140,7 @@ function mapFilePart(
 
 function mapImagePart(
   part: ImagePart,
-  downloaded: Record<string, DownloadResult | null>
+  downloaded: Record<string, AssetDownloadResult>
 ): ImagePart | null {
   const url = toHttpUrl(part.image);
   if (url) {
@@ -198,7 +200,7 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
     };
   });
 
-  return mappedMessages.filter(
+  const availableMessages = mappedMessages.filter(
     (message) =>
       !(
         message.role === "user" &&
@@ -206,4 +208,15 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
         message.content.length === 0
       )
   );
+  const firstUserIndex = availableMessages.findIndex(
+    (message) => message.role === "user"
+  );
+  if (firstUserIndex === -1) {
+    return availableMessages.filter((message) => message.role === "system");
+  }
+
+  const leadingSystemMessages = availableMessages
+    .slice(0, firstUserIndex)
+    .filter((message) => message.role === "system");
+  return [...leadingSystemMessages, ...availableMessages.slice(firstUserIndex)];
 }

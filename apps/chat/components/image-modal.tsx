@@ -1,7 +1,6 @@
 "use client";
 
 import { CopyIcon, DownloadIcon, ImageOffIcon, XIcon } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import { cn } from "@/lib/utils";
 
 interface ImageModalProps {
@@ -105,8 +105,7 @@ export function ImageModal({
   imageName,
   showActions = true,
 }: ImageModalProps) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const imageUnavailable = failedUrl === imageUrl;
+  const { handleImageError, imageUnavailable } = useImageLoadError(imageUrl);
 
   return (
     <Dialog onOpenChange={onClose} open={isOpen}>
@@ -147,7 +146,7 @@ export function ImageModal({
                 alt={imageName ?? "Expanded image"}
                 className="max-h-[90vh] max-w-[90vw] object-contain"
                 onClick={(e) => e.stopPropagation()}
-                onError={() => setFailedUrl(imageUrl)}
+                onError={handleImageError}
                 src={imageUrl || undefined}
               />
             </>

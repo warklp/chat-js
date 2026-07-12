@@ -10,7 +10,6 @@ import {
   XIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { toast } from "sonner";
 import {
   PromptInputHoverCard,
@@ -19,6 +18,7 @@ import {
 import { AttachmentCard } from "@/components/attachment-card";
 import { Button } from "@/components/ui/button";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import type { Attachment } from "@/lib/ai/types";
 import { getFileImageProps } from "@/lib/file-url";
 import { cn } from "@/lib/utils";
@@ -34,9 +34,9 @@ function AttachmentIcon({
   url: string;
   name: string;
 }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const { handleImageError, imageUnavailable } = useImageLoadError(url);
   if (isImage) {
-    if (failedUrl === url) {
+    if (imageUnavailable) {
       return (
         <>
           <ImageOffIcon className="size-3 text-muted-foreground" />
@@ -50,7 +50,7 @@ function AttachmentIcon({
         alt={name || "attachment"}
         className="size-5 object-cover"
         height={20}
-        onError={() => setFailedUrl(url)}
+        onError={handleImageError}
         src={imageProps.src}
         unoptimized={imageProps.unoptimized}
         width={20}
