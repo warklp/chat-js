@@ -1,4 +1,11 @@
 {
   "description": "Generate or edit an image from a text prompt",
-  "registryDependencies": ["toolkit-renderer"]
+  "registryDependencies": ["toolkit-renderer"],
+  "files": [
+    {
+      "source": "image-modal.tsx",
+      "target": "image-modal.tsx",
+      "type": "ui"
+    }
+  ]
 }

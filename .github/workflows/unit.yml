@@ -58,3 +58,6 @@ jobs:
           TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
           TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha }}
         run: bunx turbo run test:unit --affected
+      - name: Check registry integrity
+        if: steps.affected.outputs.run == 'true'
+        run: bun --filter @chat-js/registry test:unit

@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { inferPackageManager } from "./get-package-manager";
@@ -27,6 +28,10 @@ export type ProjectConfig = {
   paths: {
     tools: string;
   };
+};
+
+export type ProjectUiConfig = {
+  alias: string;
 };
 
 export async function loadProjectConfig(cwd: string): Promise<ProjectConfig> {
@@ -67,13 +72,35 @@ export async function loadProjectConfig(cwd: string): Promise<ProjectConfig> {
   };
 }
 
+export async function loadProjectUiConfig(
+  cwd: string
+): Promise<ProjectUiConfig> {
+  const source = await fs.readFile(path.join(cwd, "components.json"), "utf8");
+  const parsed: unknown = JSON.parse(source);
+  const alias =
+    typeof parsed === "object" &&
+    parsed !== null &&
+    "aliases" in parsed &&
+    typeof parsed.aliases === "object" &&
+    parsed.aliases !== null &&
+    "ui" in parsed.aliases
+      ? parsed.aliases.ui
+      : null;
+
+  if (typeof alias !== "string" || alias.length === 0) {
+    throw new Error('components.json must define a non-empty "aliases.ui"');
+  }
+
+  return { alias };
+}
+
 /**
  * Resolve a Next.js-style import alias to a filesystem path.
  * "@/tools" → "<cwd>/tools"
  * "./tools" → "<cwd>/tools"
  */
-export function resolveToolsPath(alias: string, cwd: string): string {
-  if (alias.startsWith("@/")) {
+export function resolveProjectPath(alias: string, cwd: string): string {
+  if (alias.startsWith("@/") || alias.startsWith("~/")) {
     return path.join(cwd, alias.slice(2));
   }
   return path.resolve(cwd, alias);

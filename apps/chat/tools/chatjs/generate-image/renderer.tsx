@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageActions, ImageModal } from "@/components/image-modal";
+import { ImageActions, ImageModal } from "@/components/ui/image-modal";
 import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
 import type { generateImage } from "./tool";
 

@@ -95,6 +95,7 @@ describe("scaffold contracts", () => {
 			.map((item) => item.name);
 		const cwd = await makeTempDir("registry");
 		const toolsDir = join(cwd, "tools", "chatjs");
+		const uiDir = join(cwd, "components", "ui");
 
 		await mkdir(cwd, { recursive: true });
 		await writeFile(
@@ -107,6 +108,8 @@ describe("scaffold contracts", () => {
 			cwd,
 			toolsDir,
 			toolsAlias: "@/tools/chatjs",
+			uiDir,
+			uiAlias: "@/components/ui",
 			registryUrl: localRegistryUrl,
 			installDependenciesNow: false,
 			packageManager: "npm",
@@ -119,6 +122,11 @@ describe("scaffold contracts", () => {
 		};
 		const toolsSource = await readFile(join(toolsDir, "tools.ts"), "utf8");
 		const uiSource = await readFile(join(toolsDir, "ui.ts"), "utf8");
+		const generateImageRenderer = await readFile(
+			join(toolsDir, "generate-image", "renderer.tsx"),
+			"utf8",
+		);
+		const imageModal = await readFile(join(uiDir, "image-modal.tsx"), "utf8");
 		const envEntries = collectEnvChecklist({
 			gateway: "vercel",
 			coreFeatures: {
@@ -152,6 +160,10 @@ describe("scaffold contracts", () => {
 		expect(uiSource).toContain('"tool-getWeather"');
 		expect(uiSource).toContain('"tool-wordCount"');
 		expect(uiSource).toContain('"tool-retrieveUrl"');
+		expect(generateImageRenderer).toContain(
+			'from "@/components/ui/image-modal"',
+		);
+		expect(imageModal).toContain("export function ImageModal");
 		expect(envEntries.some((entry) => entry.vars === "FIRECRAWL_API_KEY")).toBe(
 			true,
 		);

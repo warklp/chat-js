@@ -1,10 +1,10 @@
 import {
+  type FilePart,
   generateImage as generateImageWithImageModel,
   generateText,
-  tool,
-  type FilePart,
   type ImagePart,
   type TextPart,
+  tool,
 } from "ai";
 import { z } from "zod";
 import {
@@ -39,12 +39,7 @@ function mediaExtension(mediaType: string): string {
 
 export const generateImage = defineTool({
   id: "generate-image",
-  needs: [
-    "files.attachments",
-    "files.previous",
-    "media.write",
-    "models.image",
-  ],
+  needs: ["files.attachments", "files.previous", "media.write", "models.image"],
   createTool: (ctx: ToolRuntimeContext) =>
     tool({
       description: `Generate an image from a user-provided prompt.
@@ -96,9 +91,8 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
           const isGoogleModel =
             imageGenerationModel.modelId.startsWith("google/") ||
             imageGenerationModel.modelId.includes("gemini");
-          const isOpenAIModel = imageGenerationModel.modelId.startsWith(
-            "openai/"
-          );
+          const isOpenAIModel =
+            imageGenerationModel.modelId.startsWith("openai/");
 
           const result = await generateText({
             abortSignal,

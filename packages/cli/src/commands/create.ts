@@ -26,7 +26,7 @@ import {
 } from "../helpers/scaffold";
 import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
 import { fetchRegistryIndex } from "../registry/fetch";
-import { resolveToolsPath } from "../utils/get-config";
+import { loadProjectUiConfig, resolveProjectPath } from "../utils/get-config";
 import { inferPackageManager } from "../utils/get-package-manager";
 import { handleError } from "../utils/handle-error";
 import { highlighter } from "../utils/highlighter";
@@ -240,12 +240,16 @@ export const create = new Command()
 
 			let installableToolEnvRequirements: RegistryEnvRequirement[] = [];
 			if (assistantTools.installableTools.length > 0) {
-				const toolsDir = resolveToolsPath("@/tools/chatjs", targetDir);
+				const uiConfig = await loadProjectUiConfig(targetDir);
+				const toolsDir = resolveProjectPath("@/tools/chatjs", targetDir);
+				const uiDir = resolveProjectPath(uiConfig.alias, targetDir);
 				const registryInstall = await installRegistryTools({
 					tools: assistantTools.installableTools,
 					cwd: targetDir,
 					toolsDir,
 					toolsAlias: "@/tools/chatjs",
+					uiDir,
+					uiAlias: uiConfig.alias,
 					registryUrl: options.registry,
 					installDependenciesNow: false,
 					packageManager,

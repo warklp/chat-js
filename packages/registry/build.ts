@@ -29,6 +29,24 @@ const appToolsDir = fileURLToPath(
 );
 const itemsDir = fileURLToPath(new URL("./items", import.meta.url));
 const indexPath = fileURLToPath(new URL("./index.json", import.meta.url));
+const checkMode = process.argv.includes("--check");
+
+async function emitGeneratedFile(
+  filePath: string,
+  content: string
+): Promise<void> {
+  if (!checkMode) {
+    await fs.writeFile(filePath, content);
+    return;
+  }
+
+  const existing = await fs.readFile(filePath, "utf8").catch(() => null);
+  if (existing !== content) {
+    throw new Error(
+      `Generated registry file is out of date: ${path.relative(process.cwd(), filePath)}`
+    );
+  }
+}
 
 // Node.js built-in module names (node: prefix is handled separately)
 const NODE_BUILTINS = new Set([
@@ -102,7 +120,8 @@ function getImportPackage(spec: string): string | null {
     spec.startsWith("/") || // absolute path
     spec.startsWith("node:") || // explicit node: protocol
     spec.startsWith("@/") || // app path alias
-    spec.startsWith("@toolkit/") // registry-owned shared helpers
+    spec.startsWith("@toolkit/") || // registry-owned shared helpers
+    spec.startsWith("@ui/") // consumer UI components
   ) {
     return null;
   }
@@ -123,7 +142,7 @@ type Meta = {
   files?: Array<{
     source: string;
     target: string;
-    type: "tool" | "renderer" | "lib" | "component" | "hook";
+    type: "tool" | "renderer" | "lib" | "component" | "hook" | "ui";
   }>;
 };
 
@@ -155,7 +174,7 @@ async function main(): Promise<void> {
     const appDir = path.join(appToolsDir, name);
     const registryFiles: Array<{
       path: string;
-      type: "tool" | "renderer" | "lib" | "component" | "hook";
+      type: "tool" | "renderer" | "lib" | "component" | "hook" | "ui";
       target: string;
       content: string;
     }> = [];
@@ -237,7 +256,7 @@ async function main(): Promise<void> {
       files: registryFiles,
     };
 
-    await fs.writeFile(
+    await emitGeneratedFile(
       path.join(itemsDir, `${name}.json`),
       JSON.stringify(item, null, 2) + "\n"
     );
@@ -252,9 +271,11 @@ async function main(): Promise<void> {
     );
   }
 
-  await fs.writeFile(indexPath, JSON.stringify(index, null, 2) + "\n");
+  await emitGeneratedFile(indexPath, JSON.stringify(index, null, 2) + "\n");
 
-  console.log(`\n✓ ${dirs.length} tool(s) → items/ + index.json`);
+  console.log(
+    `\n✓ ${dirs.length} tool(s) ${checkMode ? "verified" : "→ items/ + index.json"}`
+  );
 }
 
 main().catch((error) => {

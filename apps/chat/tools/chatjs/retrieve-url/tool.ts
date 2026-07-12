@@ -34,6 +34,16 @@ function redactUrl(url: URL): string {
   return `${url.origin}${url.pathname}`;
 }
 
+function serializeError(error: unknown, sensitiveValues: string[]) {
+  let message = error instanceof Error ? error.message : String(error);
+  for (const value of sensitiveValues
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length)) {
+    message = message.replaceAll(value, "[REDACTED_URL]");
+  }
+  return error instanceof Error ? { message, name: error.name } : { message };
+}
+
 export const retrieveUrl = defineTool({
   id: "retrieve-url",
   needs: ["env.read", "url.retrieve"],
@@ -55,6 +65,8 @@ Avoid:
       }),
       // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Retrieval fallbacks are kept together to preserve the provider response flow.
       execute: async ({ url }: { url: string }) => {
+        let safeUrl: string | undefined;
+        const sensitiveUrls: string[] = [];
         try {
           if (!app) {
             return {
@@ -70,7 +82,9 @@ Avoid:
           }
 
           const redactedUrl = redactUrl(parsedUrl);
+          safeUrl = redactedUrl;
           const normalizedUrl = parsedUrl.toString();
+          sensitiveUrls.push(url, normalizedUrl);
           const content = await app.scrapeUrl(normalizedUrl);
           if (!(content.success && content.metadata)) {
             return {
@@ -117,7 +131,11 @@ Avoid:
               },
             ],
           };
-        } catch {
+        } catch (error) {
+          console.error("retrieveUrl failed", {
+            error: serializeError(error, sensitiveUrls),
+            url: safeUrl,
+          });
           return { error: "Failed to retrieve content" };
         }
       },

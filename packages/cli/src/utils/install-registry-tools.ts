@@ -34,6 +34,8 @@ export async function installRegistryTools({
 	cwd,
 	toolsDir,
 	toolsAlias,
+	uiDir,
+	uiAlias,
 	overwrite = false,
 	registryUrl,
 	installDependenciesNow = true,
@@ -44,6 +46,8 @@ export async function installRegistryTools({
 	cwd: string;
 	toolsDir: string;
 	toolsAlias: string;
+	uiDir: string;
+	uiAlias: string;
 	overwrite?: boolean;
 	registryUrl?: string;
 	installDependenciesNow?: boolean;
@@ -91,16 +95,19 @@ export async function installRegistryTools({
 	let effectiveOverwrite = overwrite;
 	const writeSpinner = spinner("Writing files...");
 	writeSpinner.start();
-	const initialWrite = await writeToolFiles(filesToWrite, {
+	const preflight = await writeToolFiles(filesToWrite, {
+		dryRun: true,
 		overwrite: effectiveOverwrite,
 		toolsDir,
 		toolsAlias,
+		uiDir,
+		uiAlias,
 	});
 
-	if (initialWrite.existing.length > 0 && !effectiveOverwrite) {
+	if (preflight.existing.length > 0 && !effectiveOverwrite) {
 		writeSpinner.stop();
 		const shouldOverwrite = confirmOverwrite
-			? await confirmOverwrite(initialWrite.existing)
+			? await confirmOverwrite(preflight.existing)
 			: false;
 		if (!shouldOverwrite) {
 			throw new Error(
@@ -108,18 +115,17 @@ export async function installRegistryTools({
 			);
 		}
 		effectiveOverwrite = true;
+		writeSpinner.start();
 	}
 
-	let writtenFiles = initialWrite.written;
-	if (effectiveOverwrite && initialWrite.existing.length > 0) {
-		writeSpinner.start();
-		const secondWrite = await writeToolFiles(filesToWrite, {
-			overwrite: true,
-			toolsDir,
-			toolsAlias,
-		});
-		writtenFiles = secondWrite.written;
-	}
+	const writeResult = await writeToolFiles(filesToWrite, {
+		overwrite: effectiveOverwrite,
+		toolsDir,
+		toolsAlias,
+		uiDir,
+		uiAlias,
+	});
+	const writtenFiles = writeResult.written;
 	writeSpinner.succeed(
 		writtenFiles.length > 0
 			? `Wrote ${writtenFiles.map((file) => path.relative(cwd, file)).join(", ")}`

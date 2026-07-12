@@ -8,7 +8,7 @@ export const envRequirementSchema = z.object({
 export const registryToolFileSchema = z.object({
   path: z.string(),
   content: z.string(),
-  type: z.enum(["tool", "renderer", "lib", "component", "hook"]),
+  type: z.enum(["tool", "renderer", "lib", "component", "hook", "ui"]),
   target: z.string(),
 });
 
