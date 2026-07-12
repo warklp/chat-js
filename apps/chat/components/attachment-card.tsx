@@ -1,9 +1,17 @@
 "use client";
 
-import { FileTextIcon, Loader2Icon, PaperclipIcon, XIcon } from "lucide-react";
+import {
+  FileTextIcon,
+  ImageOffIcon,
+  Loader2Icon,
+  PaperclipIcon,
+  XIcon,
+} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import type { Attachment } from "@/lib/ai/types";
+import { getFileImageProps } from "@/lib/file-url";
 import { cn } from "@/lib/utils";
 
 function LoadingPreview() {
@@ -15,13 +23,29 @@ function LoadingPreview() {
 }
 
 function ImagePreview({ name, url }: { name: string; url: string }) {
+  const { handleImageError, imageUnavailable } = useImageLoadError(url);
+  if (imageUnavailable) {
+    return (
+      <div
+        className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground"
+        role="status"
+      >
+        <ImageOffIcon className="size-5" />
+        <span className="text-[10px]">Unavailable</span>
+      </div>
+    );
+  }
+
+  const imageProps = getFileImageProps(url);
   return (
     <Image
       alt={name || "attachment"}
       className="object-cover"
       fill
+      onError={handleImageError}
       sizes="80px"
-      src={url}
+      src={imageProps.src}
+      unoptimized={imageProps.unoptimized}
     />
   );
 }

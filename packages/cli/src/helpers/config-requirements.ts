@@ -42,10 +42,6 @@ export const coreFeatureEnvRequirements: Partial<
 		options: [["MCP_ENCRYPTION_KEY"]],
 		description: "MCP_ENCRYPTION_KEY",
 	},
-	attachments: {
-		options: [["BLOB_READ_WRITE_TOKEN"]],
-		description: "BLOB_READ_WRITE_TOKEN",
-	},
 };
 
 export const builtInToolEnvRequirements: Record<
@@ -72,14 +68,8 @@ export const builtInToolEnvRequirements: Record<
 		description:
 			"VERCEL_OIDC_TOKEN or VERCEL_TEAM_ID + VERCEL_PROJECT_ID + VERCEL_TOKEN",
 	},
-	imageGeneration: {
-		options: [["BLOB_READ_WRITE_TOKEN"]],
-		description: "BLOB_READ_WRITE_TOKEN",
-	},
-	videoGeneration: {
-		options: [["BLOB_READ_WRITE_TOKEN"]],
-		description: "BLOB_READ_WRITE_TOKEN",
-	},
+	imageGeneration: undefined,
+	videoGeneration: undefined,
 };
 
 export const authEnvRequirements: Record<AuthProvider, EnvRequirement> = {
@@ -111,7 +101,6 @@ export const envVarDescriptions: Record<string, string> = {
 	TAVILY_API_KEY: "Tavily API key for web search",
 	FIRECRAWL_API_KEY: "Firecrawl API key for search/retrieval",
 	MCP_ENCRYPTION_KEY: "Encryption key for MCP connector secrets",
-	BLOB_READ_WRITE_TOKEN: "Blob storage token for uploads and generated files",
 	VERCEL_TEAM_ID: "Vercel team id for sandbox execution",
 	VERCEL_PROJECT_ID: "Vercel project id for sandbox execution",
 	VERCEL_TOKEN: "Vercel token for sandbox execution",

@@ -2,10 +2,11 @@ import { type FileUIPart, generateImage, generateText, tool } from "ai";
 import { z } from "zod";
 import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
 import { getImageModel, getMultimodalImageModel } from "@/lib/ai/providers";
-import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
+import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/url";
 
 interface GenerateImageProps {
   attachments?: FileUIPart[];
@@ -59,7 +60,7 @@ async function resolveImageModel(selectedModel?: string): Promise<{
 }
 
 async function fetchImageBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url);
+  const response = await fetch(new URL(url, getBaseUrl()));
   const arrayBuffer = await response.arrayBuffer();
   return Buffer.from(arrayBuffer);
 }
@@ -187,7 +188,7 @@ async function runGenerateImageTraditional({
   const buffer = Buffer.from(res.images[0].base64, "base64");
   const timestamp = Date.now();
   const filename = `generated-image-${timestamp}.png`;
-  const result = await uploadFile(filename, buffer);
+  const result = await uploadFile(filename, buffer, "image/png");
 
   if (res.usage) {
     costAccumulator?.addLLMCost(
@@ -246,11 +247,14 @@ async function runGenerateImageMultimodal({
     if (lastGeneratedImage) {
       userContent.push({
         type: "image",
-        image: new URL(lastGeneratedImage.imageUrl),
+        image: new URL(lastGeneratedImage.imageUrl, getBaseUrl()),
       });
     }
     for (const part of imageParts) {
-      userContent.push({ type: "image", image: new URL(part.url) });
+      userContent.push({
+        type: "image",
+        image: new URL(part.url, getBaseUrl()),
+      });
     }
   }
 
@@ -322,7 +326,7 @@ async function runGenerateImageMultimodal({
   const timestamp = Date.now();
   const ext = imageFile.mediaType.split("/")[1] || "png";
   const filename = `generated-image-${timestamp}.${ext}`;
-  const result = await uploadFile(filename, buffer);
+  const result = await uploadFile(filename, buffer, imageFile.mediaType);
 
   log.info(
     {

@@ -32,7 +32,9 @@ You can switch to [OpenRouter](/gateways/openrouter) or any other [supported gat
 
 ### Blob Storage
 
-Required for file attachments and AI image generation.
+Vercel Blob is the recommended Files SDK provider for file attachments and
+generated media on Vercel. See [File storage](../core/file-storage) for the
+provider-agnostic architecture and migration behavior.
 
 1. Go to **Storage** → **Create** → **Blob**
 2. Connect to your project
@@ -43,7 +45,12 @@ To disable blob features, set in `chat.config.ts`:
 ```typescript
 features: {
   attachments: false,
-  imageGeneration: false,
+},
+ai: {
+  tools: {
+    image: { enabled: false },
+    video: { enabled: false },
+  },
 }
 ```
 
@@ -59,7 +66,8 @@ Without Redis, streams work normally but can't be resumed after disconnection.
 
 ## Cron Jobs
 
-ChatJS includes a daily cleanup job that removes orphaned blob attachments (uploaded but never saved to a message).
+ChatJS includes a daily cleanup job that removes orphaned managed files
+uploaded but never saved to a message.
 
 ### Configuration
 

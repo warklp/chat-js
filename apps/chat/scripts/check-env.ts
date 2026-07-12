@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnvConfig } from "dotenv";
+import { getProvider } from "files-sdk/providers";
 // biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
 import * as ts from "typescript";
 import type { GatewayType } from "../lib/ai/gateways/registry";
@@ -16,12 +17,16 @@ import { config } from "../lib/config";
 import {
   aiToolEnvRequirements,
   authEnvRequirements,
-  featureEnvRequirements,
   gatewayEnvRequirements,
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
 import { isPlaywrightTestEnvironment } from "../lib/playwright-test-environment";
+import { storageProvider } from "../lib/storage-provider";
+import {
+  getStorageEnvironmentRequirements,
+  type StorageEnvironmentVariable,
+} from "../lib/storage-provider-metadata";
 
 loadEnvConfig({ path: ".env.local" });
 loadEnvConfig();
@@ -219,34 +224,60 @@ function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
   };
 }
 
-function validateFeatures(env: NodeJS.ProcessEnv): ValidationError[] {
-  const errors: ValidationError[] = [];
+function hasStorageEnvVariable(
+  variable: StorageEnvironmentVariable,
+  env: NodeJS.ProcessEnv
+) {
+  return [variable.key, ...(variable.aliases ?? [])].some((key) => !!env[key]);
+}
 
-  const gatewayError = validateGatewayKey(env);
-  if (gatewayError) {
-    errors.push(gatewayError);
+function validateStorage(env: NodeJS.ProcessEnv): ValidationError | null {
+  const enabled =
+    config.features.attachments ||
+    config.ai.tools.image.enabled ||
+    config.ai.tools.video.enabled;
+  if (!enabled) {
+    return null;
   }
 
-  const featureEntries = Object.entries(featureEnvRequirements) as [
-    keyof typeof featureEnvRequirements,
-    NonNullable<
-      (typeof featureEnvRequirements)[keyof typeof featureEnvRequirements]
-    >,
-  ][];
-  for (const [feature, requirement] of featureEntries) {
-    if (!(requirement && config.features[feature])) {
-      continue;
-    }
-    const missing = getMissingRequirement(requirement, env);
-    if (missing) {
-      errors.push({
-        feature: `features.${feature}`,
-        missing: [missing],
-      });
-    }
+  const metadata = getProvider(storageProvider.slug);
+  if (!metadata) {
+    return {
+      feature: "fileStorage",
+      missing: [`Unknown Files SDK provider: ${storageProvider.slug}`],
+    };
   }
 
-  return errors;
+  try {
+    storageProvider.createAdapter();
+  } catch (error) {
+    return {
+      feature: `fileStorage (${metadata.name})`,
+      missing: [
+        error instanceof Error ? error.message : "Invalid adapter options",
+      ],
+    };
+  }
+
+  const missing = getStorageEnvironmentRequirements(
+    storageProvider.slug,
+    storageProvider.options
+  )
+    .filter(
+      (requirement) =>
+        !requirement.options.some((option) =>
+          option.every((variable) => hasStorageEnvVariable(variable, env))
+        )
+    )
+    .map((requirement) =>
+      requirement.options
+        .map((option) => option.map(({ key }) => key).join(" + "))
+        .join(" or ")
+    );
+
+  return missing.length > 0
+    ? { feature: `fileStorage (${metadata.name})`, missing }
+    : null;
 }
 
 function validateAiTools(env: NodeJS.ProcessEnv): ValidationError[] {
@@ -397,10 +428,13 @@ async function checkEnv(): Promise<void> {
   }
 
   const baseUrlError = validateBaseUrl(env);
+  const gatewayError = validateGatewayKey(env);
+  const storageError = validateStorage(env);
   const installedToolErrors = await validateInstalledTools(env);
   const errors = [
     ...(baseUrlError ? [baseUrlError] : []),
-    ...validateFeatures(env),
+    ...(gatewayError ? [gatewayError] : []),
+    ...(storageError ? [storageError] : []),
     ...validateAiTools(env),
     ...validateAuthentication(env),
     ...installedToolErrors,

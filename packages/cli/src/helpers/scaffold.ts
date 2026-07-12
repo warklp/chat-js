@@ -5,6 +5,10 @@ import { fileURLToPath } from "node:url";
 import type { PackageManager } from "../types";
 import { normalizeScaffoldedPackageJson } from "./package-manifest";
 import {
+  configureStorageProvider,
+  type StorageSelection,
+} from "./storage-provider";
+import {
   createEmptyToolsTemplate,
   createEmptyUiTemplate,
 } from "../utils/inject-tool";
@@ -372,7 +376,10 @@ async function excludeElectronFromRootTypecheck(projectDir: string): Promise<voi
 
 export async function scaffoldFromTemplate(
   destination: string,
-  options?: { packageManager?: PackageManager }
+  options?: {
+    packageManager?: PackageManager;
+    storage?: StorageSelection;
+  }
 ): Promise<void> {
   const packageManager = options?.packageManager ?? "bun";
   const templateDir = findTemplateDir("chat-app");
@@ -392,6 +399,10 @@ export async function scaffoldFromTemplate(
     }
   );
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+  await configureStorageProvider(
+    destination,
+    options?.storage ?? { provider: "vercel-blob", options: {} }
+  );
   await normalizeChatAppFiles(destination, packageManager);
 }
 
@@ -436,7 +447,8 @@ export async function scaffoldElectron(
 
 export async function scaffoldFromGit(
   url: string,
-  destination: string
+  destination: string,
+  options?: { storage?: StorageSelection }
 ): Promise<void> {
   await runCommand(
     "git",
@@ -444,4 +456,11 @@ export async function scaffoldFromGit(
     process.cwd()
   );
   await rm(join(destination, ".git"), { recursive: true, force: true });
+  if (!existsSync(join(destination, "lib", "storage-provider.ts"))) {
+    return;
+  }
+  await configureStorageProvider(
+    destination,
+    options?.storage ?? { provider: "vercel-blob", options: {} }
+  );
 }

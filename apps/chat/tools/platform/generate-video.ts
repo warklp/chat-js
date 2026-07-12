@@ -2,9 +2,9 @@ import { experimental_generateVideo as generateVideo, tool } from "ai";
 import { z } from "zod";
 import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
 import { getVideoModel } from "@/lib/ai/providers";
-import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
+import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
 
 const COST_CENTS = 50; // Fixed estimate — not yet available from provider API
@@ -123,7 +123,7 @@ export const generateVideoTool = ({
         const timestamp = Date.now();
         const ext = resolveVideoExtension(video.mediaType);
         const filename = `generated-video-${timestamp}.${ext}`;
-        const uploaded = await uploadFile(filename, buffer);
+        const uploaded = await uploadFile(filename, buffer, video.mediaType);
 
         costAccumulator?.addAPICost("generateVideo", COST_CENTS);
 

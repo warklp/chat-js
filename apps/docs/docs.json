@@ -27,6 +27,7 @@
             "pages": [
               "core/architecture",
               "core/configuration",
+              "core/file-storage",
               "core/authentication",
               "core/tool-registry",
               "core/multi-model",
