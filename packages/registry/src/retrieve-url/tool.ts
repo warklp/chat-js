@@ -12,6 +12,7 @@ type ToolEnvVars = {
 }[];
 
 const SAFE_ERROR_NAME = /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/;
+const FIRECRAWL_TIMEOUT_MS = 30_000;
 
 export const toolEnvVars: ToolEnvVars = [
   {
@@ -43,6 +44,32 @@ function getErrorName(error: unknown): string {
   return SAFE_ERROR_NAME.test(error.name) ? error.name : "Error";
 }
 
+function getAbortReason(signal: AbortSignal): unknown {
+  return (
+    signal.reason ?? new DOMException("The operation was aborted", "AbortError")
+  );
+}
+
+export function withAbortSignal<T>(
+  operation: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  if (!signal) {
+    return operation;
+  }
+  if (signal.aborted) {
+    return Promise.reject(getAbortReason(signal));
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const handleAbort = () => reject(getAbortReason(signal));
+    signal.addEventListener("abort", handleAbort, { once: true });
+    operation.then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", handleAbort);
+    });
+  });
+}
+
 export const retrieveUrl = defineTool({
   id: "retrieve-url",
   needs: ["env.read", "url.retrieve"],
@@ -63,7 +90,7 @@ Avoid:
         url: z.string().describe("The URL to retrieve the information from."),
       }),
       // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Retrieval fallbacks are kept together to preserve the provider response flow.
-      execute: async ({ url }: { url: string }) => {
+      execute: async ({ url }: { url: string }, { abortSignal }) => {
         try {
           if (!app) {
             return {
@@ -80,7 +107,10 @@ Avoid:
 
           const resultUrl = displayUrl(parsedUrl);
           const normalizedUrl = parsedUrl.toString();
-          const content = await app.scrapeUrl(normalizedUrl);
+          const content = await withAbortSignal(
+            app.scrapeUrl(normalizedUrl, { timeout: FIRECRAWL_TIMEOUT_MS }),
+            abortSignal
+          );
           if (!(content.success && content.metadata)) {
             return {
               results: [
@@ -103,11 +133,15 @@ Avoid:
           let extractedContent = content.markdown;
 
           if (!(title && description && extractedContent)) {
-            const extractResult = await app.extract([normalizedUrl], {
-              prompt:
-                "Extract the page title, main content, and a brief description.",
-              schema,
-            });
+            const extractResult = await withAbortSignal(
+              app.extract([normalizedUrl], {
+                prompt:
+                  "Extract the page title, main content, and a brief description.",
+                schema,
+                scrapeOptions: { timeout: FIRECRAWL_TIMEOUT_MS },
+              }),
+              abortSignal
+            );
 
             if (extractResult.success && extractResult.data) {
               title = title || extractResult.data.title;
@@ -128,6 +162,9 @@ Avoid:
             ],
           };
         } catch (error) {
+          if (abortSignal?.aborted) {
+            throw getAbortReason(abortSignal);
+          }
           const failedUrl = parseUrl(url);
           console.error("retrieveUrl failed", {
             error,

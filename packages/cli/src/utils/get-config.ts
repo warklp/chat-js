@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
+// The package root resolves to UMD; use ESM so Bun includes it in the Node ESM CLI.
 import { parse } from "jsonc-parser/lib/esm/main.js";
 import { inferPackageManager } from "./get-package-manager";
 import type { PackageManager } from "../types";
