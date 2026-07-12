@@ -17,6 +17,7 @@ import { AttachmentCard } from "@/components/attachment-card";
 import { Button } from "@/components/ui/button";
 import { HoverCardTrigger } from "@/components/ui/hover-card";
 import type { Attachment } from "@/lib/ai/types";
+import { getFileImageProps } from "@/lib/file-url";
 import { cn } from "@/lib/utils";
 
 function AttachmentIcon({
@@ -31,12 +32,14 @@ function AttachmentIcon({
   name: string;
 }) {
   if (isImage) {
+    const imageProps = getFileImageProps(url);
     return (
       <Image
         alt={name || "attachment"}
         className="size-5 object-cover"
         height={20}
-        src={url}
+        src={imageProps.src}
+        unoptimized={imageProps.unoptimized}
         width={20}
       />
     );

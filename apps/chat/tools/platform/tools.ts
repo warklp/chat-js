@@ -9,12 +9,13 @@ import {
   getVideoModel,
 } from "@/lib/ai/providers";
 import type { StreamWriter } from "@/lib/ai/types";
-import { uploadFile } from "@/lib/blob";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import type { McpConnector } from "@/lib/db/schema";
 import { env } from "@/lib/env";
+import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/url";
 import type {
   ToolNeed,
   ToolRuntimeContext,
@@ -42,9 +43,7 @@ function createCapabilities(): ReadonlySet<ToolNeed> {
   ]);
 
   capabilities.add("models.language");
-  if (env.BLOB_READ_WRITE_TOKEN) {
-    capabilities.add("media.write");
-  }
+  capabilities.add("media.write");
   if (config.ai.tools.image.enabled) {
     capabilities.add("models.image");
   }
@@ -60,7 +59,7 @@ function createCapabilities(): ReadonlySet<ToolNeed> {
 
 function fileUiPartToFilePart(part: FileUIPart): FilePart {
   return {
-    data: new URL(part.url),
+    data: new URL(part.url, getBaseUrl()),
     filename: part.filename,
     mediaType: part.mediaType,
     type: "file",
@@ -108,7 +107,7 @@ function createToolRuntimeContext({
           return Promise.resolve([]);
         }
         const file: FilePart = {
-          data: new URL(lastGeneratedImage.imageUrl),
+          data: new URL(lastGeneratedImage.imageUrl, getBaseUrl()),
           filename: lastGeneratedImage.name,
           mediaType: "image/png",
           type: "file",
@@ -119,7 +118,11 @@ function createToolRuntimeContext({
     media: {
       write: async ({ bytes, filename, mediaType }) => {
         const finalFilename = filename ?? `generated-media-${Date.now()}`;
-        const uploaded = await uploadFile(finalFilename, Buffer.from(bytes));
+        const uploaded = await uploadFile(
+          finalFilename,
+          Buffer.from(bytes),
+          mediaType
+        );
         return {
           filename: finalFilename,
           mediaType,

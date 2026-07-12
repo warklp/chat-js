@@ -36,7 +36,7 @@ The `chat.config.ts` file controls all feature toggles, branding, and app settin
 | **Anonymous users** | 10 credits        | Limited access, no tools                                      |
 | **Models**          | Curated list      | GPT-5 Nano/Mini, Gemini 2.5 Flash Lite, Claude Sonnet 4.5     |
 
-This keeps your initial setup simple — the CLI will tell you exactly which environment variables are needed based on your choices.
+This keeps your initial setup simple. The CLI will tell you exactly which environment variables are needed based on your choices.
 
 Enable features incrementally by editing `chat.config.ts` and adding the required environment variables. See [Configuration](/core/configuration) for details.
 
@@ -117,14 +117,17 @@ Expand the sections below for setup instructions:
     3. Copy **Client ID** → `VERCEL_APP_CLIENT_ID`
     4. Copy **Client Secret** → `VERCEL_APP_CLIENT_SECRET`
   </Accordion>
-  <Accordion title="Blob Storage (Optional)">
-    Required for file attachments and image generation. Skip if you don't need these features.
+  <Accordion title="File Storage (Optional)">
+    Required for file attachments, image generation, and video generation. The
+    installer asks you to select a Files SDK provider when you enable one of
+    these capabilities.
 
-    1. Go to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)
-    2. Create a new blob store
-    3. Copy the token → `BLOB_READ_WRITE_TOKEN`
+    Configure the environment variables printed by the CLI for your selected
+    provider. For Vercel Blob, connect a Blob store and copy its token to
+    `BLOB_READ_WRITE_TOKEN` for local development.
 
-    To disable, set `features.attachments: false` and `ai.tools.image.enabled: false` in `chat.config.ts`.
+    See [File storage](./core/file-storage) for provider configuration,
+    credentials, and migration behavior.
   </Accordion>
 </AccordionGroup>
 

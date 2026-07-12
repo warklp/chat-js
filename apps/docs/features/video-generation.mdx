@@ -12,22 +12,28 @@ Generate videos directly in chat using AI models. Users describe what they want 
 Toggle in `chat.config.ts`:
 
 ```ts
-features: {
-  videoGeneration: true, // Requires BLOB_READ_WRITE_TOKEN
+ai: {
+  tools: {
+    video: {
+      enabled: true, // Requires durable file storage
+    },
+  },
 }
 ```
 
 <Note>
-  Video generation requires `BLOB_READ_WRITE_TOKEN` since generated videos are
-  uploaded to Vercel Blob storage.
+  Video generation requires a durable
+  [file storage provider](../core/file-storage) for generated videos.
 </Note>
 
 Configure the default video model:
 
 ```ts
-models: {
-  defaults: {
-    video: "xai/grok-imagine-video",
+ai: {
+  tools: {
+    video: {
+      default: "xai/grok-imagine-video",
+    },
   },
 }
 ```
@@ -38,7 +44,7 @@ The tool accepts the following inputs:
 
 | Parameter         | Type                          | Default | Description                        |
 | ----------------- | ----------------------------- | ------- | ---------------------------------- |
-| `prompt`          | string                        | —       | Descriptive text for the video     |
+| `prompt`          | string                        | Required | Descriptive text for the video    |
 | `aspectRatio`     | `"16:9"` \| `"9:16"` \| `"1:1"` | `"16:9"` | Output aspect ratio             |
 | `durationSeconds` | number (1–10)                 | `5`     | Length of the generated video      |
 
@@ -58,7 +64,9 @@ lib/ai/tools/generate-video.ts → components/part/generate-video.tsx
 return { videoUrl: result.url, prompt };
 ```
 
-The generated video is uploaded to blob storage and the URL returned. Supported container formats are mp4, webm, and mov, resolved from the response media type.
+The generated video is uploaded through the configured Files SDK provider and
+the ChatJS file URL is returned. Supported container formats are mp4, webm, and
+mov, resolved from the response media type.
 
 ### UI States
 
@@ -73,9 +81,11 @@ The generated video is uploaded to blob storage and the URL returned. Supported 
 ### Video Model
 
 ```ts title="chat.config.ts"
-models: {
-  defaults: {
-    video: "xai/grok-imagine-video",
+ai: {
+  tools: {
+    video: {
+      default: "xai/grok-imagine-video",
+    },
   },
 }
 ```
@@ -85,7 +95,7 @@ models: {
 When the tool runs, it resolves the model to use:
 
 1. If the user's selected chat model supports video output (per the app model registry, `model.output.video`), use it.
-2. Otherwise, fall back to `config.models.defaults.video`.
+2. Otherwise, fall back to `config.ai.tools.video.default`.
 
 ### Google Model Handling
 
