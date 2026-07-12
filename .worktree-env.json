@@ -28,12 +28,6 @@
       "exports": {
         "PORT": "{port}"
       }
-    },
-    "docs": {
-      "offset": 3,
-      "exports": {
-        "PORT": "{port}"
-      }
     }
   }
 }

@@ -8,7 +8,7 @@
     "node": "22.22.2"
   },
   "scripts": {
-    "dev": "bunx mintlify@latest dev --port ${PORT:-3000} --no-open",
+    "dev": "bunx mintlify@latest dev",
     "docs:links": "bunx mintlify@latest broken-links"
   }
 }
