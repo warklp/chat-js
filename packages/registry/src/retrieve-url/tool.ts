@@ -51,22 +51,49 @@ function getAbortReason(signal: AbortSignal): unknown {
 }
 
 export function withAbortSignal<T>(
-  operation: Promise<T>,
-  signal?: AbortSignal
+  operation: () => Promise<T>,
+  signal?: AbortSignal,
+  timeoutMs = FIRECRAWL_TIMEOUT_MS
 ): Promise<T> {
-  if (!signal) {
-    return operation;
-  }
-  if (signal.aborted) {
+  if (signal?.aborted) {
     return Promise.reject(getAbortReason(signal));
   }
 
   return new Promise<T>((resolve, reject) => {
-    const handleAbort = () => reject(getAbortReason(signal));
-    signal.addEventListener("abort", handleAbort, { once: true });
-    operation.then(resolve, reject).finally(() => {
-      signal.removeEventListener("abort", handleAbort);
-    });
+    let settled = false;
+    const finish = (callback: () => void) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", handleAbort);
+      callback();
+    };
+    const handleAbort = () =>
+      finish(() => reject(getAbortReason(signal as AbortSignal)));
+    const timeoutId = setTimeout(
+      () =>
+        finish(() =>
+          reject(
+            new Error(`Firecrawl operation timed out after ${timeoutMs}ms`)
+          )
+        ),
+      timeoutMs
+    );
+
+    signal?.addEventListener("abort", handleAbort, { once: true });
+    Promise.resolve()
+      .then(() => {
+        if (signal?.aborted) {
+          throw getAbortReason(signal);
+        }
+        return operation();
+      })
+      .then(
+        (value) => finish(() => resolve(value)),
+        (error: unknown) => finish(() => reject(error))
+      );
   });
 }
 
@@ -108,7 +135,10 @@ Avoid:
           const resultUrl = displayUrl(parsedUrl);
           const normalizedUrl = parsedUrl.toString();
           const content = await withAbortSignal(
-            app.scrapeUrl(normalizedUrl, { timeout: FIRECRAWL_TIMEOUT_MS }),
+            () =>
+              app.scrapeUrl(normalizedUrl, {
+                timeout: FIRECRAWL_TIMEOUT_MS,
+              }),
             abortSignal
           );
           if (!(content.success && content.metadata)) {
@@ -134,12 +164,13 @@ Avoid:
 
           if (!(title && description && extractedContent)) {
             const extractResult = await withAbortSignal(
-              app.extract([normalizedUrl], {
-                prompt:
-                  "Extract the page title, main content, and a brief description.",
-                schema,
-                scrapeOptions: { timeout: FIRECRAWL_TIMEOUT_MS },
-              }),
+              () =>
+                app.extract([normalizedUrl], {
+                  prompt:
+                    "Extract the page title, main content, and a brief description.",
+                  schema,
+                  scrapeOptions: { timeout: FIRECRAWL_TIMEOUT_MS },
+                }),
               abortSignal
             );
 
