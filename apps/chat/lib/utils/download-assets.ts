@@ -5,6 +5,7 @@ import type {
   ModelMessage,
   TextPart,
 } from "ai";
+import { downloadFile } from "@/lib/file-storage";
 import { keyFromFileUrl } from "@/lib/file-url";
 import { getBaseUrl } from "@/lib/url";
 
@@ -20,6 +21,16 @@ export type DownloadImplementation = (args: {
 }) => Promise<DownloadResult>;
 
 async function defaultDownload({ url }: { url: URL }): Promise<DownloadResult> {
+  const isApplicationUrl = url.origin === new URL(getBaseUrl()).origin;
+  const key = isApplicationUrl ? keyFromFileUrl(url.toString()) : null;
+  if (key) {
+    const file = await downloadFile(key);
+    return {
+      data: new Uint8Array(await file.arrayBuffer()),
+      mediaType: file.type || undefined,
+    };
+  }
+
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(
