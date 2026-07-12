@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import type { ModelMessage } from "ai";
+import { FilesError } from "files-sdk";
 import { afterEach, describe, it, vi } from "vitest";
 
 const { downloadFile } = vi.hoisted(() => ({
@@ -51,6 +52,135 @@ describe("replaceFilePartUrlByBinaryDataInMessages", () => {
     assert(file?.type === "file");
     assert(file.data instanceof Uint8Array);
     assert.deepEqual([...file.data], [1, 2, 3]);
+  });
+
+  it("omits unavailable managed files from model messages", async () => {
+    downloadFile.mockRejectedValue(
+      new FilesError("NotFound", "File does not exist")
+    );
+
+    const result = await replaceFilePartUrlByBinaryDataInMessages([
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Describe the earlier context" },
+          {
+            type: "file",
+            data: "/api/files/content?key=l_u0a2bkphKLFKsBI4q5Tue9.png",
+            mediaType: "image/png",
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(result, [
+      {
+        role: "user",
+        content: [{ type: "text", text: "Describe the earlier context" }],
+      },
+    ]);
+  });
+
+  it("omits unavailable legacy HTTP files from model messages", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(null, { status: 404 })))
+    );
+
+    const result = await replaceFilePartUrlByBinaryDataInMessages([
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Continue this conversation" },
+          {
+            type: "file",
+            data: "https://legacy.public.blob.vercel-storage.com/missing.png",
+            mediaType: "image/png",
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(result, [
+      {
+        role: "user",
+        content: [{ type: "text", text: "Continue this conversation" }],
+      },
+    ]);
+  });
+
+  it("omits user messages containing only an unavailable file", async () => {
+    downloadFile.mockRejectedValue(
+      new FilesError("NotFound", "File does not exist")
+    );
+
+    const result = await replaceFilePartUrlByBinaryDataInMessages([
+      {
+        role: "user",
+        content: [
+          {
+            type: "file",
+            data: "/api/files/content?key=l_u0a2bkphKLFKsBI4q5Tue9.png",
+            mediaType: "image/png",
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(result, []);
+  });
+
+  it("omits unavailable image parts from model messages", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(null, { status: 404 })))
+    );
+
+    const result = await replaceFilePartUrlByBinaryDataInMessages([
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Continue this conversation" },
+          {
+            type: "image",
+            image: new URL(
+              "https://legacy.public.blob.vercel-storage.com/missing.png"
+            ),
+          },
+        ],
+      },
+    ]);
+
+    assert.deepEqual(result, [
+      {
+        role: "user",
+        content: [{ type: "text", text: "Continue this conversation" }],
+      },
+    ]);
+  });
+
+  it("preserves provider failures", async () => {
+    const providerError = new FilesError(
+      "Provider",
+      "Storage is temporarily unavailable"
+    );
+    downloadFile.mockRejectedValue(providerError);
+
+    await assert.rejects(
+      replaceFilePartUrlByBinaryDataInMessages([
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              data: "/api/files/content?key=l_u0a2bkphKLFKsBI4q5Tue9.png",
+              mediaType: "image/png",
+            },
+          ],
+        },
+      ]),
+      providerError
+    );
   });
 
   it("downloads managed-looking URLs on other origins over HTTP", async () => {

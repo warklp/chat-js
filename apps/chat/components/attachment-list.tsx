@@ -4,11 +4,14 @@ import {
   Download,
   ExternalLink,
   FileTextIcon,
+  ImageOffIcon,
   Loader2Icon,
   PaperclipIcon,
   XIcon,
 } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   PromptInputHoverCard,
   PromptInputHoverCardContent,
@@ -31,13 +34,23 @@ function AttachmentIcon({
   url: string;
   name: string;
 }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   if (isImage) {
+    if (failedUrl === url) {
+      return (
+        <>
+          <ImageOffIcon className="size-3 text-muted-foreground" />
+          <span className="sr-only">Preview unavailable</span>
+        </>
+      );
+    }
     const imageProps = getFileImageProps(url);
     return (
       <Image
         alt={name || "attachment"}
         className="size-5 object-cover"
         height={20}
+        onError={() => setFailedUrl(url)}
         src={imageProps.src}
         unoptimized={imageProps.unoptimized}
         width={20}
@@ -194,6 +207,15 @@ function AttachmentItem({
                 e.stopPropagation();
                 try {
                   const response = await fetch(url);
+                  if (response.status === 404) {
+                    toast.error("File unavailable");
+                    return;
+                  }
+                  if (!response.ok) {
+                    throw new Error(
+                      `File download failed (${response.status})`
+                    );
+                  }
                   const blob = await response.blob();
                   const blobUrl = URL.createObjectURL(blob);
                   const link = document.createElement("a");

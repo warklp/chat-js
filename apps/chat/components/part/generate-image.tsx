@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageOffIcon } from "lucide-react";
 import { useState } from "react";
 import { ImageActions, ImageModal } from "@/components/image-modal";
 import type { ChatMessage } from "@/lib/ai/types";
@@ -11,6 +12,7 @@ export type GenerateImageTool = Extract<
 
 export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
   if (tool.state === "input-available") {
     return (
@@ -26,29 +28,46 @@ export function GenerateImage({ tool }: { tool: GenerateImageTool }) {
   if (!output) {
     return null;
   }
+  const imageUnavailable = failedUrl === output.imageUrl;
 
   return (
     <>
       <div className="flex w-full flex-col gap-4 overflow-hidden rounded-lg border">
         <div className="group relative">
-          <button
-            className="w-full cursor-pointer text-left"
-            onClick={() => setDialogOpen(true)}
-            type="button"
-          >
-            {/* biome-ignore lint/performance/noImgElement: Next/Image isn't desired for dynamic external URLs here */}
-            <img
-              alt={output.prompt}
-              className="h-auto w-full max-w-full"
-              height={512}
-              src={output.imageUrl}
-              width={512}
-            />
-          </button>
-          <ImageActions
-            className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
-            imageUrl={output.imageUrl}
-          />
+          {imageUnavailable ? (
+            <div
+              className="flex min-h-64 w-full flex-col items-center justify-center gap-2 bg-muted/30 text-muted-foreground"
+              role="status"
+            >
+              <ImageOffIcon className="size-8" />
+              <span>Generated image unavailable</span>
+            </div>
+          ) : (
+            <>
+              <button
+                className="w-full cursor-pointer text-left"
+                onClick={() => setDialogOpen(true)}
+                type="button"
+              >
+                {/* biome-ignore lint/performance/noImgElement lint/a11y/noNoninteractiveElementInteractions: Next/Image isn't desired for dynamic external URLs; onError handles loading failure */}
+                <img
+                  alt={output.prompt}
+                  className="h-auto w-full max-w-full"
+                  height={512}
+                  onError={() => {
+                    setFailedUrl(output.imageUrl);
+                    setDialogOpen(false);
+                  }}
+                  src={output.imageUrl}
+                  width={512}
+                />
+              </button>
+              <ImageActions
+                className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
+                imageUrl={output.imageUrl}
+              />
+            </>
+          )}
         </div>
         <div className="p-4 pt-0">
           <p className="text-muted-foreground text-sm">

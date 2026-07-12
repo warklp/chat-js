@@ -1,6 +1,7 @@
 "use client";
 
-import { CopyIcon, DownloadIcon, XIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, ImageOffIcon, XIcon } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,6 +105,9 @@ export function ImageModal({
   imageName,
   showActions = true,
 }: ImageModalProps) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const imageUnavailable = failedUrl === imageUrl;
+
   return (
     <Dialog onOpenChange={onClose} open={isOpen}>
       <DialogContent
@@ -125,18 +129,31 @@ export function ImageModal({
           onClick={() => onClose()}
           type="button"
         >
-          {/* biome-ignore lint/performance/noImgElement: Next/Image not desired for modal preview */}
-          {/* biome-ignore lint/correctness/useImageSize: Dynamic image dimensions unknown */}
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: Click handled by parent button */}
-          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: Stops propagation to parent */}
-          <img
-            alt={imageName ?? "Expanded image"}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-            src={imageUrl || undefined}
-          />
+          {imageUnavailable ? (
+            <span
+              className="flex flex-col items-center gap-3 text-white"
+              role="status"
+            >
+              <ImageOffIcon className="size-10" />
+              <span>Image unavailable</span>
+            </span>
+          ) : (
+            <>
+              {/* biome-ignore lint/performance/noImgElement: Next/Image not desired for modal preview */}
+              {/* biome-ignore lint/correctness/useImageSize: Dynamic image dimensions unknown */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: Click handled by parent button */}
+              {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: Stops propagation to parent and handles loading failure */}
+              <img
+                alt={imageName ?? "Expanded image"}
+                className="max-h-[90vh] max-w-[90vw] object-contain"
+                onClick={(e) => e.stopPropagation()}
+                onError={() => setFailedUrl(imageUrl)}
+                src={imageUrl || undefined}
+              />
+            </>
+          )}
         </button>
-        {showActions && (
+        {showActions && !imageUnavailable && (
           <ImageActions
             className="absolute top-4 right-4"
             imageUrl={imageUrl}
