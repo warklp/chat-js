@@ -5,6 +5,7 @@ import type {
   ModelMessage,
   TextPart,
 } from "ai";
+import { FilesError } from "files-sdk";
 import { downloadFile } from "@/lib/file-storage";
 import { keyFromFileUrl } from "@/lib/file-url";
 import { getBaseUrl } from "@/lib/url";
@@ -16,22 +17,38 @@ interface DownloadResult {
   mediaType: string | undefined;
 }
 
+type AssetDownloadResult = DownloadResult | null;
+
 export type DownloadImplementation = (args: {
   url: URL;
-}) => Promise<DownloadResult>;
+}) => Promise<AssetDownloadResult>;
 
-async function defaultDownload({ url }: { url: URL }): Promise<DownloadResult> {
+async function defaultDownload({
+  url,
+}: {
+  url: URL;
+}): Promise<AssetDownloadResult> {
   const isApplicationUrl = url.origin === new URL(getBaseUrl()).origin;
   const key = isApplicationUrl ? keyFromFileUrl(url.toString()) : null;
   if (key) {
-    const file = await downloadFile(key);
-    return {
-      data: new Uint8Array(await file.arrayBuffer()),
-      mediaType: file.type || undefined,
-    };
+    try {
+      const file = await downloadFile(key);
+      return {
+        data: new Uint8Array(await file.arrayBuffer()),
+        mediaType: file.type || undefined,
+      };
+    } catch (error) {
+      if (error instanceof FilesError && error.code === "NotFound") {
+        return null;
+      }
+      throw error;
+    }
   }
 
   const response = await fetch(url);
+  if (response.status === 404) {
+    return null;
+  }
   if (!response.ok) {
     throw new Error(
       `Failed to download asset: ${url.toString()} (${response.status})`
@@ -66,7 +83,7 @@ function toHttpUrl(value: unknown): URL | null {
 async function downloadAssetsFromModelMessages(
   messages: ModelMessage[],
   downloadImplementation: DownloadImplementation = defaultDownload
-): Promise<Record<string, DownloadResult>> {
+): Promise<Record<string, AssetDownloadResult>> {
   const urlSet = new Set<string>();
 
   for (const message of messages) {
@@ -102,11 +119,14 @@ async function downloadAssetsFromModelMessages(
 
 function mapFilePart(
   part: FilePart,
-  downloaded: Record<string, DownloadResult>
-): FilePart {
+  downloaded: Record<string, AssetDownloadResult>
+): FilePart | null {
   const url = toHttpUrl(part.data);
   if (url) {
     const found = downloaded[url.toString()];
+    if (found === null) {
+      return null;
+    }
     if (found) {
       return {
         ...part,
@@ -120,11 +140,14 @@ function mapFilePart(
 
 function mapImagePart(
   part: ImagePart,
-  downloaded: Record<string, DownloadResult>
-): ImagePart {
+  downloaded: Record<string, AssetDownloadResult>
+): ImagePart | null {
   const url = toHttpUrl(part.image);
   if (url) {
     const found = downloaded[url.toString()];
+    if (found === null) {
+      return null;
+    }
     if (found) {
       return {
         ...part,
@@ -151,7 +174,7 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
 
   const mapPart = (
     part: TextPart | ImagePart | FilePart
-  ): TextPart | ImagePart | FilePart => {
+  ): TextPart | ImagePart | FilePart | null => {
     if (part.type === "file") {
       return mapFilePart(part as FilePart, downloaded);
     }
@@ -162,14 +185,38 @@ export async function replaceFilePartUrlByBinaryDataInMessages(
     return part;
   };
 
-  return messages.map((message) => {
+  const mappedMessages = messages.map((message) => {
     if (message.role !== "user" || typeof message.content === "string") {
       return message;
     }
 
     return {
       ...message,
-      content: message.content.map(mapPart),
+      content: message.content
+        .map(mapPart)
+        .filter(
+          (part): part is TextPart | ImagePart | FilePart => part !== null
+        ),
     };
   });
+
+  const availableMessages = mappedMessages.filter(
+    (message) =>
+      !(
+        message.role === "user" &&
+        Array.isArray(message.content) &&
+        message.content.length === 0
+      )
+  );
+  const firstUserIndex = availableMessages.findIndex(
+    (message) => message.role === "user"
+  );
+  if (firstUserIndex === -1) {
+    return availableMessages.filter((message) => message.role === "system");
+  }
+
+  const leadingSystemMessages = availableMessages
+    .slice(0, firstUserIndex)
+    .filter((message) => message.role === "system");
+  return [...leadingSystemMessages, ...availableMessages.slice(firstUserIndex)];
 }
