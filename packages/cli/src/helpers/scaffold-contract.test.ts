@@ -173,6 +173,8 @@ describe("scaffold contracts", () => {
 	it("installs a tool whose UI file already exists identically in the scaffold", async () => {
 		const cwd = await makeTempDir("registry-existing-ui");
 		await scaffoldFromTemplate(cwd);
+		const imageModalPath = join(cwd, "components", "ui", "image-modal.tsx");
+		const existingImageModal = await readFile(imageModalPath, "utf8");
 
 		await installRegistryTools({
 			tools: ["generate-image"],
@@ -189,6 +191,13 @@ describe("scaffold contracts", () => {
 		expect(
 			await readFile(join(cwd, "tools", "chatjs", "tools.ts"), "utf8"),
 		).toContain("generateImage");
+		expect(await readFile(imageModalPath, "utf8")).toBe(existingImageModal);
+		expect(
+			await readFile(
+				join(cwd, "tools", "chatjs", "generate-image", "renderer.tsx"),
+				"utf8",
+			),
+		).toContain('from "@/components/ui/image-modal"');
 	});
 
 	it("requires shared registry dependencies when renderer files import shared toolkit code", async () => {

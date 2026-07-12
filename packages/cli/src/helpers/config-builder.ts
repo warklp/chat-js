@@ -63,12 +63,9 @@ function formatValue(value: unknown, indent: number): string {
 
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
-    const inline = `[${value.map((item) => JSON.stringify(item)).join(", ")}]`;
-    if (
-      value.every((item) => typeof item === "string") &&
-      spaces.length + inline.length <= 80
-    ) {
-      return inline;
+    if (value.every((item) => typeof item === "string")) {
+      const inline = `[${value.map((item) => JSON.stringify(item)).join(", ")}]`;
+      if (spaces.length + inline.length <= 80) return inline;
     }
     return `[\n${value
       .map((v) => `${inner}${formatValue(v, indent + 1)},`)

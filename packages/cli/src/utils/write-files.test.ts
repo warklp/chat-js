@@ -47,6 +47,33 @@ describe("writeToolFiles", () => {
     }
   });
 
+  it("reports non-file destinations as conflicts", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
+    const toolsDir = join(cwd, "tools");
+
+    try {
+      await mkdir(join(toolsDir, "example", "tool.ts"), { recursive: true });
+
+      const result = await writeToolFiles(
+        [registryFile("example/tool.ts", "export const tool = {};")],
+        {
+          dryRun: true,
+          toolsAlias: "@/tools/chatjs",
+          toolsDir,
+          uiAlias: "@/components/ui",
+          uiDir: join(cwd, "components/ui"),
+        }
+      );
+
+      expect(result).toEqual({
+        existing: [join(toolsDir, "example", "tool.ts")],
+        written: [],
+      });
+    } finally {
+      await rm(cwd, { force: true, recursive: true });
+    }
+  });
+
   it("reports conflicts without partially writing during preflight", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
     const toolsDir = join(cwd, "tools");
