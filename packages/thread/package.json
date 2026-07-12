@@ -43,7 +43,6 @@
 		"build": "tsc -p tsconfig.build.json",
 		"format": "bunx @biomejs/biome@2.4.10 check --write src test spike *.md package.json tsconfig.json tsconfig.build.json biome.jsonc",
 		"spike:ai-sdk": "bun test spike/ai-sdk-integration.test.ts",
-		"spike:external-chat": "bun test spike/use-chat-external-chat.test.tsx",
 		"test:types": "tsc --noEmit"
 	},
 	"peerDependencies": {
@@ -55,10 +54,8 @@
 		"@ai-sdk/react": "^3.0.152",
 		"@types/bun": "^1.3.12",
 		"@types/react": "19.2.7",
-		"@types/react-test-renderer": "19.1.0",
 		"ai": "^6.0.150",
 		"react": "19.2.3",
-		"react-test-renderer": "19.2.3",
 		"typescript": "6.0.2"
 	}
 }
