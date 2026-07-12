@@ -107,6 +107,100 @@ The app still required its existing runtime-to-Zustand synchronization for
 legacy selectors and persistence integration. The facade neither removed nor
 simplified that synchronization.
 
+## Next major: React 4 and AI 7
+
+The next stable major was inspected and tested:
+
+- `@ai-sdk/react@4.0.15`
+- `ai@7.0.14`
+
+The unchanged thread package passes its type check and all 22 runtime,
+integration, facade, and React behavior tests against those versions.
+
+The direction of the new major is conservative for chat:
+
+- `UseChatHelpers`, `UseChatOptions`, the concrete `Chat` requirement, and the
+  three tilde-prefixed subscriptions are unchanged.
+- `ReactChatState` is unchanged.
+- `AbstractChat`, `ChatState`, statuses, request methods, tools, approvals, and
+  the single `activeResponse` model are behaviorally unchanged.
+- The React package added unrelated realtime and MCP app surfaces rather than
+  generalizing `Chat` into a public external-store interface.
+
+The meaningful `useChat` change is transport freshness. For a hook-owned chat,
+React 4 keeps the latest `transport` in a ref and gives `Chat` a stable proxy
+transport. This fixes stale transports without recreating the chat.
+
+That improvement does not apply to `useChat({ chat })`: when an external chat
+is supplied, hook callbacks and transport are ignored and the external object
+continues to own them. A thread facade would therefore need to implement
+transport replacement itself, just like the direct runtime.
+
+This major supports the current ownership split. The frequently changing
+stream and request behavior remains in `AbstractChat`, which the thread runtime
+already uses once per active run. Routing the React projection through
+`useChat` would not increase reuse of that behavior.
+
+## Responsibility comparison
+
+There are two separate layers to compare.
+
+### AI request engine
+
+Both alternatives reuse the same AI SDK responsibilities through one
+`AbstractChat` per run:
+
+- transport invocation and reconnection
+- stream chunk processing and message accumulation
+- status transitions and request errors
+- abort controllers
+- data and tool callbacks
+- tool outputs and approvals
+- automatic tool follow-ups
+- finish callbacks and finish reasons
+- message metadata and data schemas
+
+Both alternatives also require the same thread-specific responsibilities:
+
+- canonical nodes and edges
+- cursor and selected-path projection
+- run registry and concurrency policy
+- stable assistant identity
+- tool and approval ownership routing
+- branch-aware regeneration, stopping, and resume
+- mapping a new user message onto a selected parent
+
+The facade does not reduce any of this because its `sendMessage`, `regenerate`,
+`stop`, tools, and approvals must delegate to `ThreadRuntime`. Letting one
+inherited `Chat` own these methods would restore the single `activeResponse`
+limitation and break concurrent branches.
+
+### React useChat glue
+
+The direct hook owns more of the small React layer:
+
+| Responsibility | Direct useThread | useChat facade |
+| --- | --- | --- |
+| Create or replace runtime by identity | Thread hook | Thread hook |
+| Keep callbacks fresh | Thread runtime | Thread runtime |
+| Keep transport fresh | Thread runtime | Thread runtime |
+| Subscribe to selected messages | Thread hook | useChat + adapter |
+| Subscribe to status and error | Thread hook | useChat + adapter |
+| Throttle message notifications | Thread hook | Adapter honoring useChat's wait value |
+| Apply setMessages updater | Thread hook | useChat |
+| Run resume-on-mount effect | Thread hook | useChat |
+| Assemble standard helper object | Thread hook | useChat |
+| Subscribe to complete tree | Thread hook | Thread hook |
+
+The facade reuses `useSyncExternalStore` wiring, the `setMessages` updater, the
+resume effect, and helper-object assembly. It must still provide the
+subscription implementation and throttling because `useChat` delegates those
+to the external `Chat` object.
+
+Therefore the direct alternative reimplements more of `useChat` numerically,
+but the difference is thin, stable React glue. Both alternatives reuse the
+same high-complexity and higher-change AI SDK request engine.
+
 ## Why one tree-backed AbstractChat is insufficient
 
 AI SDK's `AbstractChat` owns one mutable `activeResponse`, one status/error
