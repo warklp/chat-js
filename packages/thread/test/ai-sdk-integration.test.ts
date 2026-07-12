@@ -94,7 +94,7 @@ async function waitFor(predicate: () => boolean) {
 		}
 		await Bun.sleep(1);
 	}
-	throw new Error("Timed out waiting for spike state");
+	throw new Error("Timed out waiting for integration state");
 }
 
 function emitText(
@@ -145,7 +145,7 @@ function emitRichResponse(
 	transport.finish(assistantMessageId);
 }
 
-describe("SPIKE: per-stream AbstractChat engines", () => {
+describe("integration: per-stream AbstractChat engines", () => {
 	test("matches @ai-sdk/react Chat output for the same rich stream", async () => {
 		const standardTransport = new ControlledTransport();
 		const threadTransport = new ControlledTransport();
@@ -477,7 +477,7 @@ describe("SPIKE: per-stream AbstractChat engines", () => {
 	});
 });
 
-describe("SPIKE: public readUIMessageStream reducer", () => {
+describe("integration: public readUIMessageStream reducer", () => {
 	test("reduces reasoning, text, tool, and data chunks into message snapshots", async () => {
 		const chunks: UIMessageChunk[] = [
 			{ messageId: "assistant-reserved", type: "start" },

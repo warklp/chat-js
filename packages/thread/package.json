@@ -34,15 +34,16 @@
 	"files": [
 		"dist",
 		"src",
-		"README.md"
+		"README.md",
+		"ARCHITECTURE.md"
 	],
 	"publishConfig": {
 		"access": "public"
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
-		"format": "bunx @biomejs/biome@2.4.10 check --write src test spike *.md package.json tsconfig.json tsconfig.build.json biome.jsonc",
-		"spike:ai-sdk": "bun test spike/ai-sdk-integration.test.ts",
+		"format": "bunx @biomejs/biome@2.4.10 check --write src test *.md package.json tsconfig.json tsconfig.build.json biome.jsonc",
+		"test": "bun test test",
 		"test:types": "tsc --noEmit"
 	},
 	"peerDependencies": {

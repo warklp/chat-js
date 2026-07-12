@@ -3,15 +3,15 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import {
-	type MessageTreeSnapshot,
-	type ThreadRun,
-	type ThreadRunHandle,
-	ThreadRuntime,
-	type ThreadRuntimeOptions,
-	type ThreadStartRunOptions,
-	type TreeSendOptions,
-} from "./runtime";
+import { ThreadRuntime } from "./runtime";
+import type {
+	MessageTreeSnapshot,
+	ThreadRun,
+	ThreadRunHandle,
+	ThreadRuntimeOptions,
+	ThreadStartRunOptions,
+	TreeSendOptions,
+} from "./types";
 
 type ThreadHookOptions = {
 	experimental_throttle?: number;
@@ -141,7 +141,7 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 
 	const runtime = runtimeRef.current;
 	if (runtimeOptions) {
-		runtime.updateCallbacks(runtimeOptions);
+		runtime.updateOptions(runtimeOptions);
 	}
 	const snapshot = useRuntimeSnapshot(runtime, options.experimental_throttle);
 	const status = useSyncExternalStore(

@@ -47,6 +47,15 @@ class ResumeTransport extends EmptyTransport {
 	}
 }
 
+class CountingTransport extends EmptyTransport {
+	requests = 0;
+
+	override sendMessages() {
+		this.requests += 1;
+		return super.sendMessages();
+	}
+}
+
 describe("ThreadRuntime.sendMessage", () => {
 	test("preserves the id of a complete UIMessage input", async () => {
 		let generatedIdCount = 0;
@@ -196,5 +205,22 @@ describe("ThreadRuntime.sendMessage", () => {
 			"a1",
 			"a2",
 		]);
+	});
+
+	test("uses the latest transport for newly started runs", async () => {
+		const initialTransport = new CountingTransport();
+		const nextTransport = new CountingTransport();
+		const runtime = new ThreadRuntime<UIMessage>({
+			transport: initialTransport,
+		});
+
+		runtime.updateOptions({ transport: nextTransport });
+		await runtime.sendMessage(
+			{ messageId: "u1", text: "latest transport" },
+			{ body: { assistantMessageId: "a1" } },
+		);
+
+		expect(initialTransport.requests).toBe(0);
+		expect(nextTransport.requests).toBe(1);
 	});
 });

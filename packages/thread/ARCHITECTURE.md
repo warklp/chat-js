@@ -1,22 +1,19 @@
-# AI SDK Thread Runtime Spike
+# Thread Runtime Architecture
 
-## Question
+## Design goal
 
 Can a canonical message tree support concurrent branch streams while reusing AI
 SDK's message-stream behavior instead of copying or approximating it?
 
-Run the spike with:
+Run the architecture and compatibility coverage with:
 
 ```bash
-bun --filter=@chatjs/thread spike:ai-sdk
+bun --filter @chatjs/thread test
 ```
 
-The spike targets the versions installed by this workspace lockfile:
+The tests run against the AI SDK versions installed by the workspace lockfile.
 
-- `ai@6.0.158`
-- `@ai-sdk/react@3.0.160`
-
-## Public surfaces found
+## AI SDK surfaces
 
 ### `ai`
 
@@ -76,7 +73,7 @@ Primary installed source:
 
 - `@ai-sdk/react/dist/index.d.ts` and `dist/index.mjs`
 
-## Architectures tested
+## Alternatives evaluated
 
 ### Per-stream `AbstractChat`
 
@@ -91,7 +88,7 @@ ThreadRuntime (canonical tree)
      -> TreeStreamChat B -> shared ChatTransport
 ```
 
-The spike proves:
+The integration suite proves:
 
 - Rich text, reasoning, tool, and data output matches `@ai-sdk/react`'s `Chat`
   for the same chunk sequence.
@@ -107,7 +104,7 @@ tree topology, cursor selection, stream registration, and identity binding.
 
 ### Direct `readUIMessageStream`
 
-The spike also proves that the public reducer correctly accumulates:
+The integration suite also proves that the public reducer correctly accumulates:
 
 - text and reasoning parts
 - dynamic tool input and output

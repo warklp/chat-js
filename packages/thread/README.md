@@ -436,6 +436,9 @@ instead of maintaining a custom stream reducer. That preserves standard stream
 parts, tools, approvals, callbacks, automatic sends, cancellation, and resume
 behavior while the package adds tree ownership around it.
 
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the ownership model, evaluated
+alternatives, and the differential coverage behind this decision.
+
 ## Exports
 
 React APIs are exported from `@chatjs/thread/react`:
@@ -456,7 +459,6 @@ getMessageText;
 ROOT_PARENT_ID;
 
 type MessageTreeSnapshot;
-type MessageTreeStore;
 type ThreadConcurrency;
 type ThreadEvent;
 type ThreadRun;
@@ -464,7 +466,7 @@ type ThreadRunHandle;
 type ThreadRuntimeOptions;
 type ThreadStartRunOptions;
 type TreeSendOptions;
-type TreeStateSnapshot;
+type ThreadStateSnapshot;
 ```
 
 ## Scope
