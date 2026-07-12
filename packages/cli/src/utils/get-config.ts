@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { parse } from "jsonc-parser";
+import { parse } from "jsonc-parser/lib/esm/main.js";
 import { inferPackageManager } from "./get-package-manager";
 import type { PackageManager } from "../types";
 
