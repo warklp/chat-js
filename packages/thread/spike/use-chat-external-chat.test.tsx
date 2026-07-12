@@ -4,6 +4,7 @@ import type { ChatTransport, UIMessage, UIMessageChunk } from "ai";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { getMessageText, ThreadRuntime } from "../src/runtime";
+import { type UseThreadHelpers, useThread } from "../src/use-thread";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -258,6 +259,103 @@ describe("SPIKE: useChat with an externally owned thread facade", () => {
 			"alpha-hidden",
 		);
 		expect(getMessageText(helpers?.messages.at(-1) as UIMessage)).toBe("beta");
+	});
+});
+
+describe("SPIKE: current useThread React behavior", () => {
+	test("refreshes callbacks without replacing the runtime", async () => {
+		const transport = new ControlledTransport();
+		const finishedBy: string[] = [];
+		let helpers: UseThreadHelpers<UIMessage> | undefined;
+
+		function Probe({ callbackVersion }: { callbackVersion: string }) {
+			helpers = useThread({
+				id: "callback-chat",
+				onFinish: () => finishedBy.push(callbackVersion),
+				transport,
+			});
+			return null;
+		}
+
+		await act(async () => {
+			renderer = create(createElement(Probe, { callbackVersion: "old" }));
+		});
+		await act(async () => {
+			renderer?.update(createElement(Probe, { callbackVersion: "new" }));
+		});
+
+		let run: Awaited<ReturnType<ThreadRuntime["startRun"]>> | undefined;
+		await act(async () => {
+			run = await helpers?.tree.startRun({
+				message: userMessage("callback-user", "callback"),
+				request: { body: { assistantMessageId: "callback-assistant" } },
+			});
+			await waitFor(() => transport.requests.has("callback-assistant"));
+			transport.emitText("callback-assistant", "callback-text", "done");
+			transport.finish("callback-assistant");
+			await run?.finished;
+		});
+
+		expect(finishedBy).toEqual(["new"]);
+	});
+
+	test("batches multiple external-store notifications into one React render", async () => {
+		const runtime = new ThreadRuntime<UIMessage>({
+			id: "render-chat",
+			messages: [userMessage("root", "root")],
+		});
+		let helpers: UseThreadHelpers<UIMessage> | undefined;
+		let renderCount = 0;
+
+		function Probe() {
+			renderCount += 1;
+			helpers = useThread({ runtime });
+			return null;
+		}
+
+		await act(async () => {
+			renderer = create(createElement(Probe));
+		});
+		const rendersBefore = renderCount;
+
+		await act(async () => {
+			helpers?.tree.setCursor(null);
+		});
+
+		expect(renderCount - rendersBefore).toBe(1);
+		expect(helpers?.messages).toEqual([]);
+	});
+
+	test("switches externally owned runtimes with the same chat id", async () => {
+		const runtimeA = new ThreadRuntime<UIMessage>({
+			id: "shared-id",
+			messages: [userMessage("user-a", "A")],
+		});
+		const runtimeB = new ThreadRuntime<UIMessage>({
+			id: "shared-id",
+			messages: [userMessage("user-b", "B")],
+		});
+		let helpers: UseThreadHelpers<UIMessage> | undefined;
+
+		function Probe({ runtime }: { runtime: ThreadRuntime<UIMessage> }) {
+			helpers = useThread({ runtime });
+			return null;
+		}
+
+		await act(async () => {
+			renderer = create(createElement(Probe, { runtime: runtimeA }));
+		});
+		expect(helpers?.messages.map((message) => message.id)).toEqual(["user-a"]);
+
+		await act(async () => {
+			renderer?.update(createElement(Probe, { runtime: runtimeB }));
+		});
+		expect(helpers?.messages.map((message) => message.id)).toEqual(["user-b"]);
+
+		await act(async () => {
+			runtimeB.setCursor(null);
+		});
+		expect(helpers?.messages).toEqual([]);
 	});
 });
 

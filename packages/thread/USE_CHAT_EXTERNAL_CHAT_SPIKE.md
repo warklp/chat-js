@@ -18,7 +18,8 @@ bun run spike:external-chat
 
 ## Verdict
 
-Yes, with a concrete `Chat` facade over `ThreadRuntime`.
+Technically yes, with a concrete `Chat` facade over `ThreadRuntime`. Do not use
+that facade as the production implementation of `useThread`.
 
 The facade must extend `@ai-sdk/react`'s public `Chat` class, delegate the
 standard chat operations to `ThreadRuntime`, expose the selected path through
@@ -34,7 +35,9 @@ useThread
 ```
 
 The facade does not replace the runtime's per-run engines. One isolated
-`AbstractChat` is still required for every concurrent assistant response.
+`AbstractChat` is still required for every concurrent assistant response. In
+practice, the facade only replaces a small amount of React subscription glue
+while adding inheritance and coupling to React Chat internals.
 
 ## What `useChat({ chat })` actually requires
 
@@ -74,6 +77,35 @@ proves that:
 
 The additional tree API still needs a `ThreadRuntime` subscription because
 `useChat` only returns its fixed `UseChatHelpers` surface.
+
+## Real application validation
+
+The package's production `useThread` was temporarily changed to use the facade
+and exercised through the ChatJS application with its normal HTTP transport,
+persistence callbacks, query invalidation, Zustand selectors, message editing,
+and sibling controls.
+
+The following scenarios passed:
+
+- A new provisional chat streamed, persisted, promoted to its permanent URL,
+  and restored correctly.
+- Additional messages streamed into an existing persisted chat.
+- Editing a user message created a `2/2` branch without replacing the original.
+- Switching to the previous branch while the edited response was streaming did
+  not abort or redirect the hidden run.
+- Switching back after completion revealed the complete hidden response.
+- Stopping during submission returned the selected path to `ready`.
+
+No browser errors, duplicate messages, reversed messages, or branch-count
+inflation were observed.
+
+React-level tests also proved that callback updates reach the existing runtime,
+multiple runtime notifications are batched into one render, and externally
+owned runtimes can be replaced even when they share a chat ID.
+
+The app still required its existing runtime-to-Zustand synchronization for
+legacy selectors and persistence integration. The facade neither removed nor
+simplified that synchronization.
 
 ## Why one tree-backed AbstractChat is insufficient
 
@@ -117,9 +149,9 @@ already works.
 })` for the standard active-path API, subscribes separately for tree state, and
 returns `{ ...chat, tree }`.
 
-This mechanically delegates the standard React contract to AI SDK and makes
-the compatibility claim easier to audit. It does not simplify tree or run
-ownership.
+This mechanically delegates the standard React contract to AI SDK. It does not
+simplify tree or run ownership, callback ownership, or application state
+integration.
 
 ### 3. Export the facade for callers to pass to useChat
 
@@ -132,20 +164,41 @@ ergonomic than `useThread` and exposes more lifecycle responsibility.
 Do not use this option. It bypasses the public type and depends directly on the
 three tilde-prefixed subscription methods.
 
+## Architectural assessment
+
+The facade is an adapter, not another state store: its getters read
+`ThreadRuntime` directly and it does not duplicate messages. It therefore does
+not create a state synchronization bridge by itself.
+
+It is still a shallow module:
+
+- It subclasses `Chat` but bypasses the inherited `ReactChatState` and request
+  engine.
+- It overrides every operation returned by `useChat`.
+- It depends on the tilde-prefixed React subscription protocol.
+- It allocates the base `Chat` state even though that state is never used.
+- It still needs a separate runtime subscription for `tree`.
+- It leaves callback refresh in `ThreadRuntime` because external `useChat`
+  callbacks are unavailable.
+- It does not remove the app's runtime-to-Zustand integration.
+
+Under the deletion test, removing the facade restores a small amount of direct
+`useSyncExternalStore` code. Its complexity does not reappear across callers;
+it remains local to `useThread`. The adapter therefore provides little module
+depth or leverage.
+
 ## Recommendation
 
-Keep `ThreadRuntime` and its per-run `AbstractChat` engines unchanged.
+Keep the current direct `useThread` implementation and the per-run
+`AbstractChat` engines.
 
-A `ThreadChatFacade` is viable as an internal implementation detail of
-`useThread`, but adopting it is a compatibility-maintenance tradeoff rather
-than an architectural simplification:
+Compatibility should be guaranteed at the public interface and by
+differential tests against `UseChatHelpers`, not by routing the implementation
+through the `useChat` hook. The direct implementation uses stable public React
+primitives, avoids pretending to use `Chat` state that it actually bypasses,
+and keeps the canonical runtime as the only state owner.
 
-- Benefit: standard helpers, resume behavior, and active-path subscriptions
-  are wired by the real `useChat` hook.
-- Cost: the package becomes coupled to `Chat`'s tilde-prefixed React
-  subscription protocol and must preserve message throttling in the facade.
-
-Before changing production code, add differential tests for `resume`, callback
-refresh, throttled message subscriptions, external facade replacement, tools,
-and approvals. The spike proves feasibility, not yet superiority over the
-current hook implementation.
+The facade spike should remain as evidence that `useChat({ chat })` is
+technically interoperable and as a regression oracle if AI SDK later publishes
+a proper external chat interface. It should not be exported or used in the
+production hook today.
