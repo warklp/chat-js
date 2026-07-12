@@ -445,7 +445,9 @@ export const withThreads =
         const mergedMessages = mergeTreeMessages(
           messages,
           existingTreeMessages,
-          currentVisibleMessages
+          state.status === "streaming" || state.status === "submitted"
+            ? currentVisibleMessages
+            : []
         );
         const snapshot = buildTreeSnapshotFromMessages(
           mergedMessages,
@@ -487,6 +489,8 @@ export const withThreads =
         set((prev) => ({
           ...prev,
           messages: nextVisibleThread,
+          _memoizedSelectors: new Map(),
+          _throttledMessages: nextVisibleThread,
           threadInitialMessages: nextVisibleThread,
           allMessages: mergedMessages,
           treeSnapshot: snapshot,

@@ -230,14 +230,14 @@ export function useChat<TMessage extends UIMessage = UIMessage>(
       runtime: summarizeThreadMessages(chatHelpers.messages),
     });
     lastExternalMessagesRef.current = externalSignature;
-    if (messageIds(externalMessages) !== messageIds(chatHelpers.messages)) {
+    if (messagesSignature(chatHelpers.messages) !== externalSignature) {
       traceThread("runtime-bridge", "externalMessages.apply", {
         externalIds: messageIds(externalMessages),
         runtimeIds: messageIds(chatHelpers.messages),
       });
       setMessages(externalMessages);
     } else {
-      traceThread("runtime-bridge", "externalMessages.skipSameIds", {
+      traceThread("runtime-bridge", "externalMessages.skipSameContent", {
         ids: messageIds(externalMessages),
       });
     }

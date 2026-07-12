@@ -13,6 +13,7 @@ function createMessage({
   parallelGroupId = null,
   parallelIndex = null,
   activeStreamId = null,
+  text = "",
 }: {
   id: string;
   role: ChatMessage["role"];
@@ -21,11 +22,12 @@ function createMessage({
   parallelGroupId?: string | null;
   parallelIndex?: number | null;
   activeStreamId?: string | null;
+  text?: string;
 }): ChatMessage {
   return {
     id,
     role,
-    parts: [],
+    parts: text ? [{ type: "text", text }] : [],
     metadata: {
       createdAt: new Date(createdAt),
       parentMessageId,
@@ -230,6 +232,54 @@ describe("withThreads", () => {
     assert.equal(
       updatedAssistant?.metadata.selectedModel,
       assistant.metadata.selectedModel
+    );
+  });
+
+  it("replaces a selected placeholder with completed server content when ready", () => {
+    const rootUser = createMessage({
+      id: "user-root",
+      role: "user",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    const placeholder = createMessage({
+      id: "assistant-b",
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:01.000Z",
+      parentMessageId: rootUser.id,
+      parallelGroupId: "group-root",
+      parallelIndex: 1,
+      activeStreamId: "pending:assistant-b",
+    });
+    const completed = createMessage({
+      id: placeholder.id,
+      role: "assistant",
+      createdAt: "2024-01-01T00:00:01.000Z",
+      parentMessageId: rootUser.id,
+      parallelGroupId: "group-root",
+      parallelIndex: 1,
+      text: "Completed secondary response",
+    });
+    const store = createThreadStore([rootUser, placeholder]);
+
+    store.getState().setAllMessages([rootUser, completed]);
+
+    const completedPart = store.getState().messages.at(-1)?.parts.at(0);
+    assert.equal(completedPart?.type, "text");
+    assert.equal(
+      completedPart?.type === "text" ? completedPart.text : null,
+      "Completed secondary response"
+    );
+    assert.equal(
+      store.getState().messages.at(-1)?.metadata.activeStreamId,
+      null
+    );
+    const throttledPart = store
+      .getState()
+      ._throttledMessages?.at(-1)
+      ?.parts.at(0);
+    assert.equal(
+      throttledPart?.type === "text" ? throttledPart.text : null,
+      "Completed secondary response"
     );
   });
 
