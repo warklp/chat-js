@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectEnvChecklist } from "./env-checklist";
 import { buildConfigTs } from "./config-builder";
+import { scaffoldFromTemplate } from "./scaffold";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { resolveRegistryItems } from "../registry/resolve";
 import { installRegistryTools } from "../utils/install-registry-tools";
@@ -167,6 +168,27 @@ describe("scaffold contracts", () => {
 		expect(envEntries.some((entry) => entry.vars === "FIRECRAWL_API_KEY")).toBe(
 			true,
 		);
+	});
+
+	it("installs a tool whose UI file already exists identically in the scaffold", async () => {
+		const cwd = await makeTempDir("registry-existing-ui");
+		await scaffoldFromTemplate(cwd);
+
+		await installRegistryTools({
+			tools: ["generate-image"],
+			cwd,
+			toolsDir: join(cwd, "tools", "chatjs"),
+			toolsAlias: "@/tools/chatjs",
+			uiDir: join(cwd, "components", "ui"),
+			uiAlias: "@/components/ui",
+			registryUrl: localRegistryUrl,
+			installDependenciesNow: false,
+			packageManager: "bun",
+		});
+
+		expect(
+			await readFile(join(cwd, "tools", "chatjs", "tools.ts"), "utf8"),
+		).toContain("generateImage");
 	});
 
 	it("requires shared registry dependencies when renderer files import shared toolkit code", async () => {

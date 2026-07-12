@@ -156,8 +156,7 @@ export function createEmptyToolsTemplate(
     `\n` +
     `export function createTools(ctx: ToolRuntimeContext) {\n` +
     `  return createRegistryTools(toolEntries, ctx);\n` +
-    `}\n` +
-    `\n`
+    `}\n`
   );
 }
 

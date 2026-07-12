@@ -21,6 +21,32 @@ function registryFile(
 }
 
 describe("writeToolFiles", () => {
+  it("treats identical existing files as already installed", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
+    const uiDir = join(cwd, "components/ui");
+    const content = "export const modal = {};";
+
+    try {
+      await mkdir(uiDir, { recursive: true });
+      await writeFile(join(uiDir, "image-modal.tsx"), content);
+
+      const result = await writeToolFiles(
+        [registryFile("image-modal.tsx", content, "ui")],
+        {
+          dryRun: true,
+          toolsAlias: "@/tools/chatjs",
+          toolsDir: join(cwd, "tools"),
+          uiAlias: "@/components/ui",
+          uiDir,
+        }
+      );
+
+      expect(result).toEqual({ existing: [], written: [] });
+    } finally {
+      await rm(cwd, { force: true, recursive: true });
+    }
+  });
+
   it("reports conflicts without partially writing during preflight", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
     const toolsDir = join(cwd, "tools");

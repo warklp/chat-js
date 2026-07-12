@@ -132,6 +132,13 @@ export async function writeToolFiles(
     }
     const exists = destinationStat !== null;
 
+    if (exists) {
+      const existingContent = await fs.readFile(dest, "utf8");
+      if (existingContent === content) {
+        continue;
+      }
+    }
+
     if (exists && !overwrite) {
       existing.push(dest);
       continue;
