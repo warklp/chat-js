@@ -50,6 +50,15 @@ export const add = new Command()
 				process.exit(1);
 			}
 
+			try {
+				await fs.stat(path.join(cwd, "components.json"));
+			} catch {
+				log.error(
+					'No components.json found. Add one with an "aliases.ui" entry or re-run `chat-js create`.',
+				);
+				process.exit(1);
+			}
+
 			intro("chatjs add");
 
 			const configSpinner = spinner("Loading project config...");

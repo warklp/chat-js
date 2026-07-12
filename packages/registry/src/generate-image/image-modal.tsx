@@ -29,7 +29,8 @@ async function downloadImage(imageUrl: string): Promise<void> {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = objectUrl;
-  anchor.download = `image-${Date.now()}.png`;
+  const extension = blob.type.split("/")[1]?.split(";")[0] || "png";
+  anchor.download = `image-${Date.now()}.${extension}`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -142,7 +143,6 @@ export function ImageModal({
         event.preventDefault();
         onClose();
       }}
-      onClose={onClose}
       ref={dialogRef}
     >
       <div className="relative flex h-full w-full items-center justify-center bg-black/30 p-6">
@@ -160,7 +160,7 @@ export function ImageModal({
         >
           <XIcon aria-hidden="true" size={20} />
         </button>
-        {showActions && (
+        {showActions && isOpen && (
           <ImageActions
             className="absolute top-4 right-4 z-10"
             imageUrl={imageUrl}

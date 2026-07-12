@@ -16,7 +16,7 @@ export type ModelSelection = {
   purpose?: string;
 };
 
-export type VideoModel = string | Experimental_VideoModelV3;
+export type VideoModel = Experimental_VideoModelV3;
 
 export type StoredMedia = {
   filename: string;

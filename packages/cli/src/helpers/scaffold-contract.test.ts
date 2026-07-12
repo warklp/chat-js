@@ -209,7 +209,7 @@ describe("scaffold contracts", () => {
 			}),
 		);
 
-		expect(
+		await expect(
 			installRegistryTools({
 				tools: ["standalone"],
 				cwd,

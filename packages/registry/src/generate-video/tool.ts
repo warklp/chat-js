@@ -5,7 +5,7 @@ import {
   type ToolRuntimeContext,
 } from "@toolkit/lib/runtime";
 
-const COST_CENTS = 50;
+const COST_CENTS = 50; // Fixed estimate; provider APIs do not report actual cost.
 const DEFAULT_ASPECT_RATIO = "16:9";
 const DEFAULT_DURATION_SECONDS = 5;
 const ALLOWED_EXTENSIONS = new Set(["mp4", "webm", "mov"]);
@@ -28,9 +28,6 @@ function resolveVideoExtension(mediaType?: string): string {
 function getModelId(model: unknown): string | null {
   if (model && typeof model === "object" && "modelId" in model) {
     return String((model as { modelId: unknown }).modelId);
-  }
-  if (typeof model === "string") {
-    return model;
   }
   return null;
 }
@@ -88,6 +85,7 @@ export const generateVideo = defineTool({
         if (!result.video) {
           throw new Error("No video generated");
         }
+        ctx.cost.addAPICost("generateVideo", COST_CENTS);
 
         const extension = resolveVideoExtension(result.video.mediaType);
         const stored = await ctx.media.write({
@@ -95,8 +93,6 @@ export const generateVideo = defineTool({
           filename: `generated-video-${Date.now()}.${extension}`,
           mediaType: result.video.mediaType,
         });
-        ctx.cost.addAPICost("generateVideo", COST_CENTS);
-
         return {
           prompt,
           videoUrl: stored.url,

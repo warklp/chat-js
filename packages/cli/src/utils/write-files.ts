@@ -121,10 +121,16 @@ export async function writeToolFiles(
   for (const { content, dest, rootDir, target } of preparedFiles) {
     await assertNoSymlinkTraversal(dest, rootDir);
 
-    const exists = await fs
-      .access(dest)
-      .then(() => true)
-      .catch(() => false);
+    const destinationStat = await fs.lstat(dest).catch((error: unknown) => {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw error;
+    });
+    if (destinationStat?.isSymbolicLink()) {
+      throw new Error(`Refusing to overwrite symlinked file "${target}"`);
+    }
+    const exists = destinationStat !== null;
 
     if (exists && !overwrite) {
       existing.push(dest);
@@ -146,12 +152,6 @@ export async function writeToolFiles(
       throw new Error(
         `Refusing to write "${target}" outside its registry directory`
       );
-    }
-    if (exists) {
-      const stat = await fs.lstat(dest);
-      if (stat.isSymbolicLink()) {
-        throw new Error(`Refusing to overwrite symlinked file "${target}"`);
-      }
     }
     await fs.writeFile(dest, content, "utf8");
     written.push(dest);

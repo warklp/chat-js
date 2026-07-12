@@ -30,7 +30,11 @@ export function GenerateImageRenderer({
   }
   const output = tool.output;
   if (!output) {
-    return null;
+    return (
+      <div className="rounded-lg border p-4 text-muted-foreground text-sm">
+        Couldn&apos;t generate image.
+      </div>
+    );
   }
 
   return (

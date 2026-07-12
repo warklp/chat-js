@@ -37,7 +37,7 @@ describe("resolveProjectPath", () => {
         path.join(cwd, "tsconfig.json"),
         JSON.stringify({ compilerOptions: { paths: { "#/*": ["../*"] } } }),
       );
-      expect(resolveProjectPath("#/outside", cwd)).rejects.toThrow(
+      await expect(resolveProjectPath("#/outside", cwd)).rejects.toThrow(
         "inside the project directory",
       );
     } finally {

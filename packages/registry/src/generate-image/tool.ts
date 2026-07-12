@@ -14,23 +14,33 @@ import {
 
 type ImageMode = "edit" | "generate";
 
-async function filePartToBuffer(file: FilePart): Promise<Buffer> {
-  if (file.data instanceof URL) {
-    const response = await fetch(file.data);
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-  }
-  if (typeof file.data === "string") {
-    return Buffer.from(file.data, "base64");
-  }
-  if (file.data instanceof ArrayBuffer) {
-    return Buffer.from(new Uint8Array(file.data));
-  }
-  return Buffer.from(file.data);
+function decodeBase64(data: string): Uint8Array {
+  const decoded = atob(data);
+  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
 }
 
-function collectEditImageBuffers(files: FilePart[]): Promise<Buffer[]> {
-  return Promise.all(files.map((file) => filePartToBuffer(file)));
+async function filePartToBytes(
+  file: FilePart,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
+  if (file.data instanceof URL) {
+    const response = await fetch(file.data, { signal });
+    return new Uint8Array(await response.arrayBuffer());
+  }
+  if (typeof file.data === "string") {
+    return decodeBase64(file.data);
+  }
+  if (file.data instanceof ArrayBuffer) {
+    return new Uint8Array(file.data);
+  }
+  return file.data;
+}
+
+function collectEditImageBytes(
+  files: FilePart[],
+  signal?: AbortSignal
+): Promise<Uint8Array[]> {
+  return Promise.all(files.map((file) => filePartToBytes(file, signal)));
 }
 
 function mediaExtension(mediaType: string): string {
@@ -134,23 +144,23 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
 
           return {
             imageUrl: stored.url,
+            mediaType: stored.mediaType,
             prompt,
           };
         }
 
-        const imageBuffers =
-          mode === "edit" ? await collectEditImageBuffers(imageInputs) : [];
+        const imageBytes =
+          mode === "edit"
+            ? await collectEditImageBytes(imageInputs, abortSignal)
+            : [];
         const promptInput =
-          mode === "edit" ? { text: prompt, images: imageBuffers } : prompt;
+          mode === "edit" ? { text: prompt, images: imageBytes } : prompt;
 
         const result = await generateImageWithImageModel({
           abortSignal,
           model: imageGenerationModel.model,
           n: 1,
           prompt: promptInput,
-          providerOptions: {
-            telemetry: { isEnabled: true },
-          },
         });
 
         const image = result.images[0];
@@ -176,6 +186,7 @@ The assistant must not add new subjects, claims, branding, or alter the tone or 
 
         return {
           imageUrl: stored.url,
+          mediaType: stored.mediaType,
           prompt,
         };
       },

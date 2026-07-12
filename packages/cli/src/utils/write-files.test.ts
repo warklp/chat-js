@@ -1,5 +1,12 @@
 import { describe, expect, it } from "bun:test";
-import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { RegistryToolItemFile } from "../registry/schema";
@@ -38,7 +45,7 @@ describe("writeToolFiles", () => {
       );
 
       expect(result.existing).toEqual([join(uiDir, "image-modal.tsx")]);
-      expect(access(join(toolsDir, "example/tool.ts"))).rejects.toThrow();
+      await expect(access(join(toolsDir, "example/tool.ts"))).rejects.toThrow();
     } finally {
       await rm(cwd, { force: true, recursive: true });
     }
@@ -48,7 +55,7 @@ describe("writeToolFiles", () => {
     const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
 
     try {
-      expect(
+      await expect(
         writeToolFiles(
           [
             registryFile("image-modal.tsx", "export const first = {};", "ui"),
@@ -63,6 +70,34 @@ describe("writeToolFiles", () => {
           }
         )
       ).rejects.toThrow("conflicting destination");
+    } finally {
+      await rm(cwd, { force: true, recursive: true });
+    }
+  });
+
+  it("rejects dangling symlink destinations during preflight", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "chatjs-write-files-"));
+    const uiDir = join(cwd, "components/ui");
+
+    try {
+      await mkdir(uiDir, { recursive: true });
+      await symlink(
+        join(cwd, "outside/missing.tsx"),
+        join(uiDir, "image-modal.tsx")
+      );
+
+      await expect(
+        writeToolFiles(
+          [registryFile("image-modal.tsx", "export const modal = {};", "ui")],
+          {
+            dryRun: true,
+            toolsAlias: "@/tools/chatjs",
+            toolsDir: join(cwd, "tools"),
+            uiAlias: "@/components/ui",
+            uiDir,
+          }
+        )
+      ).rejects.toThrow("Refusing to overwrite symlinked file");
     } finally {
       await rm(cwd, { force: true, recursive: true });
     }

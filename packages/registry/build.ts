@@ -282,6 +282,21 @@ async function main(): Promise<void> {
     );
   }
 
+  const expectedItemFiles = new Set(dirs.map((name) => `${name}.json`));
+  const orphanedItemFiles = (await fs.readdir(itemsDir)).filter(
+    (file) => file.endsWith(".json") && !expectedItemFiles.has(file)
+  );
+  if (orphanedItemFiles.length > 0) {
+    if (checkMode) {
+      throw new Error(
+        `Orphaned registry item file(s): ${orphanedItemFiles.join(", ")}`
+      );
+    }
+    await Promise.all(
+      orphanedItemFiles.map((file) => fs.rm(path.join(itemsDir, file)))
+    );
+  }
+
   await emitGeneratedFile(indexPath, JSON.stringify(index, null, 2) + "\n");
 
   console.log(

@@ -1,5 +1,9 @@
 import type { FilePart, FileUIPart, ModelMessage, Tool } from "ai";
-import { type AppModelId, getAppModelDefinition } from "@/lib/ai/app-models";
+import {
+  type AppModelDefinition,
+  type AppModelId,
+  getAppModelDefinition,
+} from "@/lib/ai/app-models";
 import { getOrCreateMcpClient, type MCPClient } from "@/lib/ai/mcp/mcp-client";
 import { createToolId } from "@/lib/ai/mcp-name-id";
 import {
@@ -12,7 +16,6 @@ import type { StreamWriter } from "@/lib/ai/types";
 import { config } from "@/lib/config";
 import type { CostAccumulator } from "@/lib/credits/cost-accumulator";
 import type { McpConnector } from "@/lib/db/schema";
-import { env } from "@/lib/env";
 import { uploadFile } from "@/lib/file-storage";
 import { createModuleLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/url";
@@ -73,14 +76,18 @@ function createToolRuntimeContext({
 }: {
   attachments: FileUIPart[];
   costAccumulator: CostAccumulator;
-  lastGeneratedImage: { imageUrl: string; name: string } | null;
+  lastGeneratedImage: {
+    imageUrl: string;
+    mediaType: string;
+    name: string;
+  } | null;
 }): ToolRuntimeContext {
   return {
     capabilities: createCapabilities(),
     env: {
-      get: (name) => env[name as keyof typeof env],
+      get: (name) => process.env[name],
       require: (name) => {
-        const value = env[name as keyof typeof env];
+        const value = process.env[name];
         if (!value) {
           throw new Error(`Missing required env var: ${name}`);
         }
@@ -109,7 +116,7 @@ function createToolRuntimeContext({
         const file: FilePart = {
           data: new URL(lastGeneratedImage.imageUrl, getBaseUrl()),
           filename: lastGeneratedImage.name,
-          mediaType: "image/png",
+          mediaType: lastGeneratedImage.mediaType,
           type: "file",
         };
         return Promise.resolve([file].slice(0, limit));
@@ -117,7 +124,8 @@ function createToolRuntimeContext({
     },
     media: {
       write: async ({ bytes, filename, mediaType }) => {
-        const finalFilename = filename ?? `generated-media-${Date.now()}`;
+        const finalFilename =
+          filename ?? `generated-media-${crypto.randomUUID()}`;
         const uploaded = await uploadFile(
           finalFilename,
           Buffer.from(bytes),
@@ -132,33 +140,36 @@ function createToolRuntimeContext({
       },
     },
     models: {
-      image: ({ model } = {}) => {
-        if (!config.ai.tools.image.enabled) {
-          throw new Error("Image generation is not enabled");
-        }
-        return Promise.resolve(
-          getImageModel(model ?? config.ai.tools.image.default)
-        );
-      },
+      image: ({ model } = {}) =>
+        Promise.resolve().then(() => {
+          if (!config.ai.tools.image.enabled) {
+            throw new Error("Image generation is not enabled");
+          }
+          return getImageModel(model ?? config.ai.tools.image.default);
+        }),
       imageGeneration: async ({ model } = {}) => {
         if (!config.ai.tools.image.enabled) {
           throw new Error("Image generation is not enabled");
         }
 
         const modelId = model ?? config.ai.tools.image.default;
+        let modelDefinition: AppModelDefinition | null = null;
         try {
-          const modelDefinition = await getAppModelDefinition(
-            modelId as AppModelId
-          );
-          if (modelDefinition.output.image) {
-            return {
-              model: getMultimodalImageModel(modelId),
-              modelId,
-              type: "language" as const,
-            };
+          modelDefinition = await getAppModelDefinition(modelId as AppModelId);
+        } catch (error) {
+          if (
+            !(error instanceof Error) ||
+            error.message !== `Model ${modelId} not found`
+          ) {
+            throw error;
           }
-        } catch {
-          // Dedicated image models may not exist in the chat model registry.
+        }
+        if (modelDefinition?.output.image) {
+          return {
+            model: getMultimodalImageModel(modelId),
+            modelId,
+            type: "language" as const,
+          };
         }
 
         return {
@@ -169,14 +180,13 @@ function createToolRuntimeContext({
       },
       language: async ({ model } = {}) =>
         getLanguageModel((model ?? config.ai.workflows.chat) as AppModelId),
-      video: ({ model } = {}) => {
-        if (!config.ai.tools.video.enabled) {
-          throw new Error("Video generation is not enabled");
-        }
-        return Promise.resolve(
-          getVideoModel(model ?? config.ai.tools.video.default)
-        );
-      },
+      video: ({ model } = {}) =>
+        Promise.resolve().then(() => {
+          if (!config.ai.tools.video.enabled) {
+            throw new Error("Video generation is not enabled");
+          }
+          return getVideoModel(model ?? config.ai.tools.video.default);
+        }),
     },
     cost: {
       addAPICost: (apiName, cost) => {
@@ -204,7 +214,11 @@ export function getTools({
   messageId: string;
   selectedModel: AppModelId;
   attachments: FileUIPart[];
-  lastGeneratedImage: { imageUrl: string; name: string } | null;
+  lastGeneratedImage: {
+    imageUrl: string;
+    mediaType: string;
+    name: string;
+  } | null;
   contextForLLM: ModelMessage[];
   costAccumulator: CostAccumulator;
 }) {

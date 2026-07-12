@@ -85,7 +85,8 @@ Avoid:
             return {
               results: [
                 {
-                  error: content.error,
+                  error:
+                    content.error ?? "Failed to retrieve content from the URL.",
                 },
               ],
             };
@@ -127,8 +128,11 @@ Avoid:
             ],
           };
         } catch (error) {
+          const failedUrl = parseUrl(url);
           console.error("retrieveUrl failed", {
+            error,
             errorName: getErrorName(error),
+            url: failedUrl ? displayUrl(failedUrl) : "invalid",
           });
           return { error: "Failed to retrieve content" };
         }
