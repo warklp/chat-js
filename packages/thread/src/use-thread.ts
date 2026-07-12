@@ -1,9 +1,10 @@
 "use client";
 
-import type { UseChatHelpers } from "@ai-sdk/react";
+import { type UseChatHelpers, useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "react";
 import { ThreadRuntime } from "./runtime";
+import { ThreadChatFacade } from "./thread-chat-facade";
 import type {
 	MessageTreeSnapshot,
 	ThreadRun,
@@ -143,50 +144,32 @@ export function useThread<TMessage extends UIMessage = UIMessage>(
 	if (runtimeOptions) {
 		runtime.updateOptions(runtimeOptions);
 	}
+	const facadeRef = useRef<{
+		facade: ThreadChatFacade<TMessage>;
+		runtime: ThreadRuntime<TMessage>;
+	} | null>(null);
+	if (!facadeRef.current || facadeRef.current.runtime !== runtime) {
+		facadeRef.current = {
+			facade: new ThreadChatFacade(runtime),
+			runtime,
+		};
+	}
+	const chat = useChat({
+		chat: facadeRef.current.facade,
+		experimental_throttle: options.experimental_throttle,
+		resume: options.resume,
+	});
 	const snapshot = useRuntimeSnapshot(runtime, options.experimental_throttle);
-	const status = useSyncExternalStore(
-		runtime.subscribe,
-		() => runtime.getSnapshot().status,
-		() => runtime.getSnapshot().status,
-	);
 	const treeStatus = useSyncExternalStore(
 		runtime.subscribe,
 		() => runtime.getSnapshot().treeStatus,
 		() => runtime.getSnapshot().treeStatus,
 	);
-	const error = useSyncExternalStore(
-		runtime.subscribe,
-		() => runtime.getSnapshot().error,
-		() => runtime.getSnapshot().error,
-	);
-
-	useEffect(() => {
-		if (!options.resume) {
-			return;
-		}
-		runtime.resumeStream();
-	}, [options.resume, runtime]);
-
-	const setMessages = useCallback<UseChatHelpers<TMessage>["setMessages"]>(
-		(messages) => runtime.setMessages(messages),
-		[runtime],
-	);
 
 	return {
-		addToolApprovalResponse: runtime.addToolApprovalResponse,
-		addToolOutput: runtime.addToolOutput,
-		addToolResult: runtime.addToolResult,
-		clearError: runtime.clearError,
-		error,
-		id: runtime.chatId,
+		...chat,
 		lastEvent: snapshot.lastEvent,
-		messages: snapshot.messages,
-		regenerate: runtime.regenerate,
-		resumeStream: runtime.resumeStream,
 		sendMessage: runtime.sendMessage,
-		setMessages,
-		status,
-		stop: runtime.stop,
 		tree: {
 			activeRuns: snapshot.activeRuns,
 			childrenByParentId: snapshot.childrenByParentId,
