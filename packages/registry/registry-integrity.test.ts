@@ -12,6 +12,7 @@ type RegistryFile = {
 type RegistryItem = {
   files: RegistryFile[];
   name: string;
+  projectRequirements?: string[];
   registryDependencies?: string[];
 };
 
@@ -88,6 +89,19 @@ describe("registry integrity", () => {
           ),
           `${item.name}:${target}`
         ).toBe(true);
+      }
+    }
+  });
+
+  it("declares storage setup for tools that write media", async () => {
+    for (const item of await readRegistryItems()) {
+      const toolContent = item.files
+        .filter((file) => file.type === "tool")
+        .map((file) => file.content)
+        .join("\n");
+
+      if (toolContent.includes('"media.write"')) {
+        expect(item.projectRequirements, item.name).toContain("storage");
       }
     }
   });

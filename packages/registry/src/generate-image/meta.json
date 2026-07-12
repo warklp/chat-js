@@ -1,5 +1,6 @@
 {
   "description": "Generate or edit an image from a text prompt",
+  "projectRequirements": ["storage"],
   "registryDependencies": ["toolkit-renderer"],
   "files": [
     {

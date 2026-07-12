@@ -111,6 +111,8 @@ You can also set a default registry URL template with `CHATJS_REGISTRY_URL`.
 
 Every tool item in a custom registry must declare `toolkit-renderer` in `registryDependencies`. The CLI-managed server registry imports the shared runtime from that item even when the tool itself is a plain AI SDK `tool()`. Custom registries must therefore publish `toolkit-renderer` alongside their tools.
 
+Tools that need project-level storage configuration must declare `"projectRequirements": ["storage"]` in both their item manifest and registry index entry. `chatjs create` reads the index before scaffolding and prompts for storage when any selected installable tool declares this requirement. A top-level tool's index entry must include its complete project requirements, including requirements introduced by its registry dependencies.
+
 ## Manual Update And Troubleshooting
 
 - Re-running `chatjs add` is safe. The CLI avoids duplicate registry entries.

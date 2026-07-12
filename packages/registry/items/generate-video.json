@@ -8,6 +8,9 @@
   "registryDependencies": [
     "toolkit-renderer"
   ],
+  "projectRequirements": [
+    "storage"
+  ],
   "files": [
     {
       "path": "tool.ts",

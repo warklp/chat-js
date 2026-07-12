@@ -26,7 +26,10 @@ import {
 	scaffoldFromTemplate,
 } from "../helpers/scaffold";
 import { storageEnvRequirements } from "../helpers/storage-provider";
-import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
+import type {
+	EnvRequirement as RegistryEnvRequirement,
+	RegistryIndexItem,
+} from "../registry/schema";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { loadProjectUiConfig, resolveProjectPath } from "../utils/get-config";
 import { inferPackageManager } from "../utils/get-package-manager";
@@ -86,6 +89,19 @@ function printEnvChecklist(entries: EnvVarEntry[]): void {
 		}
 		i -= 1;
 	}
+}
+
+export function selectedRegistryToolsRequireStorage(
+	registryItems: RegistryIndexItem[],
+	selectedToolNames: string[],
+): boolean {
+	const selectedTools = new Set(selectedToolNames);
+
+	return registryItems.some(
+		(item) =>
+			selectedTools.has(item.name) &&
+			item.projectRequirements?.includes("storage"),
+	);
 }
 
 const createOptionsSchema = z.object({
@@ -195,6 +211,10 @@ export const create = new Command()
 				coreFeatures.attachments ||
 				assistantTools.builtInTools.imageGeneration ||
 				assistantTools.builtInTools.videoGeneration ||
+				selectedRegistryToolsRequireStorage(
+					registryItems,
+					assistantTools.installableTools,
+				) ||
 				options.storageProvider !== undefined ||
 				options.storageConfig !== undefined;
 			const storage = usesStorage

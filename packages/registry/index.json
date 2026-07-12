@@ -1,11 +1,17 @@
 [
   {
     "name": "generate-image",
-    "description": "Generate or edit an image from a text prompt"
+    "description": "Generate or edit an image from a text prompt",
+    "projectRequirements": [
+      "storage"
+    ]
   },
   {
     "name": "generate-video",
-    "description": "Generate a short video clip from a text prompt"
+    "description": "Generate a short video clip from a text prompt",
+    "projectRequirements": [
+      "storage"
+    ]
   },
   {
     "name": "get-weather",

@@ -136,6 +136,7 @@ function getImportPackage(spec: string): string | null {
 type Meta = {
   description: string;
   hidden?: boolean;
+  projectRequirements?: Array<"storage">;
   extraDependencies?: string[];
   devDependencies?: string[];
   registryDependencies?: string[];
@@ -163,7 +164,12 @@ async function main(): Promise<void> {
     if (stat.isDirectory()) dirs.push(entry);
   }
 
-  const index: Array<{ name: string; description: string; hidden?: boolean }> = [];
+  const index: Array<{
+    name: string;
+    description: string;
+    hidden?: boolean;
+    projectRequirements?: Array<"storage">;
+  }> = [];
 
   for (const name of dirs) {
     const dir = path.join(srcDir, name);
@@ -236,6 +242,9 @@ async function main(): Promise<void> {
 
     for (const dep of meta.extraDependencies ?? []) detected.add(dep);
     const dependencies = [...detected].sort();
+    const projectRequirements = [
+      ...new Set(meta.projectRequirements ?? []),
+    ].sort();
 
     const item = {
       name,
@@ -253,6 +262,7 @@ async function main(): Promise<void> {
           }
         : {}),
       ...(toolEnvVars.length > 0 ? { envRequirements: toolEnvVars } : {}),
+      ...(projectRequirements.length > 0 ? { projectRequirements } : {}),
       files: registryFiles,
     };
 
@@ -265,6 +275,7 @@ async function main(): Promise<void> {
       name,
       description: meta.description,
       ...(meta.hidden ? { hidden: true } : {}),
+      ...(projectRequirements.length > 0 ? { projectRequirements } : {}),
     });
     console.log(
       `  built ${name} (deps: ${dependencies.join(", ") || "none"})`
