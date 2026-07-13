@@ -1,5 +1,6 @@
 "use client";
 
+import type { ThreadChat } from "@chatjs/thread";
 import { DefaultChatTransport } from "ai";
 import { useRef } from "react";
 import { toast } from "sonner";
@@ -14,14 +15,20 @@ import {
   useAddMessageToTree,
   useThreadInitialMessages,
 } from "@/lib/stores/hooks-threads";
-import { fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { fetchWithErrorHandlers } from "@/lib/utils";
 import { useSession } from "@/providers/session-provider";
 
 function isResumableActiveStreamId(activeStreamId: string | null | undefined) {
   return !!(activeStreamId && !activeStreamId.startsWith("pending:"));
 }
 
-export function ChatSync({ id }: { id: string }) {
+export function ChatSync({
+  chat,
+  id,
+}: {
+  chat: ThreadChat<ChatMessage>;
+  id: string;
+}) {
   const { data: session } = useSession();
   const { mutate: saveChatMessage } = useSaveMessageMutation();
   const { setChatPersisted } = useChatPersistenceActions();
@@ -40,13 +47,13 @@ export function ChatSync({ id }: { id: string }) {
   );
 
   useChat<ChatMessage>({
+    chat,
     experimental_throttle: 100,
     id,
     // TODO: this is a special "snapshot" value in the store that is only updated
     // on store init + sibling switch. Once the store can guarantee up-to-date
     // messages at ChatSync remount time, we can likely remove this override.
     messages: threadInitialMessages,
-    generateId: generateUUID,
     onFinish: ({ message }) => {
       addMessageToTree(message);
       saveChatMessage({ message, chatId: id });

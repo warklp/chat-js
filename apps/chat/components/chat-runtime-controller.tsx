@@ -118,7 +118,7 @@ export function AppRuntimeSlot({ runtime }: { runtime: AppRuntime }) {
   return (
     <CustomStoreProvider store={store}>
       <ChatConfirmationEffects chatId={runtime.data.chatId} />
-      <ChatSync id={runtime.data.chatId} />
+      <ChatSync chat={runtime.data.chat} id={runtime.data.chatId} />
     </CustomStoreProvider>
   );
 }

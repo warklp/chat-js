@@ -1,3 +1,4 @@
+import { ThreadChat } from "@chatjs/thread";
 import {
   createContext,
   createElement,
@@ -20,6 +21,7 @@ import {
 
 export interface AppRuntimeData {
   bootstrap: boolean;
+  chat: ThreadChat<ChatMessage>;
   chatId: string;
   initialMessages?: ChatMessage[];
   initialTool?: UiToolName | null;
@@ -100,13 +102,20 @@ export function createAppRuntimeInput({
     throw new Error(`Invalid chat runtime id: ${runtimeId}`);
   }
 
+  const store = createAppRuntimeStore({ bootstrap, initialMessages });
+
   return {
     data: {
       bootstrap,
+      chat: new ThreadChat<ChatMessage>({
+        generateId: generateUUID,
+        id: parsed.chatId,
+        initialTree: store.getState().treeSnapshot,
+      }),
       chatId: parsed.chatId,
       initialMessages,
       initialTool,
-      store: createAppRuntimeStore({ bootstrap, initialMessages }),
+      store,
       threadId: parsed.threadId,
     },
     runtimeId,
