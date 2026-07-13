@@ -205,7 +205,7 @@ describe("withThreads", () => {
     );
   });
 
-  it("preserves metadata shape and clears active streams when replacing a tree message", () => {
+  it("preserves a pending stream marker when a run inserts its assistant shell", () => {
     const rootUser = createMessage({
       id: "user-root",
       role: "user",
@@ -228,7 +228,10 @@ describe("withThreads", () => {
     store.getState().addMessageToTree(assistantWithoutMetadata);
 
     const updatedAssistant = store.getState().allMessages.at(-1);
-    assert.equal(updatedAssistant?.metadata.activeStreamId, null);
+    assert.equal(
+      updatedAssistant?.metadata.activeStreamId,
+      "pending:assistant-a"
+    );
     assert.equal(
       updatedAssistant?.metadata.selectedModel,
       assistant.metadata.selectedModel

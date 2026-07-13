@@ -93,4 +93,33 @@ describe("runParallelThreadRequestSpecs", () => {
 
     assert.deepEqual(await resultPromise, []);
   });
+
+  it("starts confirmed provisional runs without preparing persistence again", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const startRun = vi.fn<TreeHelpers<ChatMessage>["startRun"]>(() =>
+      Promise.resolve({
+        assistantMessageId: "assistant-mini",
+        finished: Promise.resolve(),
+        getSnapshot: () => undefined,
+        id: "assistant-mini",
+        stop: () => Promise.resolve(),
+      })
+    );
+
+    assert.deepEqual(
+      await runParallelThreadRequestSpecs({
+        chatId: "chat-1",
+        message,
+        projectId: null,
+        requestSpecs: requestSpecs.slice(0, 1),
+        startRun,
+        userMessagePersisted: true,
+      }),
+      []
+    );
+
+    assert.equal(fetchMock.mock.calls.length, 0);
+    assert.equal(startRun.mock.calls.length, 1);
+  });
 });

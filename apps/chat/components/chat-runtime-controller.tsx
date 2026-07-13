@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { ChatSync } from "@/components/chat-sync";
 import { type AppRuntime, getAppRuntimeStore } from "@/lib/app-chat-runtime";
 import {
-  addPendingAssistantMessages,
   markParallelRequestSpecsFailed,
-  runParallelRequestSpecs,
+  runParallelThreadRequestSpecs,
 } from "@/lib/parallel-chat-requests";
-import { claimProvisionalChatConfirmation } from "@/lib/provisional-chat-confirmations";
+import { claimConfirmedProvisionalChat } from "@/lib/provisional-chat-confirmations";
+import { useChatActions } from "@/lib/stores/base";
 import { CustomStoreProvider } from "@/lib/stores/custom-store-provider";
 import { useIsChatPersisted } from "@/lib/stores/hooks-chat-persistence";
 import { useAddMessageToTree } from "@/lib/stores/hooks-threads";
@@ -18,6 +18,7 @@ import { useTRPC } from "@/trpc/react";
 
 function ChatConfirmationEffects({ chatId }: { chatId: string }) {
   const addMessageToTree = useAddMessageToTree();
+  const { startRun } = useChatActions();
   const isChatPersisted = useIsChatPersisted(chatId);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -32,7 +33,7 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
       return;
     }
 
-    const pendingConfirmation = claimProvisionalChatConfirmation(chatId);
+    const pendingConfirmation = claimConfirmedProvisionalChat(chatId);
     if (!pendingConfirmation) {
       return;
     }
@@ -67,17 +68,13 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
       return;
     }
 
-    addPendingAssistantMessages({
-      addMessageToTree,
-      message: pendingConfirmation.message,
-      requestSpecs: secondaryRequestSpecs,
-    });
-
-    runParallelRequestSpecs({
+    runParallelThreadRequestSpecs({
       chatId,
       message: pendingConfirmation.message,
       projectId: pendingConfirmation.projectId,
       requestSpecs: secondaryRequestSpecs,
+      startRun,
+      userMessagePersisted: true,
     })
       .then((failedRequestSpecs) => {
         if (failedRequestSpecs.length > 0) {
@@ -102,7 +99,7 @@ function ChatConfirmationEffects({ chatId }: { chatId: string }) {
           toast.error("Failed to refresh chat history");
         });
       });
-  }, [addMessageToTree, chatId, isChatPersisted, queryClient, trpc]);
+  }, [addMessageToTree, chatId, isChatPersisted, queryClient, startRun, trpc]);
 
   return null;
 }

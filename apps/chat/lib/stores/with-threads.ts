@@ -233,8 +233,6 @@ function mergeMessageIntoMap<UM extends UIMessage>(
       ...message,
       metadata: {
         ...existingMetadata,
-        activeStreamId:
-          message.role === "assistant" ? null : existingMetadata.activeStreamId,
       },
     } as UM);
     return;
@@ -478,10 +476,6 @@ export const withThreads =
                     ...message,
                     metadata: {
                       ...existingMetadata,
-                      activeStreamId:
-                        message.role === "assistant"
-                          ? null
-                          : existingMetadata.activeStreamId,
                     },
                   } as UI_MESSAGE)
                 : message;
