@@ -45,6 +45,7 @@ export function ChatSync({
   const isLastMessagePartial = isResumableActiveStreamId(
     lastMessage?.metadata?.activeStreamId
   );
+  const resumeOnMountRef = useRef(isLastMessagePartial);
 
   useChat<ChatMessage>({
     chat,
@@ -58,7 +59,7 @@ export function ChatSync({
       addMessageToTree(message);
       saveChatMessage({ message, chatId: id });
     },
-    resume: isLastMessagePartial,
+    resume: resumeOnMountRef.current,
     transport: new DefaultChatTransport({
       api: "/api/chat",
       fetch: fetchWithErrorHandlers as typeof fetch,
@@ -72,15 +73,21 @@ export function ChatSync({
           },
         };
       },
-      prepareReconnectToStreamRequest({ id: chatId }) {
+      prepareReconnectToStreamRequest({ body, id: chatId }) {
         const current = lastMessageRef.current;
         const activeStreamId = current?.metadata?.activeStreamId ?? null;
-        const partialMessageId = isResumableActiveStreamId(activeStreamId)
-          ? (current?.id ?? null)
-          : null;
+        const runMessageId =
+          typeof body?.assistantMessageId === "string"
+            ? body.assistantMessageId
+            : null;
+        const partialMessageId =
+          runMessageId ??
+          (isResumableActiveStreamId(activeStreamId)
+            ? (current?.id ?? null)
+            : null);
 
         return {
-          api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${partialMessageId}` : ""}`,
+          api: `/api/chat/${chatId}/stream${partialMessageId ? `?messageId=${encodeURIComponent(partialMessageId)}` : ""}`,
         };
       },
     }),
