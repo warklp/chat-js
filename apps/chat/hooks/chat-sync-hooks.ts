@@ -15,7 +15,6 @@ import type { ChatMessage } from "@/lib/ai/types";
 import { getAnonymousSession } from "@/lib/anonymous-session-client";
 import { useCurrentChatRoute } from "@/lib/chat-route";
 import type { Document, Project } from "@/lib/db/schema";
-import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 import { ANONYMOUS_LIMITS } from "@/lib/types/anonymous";
 import type { UIChat } from "@/lib/types/ui-chat";
 import { useSession } from "@/providers/session-provider";
@@ -304,24 +303,11 @@ export function useSaveMessageMutation() {
       Promise.resolve({ success: true } as const),
     onMutate: async ({ message, chatId }) => {
       const key = trpc.chat.getChatMessages.queryKey({ chatId });
-      traceThread("query-sync", "saveMessage.onMutate.start", {
-        chatId,
-        message: summarizeThreadMessages([message])[0],
-        queryBefore: summarizeThreadMessages(
-          qc.getQueryData<ChatMessage[]>(key) ?? []
-        ),
-      });
       await qc.cancelQueries({ queryKey: key });
       const previousMessages = qc.getQueryData<ChatMessage[]>(key);
       qc.setQueryData<ChatMessage[]>(key, (old) =>
         old ? [...old, message] : [message]
       );
-      traceThread("query-sync", "saveMessage.onMutate.optimistic", {
-        chatId,
-        queryAfter: summarizeThreadMessages(
-          qc.getQueryData<ChatMessage[]>(key) ?? []
-        ),
-      });
       return { previousMessages, chatId };
     },
     onSuccess: async (_data, { message, chatId }) => {
@@ -352,27 +338,7 @@ export function useSaveMessageMutation() {
         // Placed in onSettled (not onSuccess) so this runs after the real
         // backend write when the mutationFn is eventually made server-side.
         const key = trpc.chat.getChatMessages.queryKey({ chatId });
-        traceThread("query-sync", "saveMessage.onSettled.invalidate", {
-          chatId,
-          queryBefore: summarizeThreadMessages(
-            qc.getQueryData<ChatMessage[]>(key) ?? []
-          ),
-        });
-        qc.invalidateQueries({ queryKey: key })
-          .then(() => {
-            traceThread("query-sync", "saveMessage.invalidate.finished", {
-              chatId,
-              queryAfter: summarizeThreadMessages(
-                qc.getQueryData<ChatMessage[]>(key) ?? []
-              ),
-            });
-          })
-          .catch((error: unknown) => {
-            traceThread("query-sync", "saveMessage.invalidate.error", {
-              chatId,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
+        qc.invalidateQueries({ queryKey: key });
       }
     },
   });

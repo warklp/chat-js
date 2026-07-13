@@ -1,6 +1,6 @@
+import type { TreeHelpers } from "@chatjs/thread/react";
 import type { AppModelId } from "@/lib/ai/app-model-id";
 import type { ChatMessage } from "@/lib/ai/types";
-import { summarizeThreadMessages, traceThread } from "@/lib/thread-debug";
 import { fetchWithErrorHandlers } from "@/lib/utils";
 import type { ParallelRequestSpec } from "./draft-chat-submission";
 
@@ -78,10 +78,6 @@ export function addPendingAssistantMessages({
   message: ChatMessage;
   requestSpecs: ParallelRequestSpec[];
 }) {
-  traceThread("parallel-request", "placeholders.add", {
-    messageId: message.id,
-    requestSpecs,
-  });
   for (const requestSpec of requestSpecs) {
     addMessageToTree(
       createPendingAssistantMessage({
@@ -140,13 +136,6 @@ async function drainParallelRequest({
   projectId: string | null;
   requestSpec: ParallelRequestSpec;
 }) {
-  traceThread("parallel-request", "secondary.fetch.start", {
-    assistantMessageId: requestSpec.assistantMessageId,
-    chatId,
-    messageId: message.id,
-    parallelGroupId: requestSpec.parallelGroupId,
-    parallelIndex: requestSpec.parallelIndex,
-  });
   const response = await fetchWithErrorHandlers("/api/chat", {
     method: "POST",
     headers: {
@@ -161,18 +150,85 @@ async function drainParallelRequest({
     }),
   });
 
-  traceThread("parallel-request", "secondary.fetch.response", {
-    assistantMessageId: requestSpec.assistantMessageId,
-    chatId,
-    ok: response.ok,
-    status: response.status,
-  });
-
   await drainResponse(response);
-  traceThread("parallel-request", "secondary.fetch.drained", {
-    assistantMessageId: requestSpec.assistantMessageId,
+}
+
+async function prepareParallelRequests({
+  chatId,
+  message,
+  projectId,
+}: {
+  chatId: string;
+  message: ChatMessage;
+  projectId: string | null;
+}) {
+  try {
+    await fetchWithErrorHandlers("/api/chat/prepare", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: chatId,
+        message,
+        projectId,
+      }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function runParallelThreadRequestSpecs({
+  chatId,
+  message,
+  projectId,
+  requestSpecs,
+  startRun,
+}: {
+  chatId: string;
+  message: ChatMessage;
+  projectId: string | null;
+  requestSpecs: ParallelRequestSpec[];
+  startRun: TreeHelpers<ChatMessage>["startRun"];
+}) {
+  if (requestSpecs.length === 0) {
+    return [];
+  }
+
+  const prepared = await prepareParallelRequests({
     chatId,
+    message,
+    projectId,
   });
+  if (!prepared) {
+    return requestSpecs;
+  }
+
+  const results = await Promise.allSettled(
+    requestSpecs.map(async (requestSpec) => {
+      const run = await startRun({
+        follow: false,
+        from: message.id,
+        request: {
+          body: {
+            ...createParallelRequestBody(requestSpec, false),
+            projectId: projectId ?? undefined,
+          },
+        },
+      });
+      await run.finished;
+      const snapshot = run.getSnapshot();
+      if (snapshot?.status === "error") {
+        throw snapshot.error ?? new Error("Parallel response failed");
+      }
+    })
+  );
+
+  return requestSpecs.filter(
+    (_requestSpec, index) => results[index]?.status === "rejected"
+  );
 }
 
 export async function runParallelRequestSpecs({
@@ -187,40 +243,15 @@ export async function runParallelRequestSpecs({
   requestSpecs: ParallelRequestSpec[];
 }) {
   if (requestSpecs.length === 0) {
-    traceThread("parallel-request", "run.skipEmpty", {
-      chatId,
-      messageId: message.id,
-    });
     return [];
   }
 
-  traceThread("parallel-request", "prepare.start", {
+  const prepared = await prepareParallelRequests({
     chatId,
-    message: summarizeThreadMessages([message])[0],
-    requestSpecs,
+    message,
+    projectId,
   });
-  try {
-    const response = await fetchWithErrorHandlers("/api/chat/prepare", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: chatId,
-        message,
-        projectId,
-      }),
-    });
-    traceThread("parallel-request", "prepare.finish", {
-      chatId,
-      ok: response.ok,
-      status: response.status,
-    });
-  } catch (error) {
-    traceThread("parallel-request", "prepare.error", {
-      chatId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  if (!prepared) {
     return requestSpecs;
   }
 
@@ -234,24 +265,6 @@ export async function runParallelRequestSpecs({
       })
     )
   );
-
-  traceThread("parallel-request", "run.finish", {
-    chatId,
-    results: results.map((result, index) => {
-      let error: string | null = null;
-      if (result.status === "rejected") {
-        error =
-          result.reason instanceof Error
-            ? result.reason.message
-            : String(result.reason);
-      }
-      return {
-        assistantMessageId: requestSpecs[index]?.assistantMessageId,
-        error,
-        status: result.status,
-      };
-    }),
-  });
 
   return requestSpecs.filter(
     (_requestSpec, index) => results[index]?.status === "rejected"

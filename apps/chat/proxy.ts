@@ -29,7 +29,6 @@ function isPublicPage(pathname: string): boolean {
     pathname.startsWith("/models") ||
     pathname.startsWith("/compare") ||
     pathname.startsWith("/share/") ||
-    pathname.startsWith("/thread-poc") ||
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms")
   );
@@ -98,9 +97,8 @@ export const config = {
      * - Images and other static assets (.svg, .png, .jpg, .jpeg, .gif, .webp, .ico)
      * - models
      * - compare
-     * - thread-poc
      * - docs (Mintlify documentation)
      */
-    "/((?!api|docs|_next/static|_next/image|favicon.ico|opengraph-image|manifest|models|compare|thread-poc|privacy|terms|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|webmanifest)$).*)",
+    "/((?!api|docs|_next/static|_next/image|favicon.ico|opengraph-image|manifest|models|compare|privacy|terms|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|webmanifest)$).*)",
   ],
 };

@@ -8,11 +8,6 @@ import { type MessageTreeSnapshot, ROOT_PARENT_ID } from "@chatjs/thread";
 import type { UIMessage } from "ai";
 import type { StateCreator } from "zustand";
 import type { StoreState as BaseChatStoreState } from "@/lib/stores/base";
-import {
-  summarizeThreadMessages,
-  summarizeThreadTree,
-  traceThread,
-} from "@/lib/thread-debug";
 import type { MessageNode } from "@/lib/thread-utils";
 
 export interface MessageSiblingInfo<UM> {
@@ -350,20 +345,12 @@ export const withThreads =
 
       setMessagesWithEpoch: (messages: UI_MESSAGE[]) => {
         const cursorId = messages.at(-1)?.id ?? null;
-        traceThread("store", "setMessagesWithEpoch.request", {
-          incoming: summarizeThreadMessages(messages),
-          previousEpoch: get().threadEpoch,
-        });
         set((state) => {
           const snapshot = buildTreeSnapshotFromMessages(
             state.allMessages,
             cursorId
           );
           state._messageIndex.update(messages);
-          traceThread("store", "setMessagesWithEpoch.apply", {
-            nextEpoch: state.threadEpoch + 1,
-            tree: summarizeThreadTree(snapshot),
-          });
           return {
             ...state,
             messages,
@@ -380,11 +367,6 @@ export const withThreads =
 
       setTreeSnapshot: (snapshot: MessageTreeSnapshot<UI_MESSAGE>) => {
         const state = get();
-        traceThread("store", "setTreeSnapshot.receive", {
-          currentStatus: state.status,
-          incoming: summarizeThreadTree(snapshot),
-          visible: summarizeThreadMessages(state.messages),
-        });
         const snapshotMessages = Object.values(snapshot.messagesById);
         const mergedMessages = mergeTreeMessages(
           snapshotMessages,
@@ -398,9 +380,6 @@ export const withThreads =
         );
         const signature = getSnapshotSignature(mergedSnapshot);
         if (state.treeSnapshotSignature === signature) {
-          traceThread("store", "setTreeSnapshot.skipSameSignature", {
-            cursorId: snapshot.cursorId,
-          });
           return;
         }
 
@@ -413,11 +392,6 @@ export const withThreads =
           : [];
 
         set((prev) => {
-          traceThread("store", "setTreeSnapshot.apply", {
-            nextVisible: summarizeThreadMessages(nextVisibleThread),
-            previousVisible: summarizeThreadMessages(prev.messages),
-            tree: summarizeThreadTree(mergedSnapshot),
-          });
           prev._messageIndex.update(nextVisibleThread);
           return {
             ...prev,
@@ -436,12 +410,6 @@ export const withThreads =
         const state = get();
         const currentVisibleMessages = state.messages;
         const existingTreeMessages = state.allMessages;
-        traceThread("query-sync", "setAllMessages.receive", {
-          incoming: summarizeThreadMessages(messages),
-          status: state.status,
-          treeBefore: summarizeThreadTree(state.treeSnapshot),
-          visibleBefore: summarizeThreadMessages(currentVisibleMessages),
-        });
         const mergedMessages = mergeTreeMessages(
           messages,
           existingTreeMessages,
@@ -461,11 +429,6 @@ export const withThreads =
         // remounting ChatSync mid-stream. Only update the tree index here and
         // let the normal post-stream invalidation apply the full visible update.
         if (state.status === "streaming" || state.status === "submitted") {
-          traceThread("query-sync", "setAllMessages.deferVisibleDuringStream", {
-            merged: summarizeThreadMessages(mergedMessages),
-            status: state.status,
-            tree: summarizeThreadTree(snapshot),
-          });
           set((prev) => ({
             ...prev,
             allMessages: mergedMessages,
@@ -482,10 +445,6 @@ export const withThreads =
           : currentVisibleMessages;
 
         originalSetMessages(nextVisibleThread);
-        traceThread("query-sync", "setAllMessages.applyVisible", {
-          nextVisible: summarizeThreadMessages(nextVisibleThread),
-          tree: summarizeThreadTree(snapshot),
-        });
         set((prev) => ({
           ...prev,
           messages: nextVisibleThread,
@@ -531,11 +490,6 @@ export const withThreads =
             next,
             state.messages.at(-1)?.id ?? null
           );
-          traceThread("store", "addMessageToTree", {
-            message: summarizeThreadMessages([message])[0],
-            status: state.status,
-            tree: summarizeThreadTree(snapshot),
-          });
           return {
             ...state,
             allMessages: next,
@@ -658,14 +612,6 @@ export const withThreads =
           leafId ?? targetSibling.id
         ) as UI_MESSAGE[];
 
-        traceThread("navigation", "switchToSibling", {
-          direction,
-          fromMessageId: messageId,
-          siblingIds: siblings.map((sibling) => sibling.id),
-          targetMessageId: targetSibling.id,
-          targetThread: summarizeThreadMessages(newThread),
-        });
-
         state.setMessagesWithEpoch(newThread);
         return newThread;
       },
@@ -690,11 +636,6 @@ export const withThreads =
           leafId ?? messageId
         ) as UI_MESSAGE[];
 
-        traceThread("navigation", "switchToMessage", {
-          requestedMessageId: messageId,
-          targetThread: summarizeThreadMessages(newThread),
-        });
-
         state.setMessagesWithEpoch(newThread);
         return newThread;
       },
@@ -704,12 +645,6 @@ export const withThreads =
         const currentMessages = get().messages;
         const currentIds = currentMessages.map((m) => m.id).join(",");
         const newIds = messages.map((m) => m.id).join(",");
-
-        traceThread("store", "setMessages", {
-          current: summarizeThreadMessages(currentMessages),
-          incoming: summarizeThreadMessages(messages),
-          structureChanged: currentIds !== newIds,
-        });
 
         originalSetMessages(messages);
 

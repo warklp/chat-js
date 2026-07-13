@@ -9,7 +9,6 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import { ElectronAuthHandler } from "@/components/electron-auth-handler";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThreadDebugBootstrap } from "@/components/thread-debug-bootstrap";
 import { config } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -89,7 +88,6 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <ElectronAuthHandler />
-        <ThreadDebugBootstrap />
         <Script
           src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
           strategy="afterInteractive"
