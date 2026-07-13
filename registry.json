@@ -19,6 +19,16 @@
           "target": "@lib/thread/runtime.ts"
         },
         {
+          "path": "packages/thread/src/thread-run-chat.ts",
+          "type": "registry:lib",
+          "target": "@lib/thread/thread-run-chat.ts"
+        },
+        {
+          "path": "packages/thread/src/types.ts",
+          "type": "registry:lib",
+          "target": "@lib/thread/types.ts"
+        },
+        {
           "path": "packages/thread/src/use-thread.ts",
           "type": "registry:hook",
           "target": "@lib/thread/use-thread.ts"

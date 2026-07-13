@@ -23,11 +23,15 @@
 	"exports": {
 		".": {
 			"types": "./src/index.ts",
-			"default": "./src/index.ts"
+			"bun": "./src/index.ts",
+			"development": "./src/index.ts",
+			"default": "./dist/index.js"
 		},
 		"./react": {
 			"types": "./src/react.ts",
-			"default": "./src/react.ts"
+			"bun": "./src/react.ts",
+			"development": "./src/react.ts",
+			"default": "./dist/react.js"
 		}
 	},
 	"types": "./src/index.ts",
@@ -41,9 +45,12 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
+		"build": "rm -rf dist && tsc -p tsconfig.build.json && bun build ./src/index.ts --outfile ./dist/index.js --target=browser --format=esm --packages external && bun build ./src/react.ts --outfile ./dist/react.js --target=browser --format=esm --packages external --banner='\"use client\";'",
 		"format": "bunx @biomejs/biome@2.4.10 check --write src test *.md package.json tsconfig.json tsconfig.build.json biome.jsonc",
+		"lint": "bunx @biomejs/biome@2.4.10 check src test README.md ARCHITECTURE.md package.json tsconfig.json tsconfig.build.json biome.jsonc",
+		"prepublishOnly": "bun run build",
 		"test": "bun test ./test",
+		"test:unit": "bun test ./test",
 		"test:types": "tsc --noEmit"
 	},
 	"peerDependencies": {

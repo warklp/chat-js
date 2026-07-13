@@ -29,7 +29,7 @@ class ControlledTransport implements ChatTransport<UIMessage> {
 		const assistantMessageId =
 			body?.tree?.assistantMessageId ?? body?.assistantMessageId;
 		if (!assistantMessageId) {
-			throw new Error("Spike transport requires tree.assistantMessageId");
+			throw new Error("Test transport requires tree.assistantMessageId");
 		}
 
 		return Promise.resolve(
