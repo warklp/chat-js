@@ -26,6 +26,7 @@
             "group": "Core Concepts",
             "pages": [
               "core/architecture",
+              "core/use-thread",
               "core/configuration",
               "core/file-storage",
               "core/authentication",
