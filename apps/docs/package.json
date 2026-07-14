@@ -13,7 +13,7 @@
     "docs:links": "blume validate --strict",
     "lint": "blume doctor"
   },
-  "dependencies": {
+  "devDependencies": {
     "blume": "^1.0.3"
   }
 }

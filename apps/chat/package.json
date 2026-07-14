@@ -12,7 +12,7 @@
     "start": "next start",
     "prod": "bun run build && bun run start",
     "lint": "ultracite check",
-    "format": "bunx ultracite@7.4.3 fix",
+    "format": "ultracite fix",
     "check-env": "bun scripts/check-env.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "export VERCEL_ENV=production && bash scripts/with-db.sh bunx tsx lib/db/migrate.ts",

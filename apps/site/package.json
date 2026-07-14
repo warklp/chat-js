@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "ultracite check",
     "test:types": "next typegen . && tsc --noEmit",
-    "format": "bunx ultracite@7.4.3 fix"
+    "format": "ultracite fix"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
