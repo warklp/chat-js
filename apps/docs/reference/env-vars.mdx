@@ -5,11 +5,11 @@ description: Complete reference for all environment variables used by ChatJS
 
 This page lists every environment variable recognized by ChatJS, grouped by category. The schema is defined in `apps/chat/lib/env-schema.ts` and validated at build time by `apps/chat/scripts/check-env.ts`.
 
-<Note>
+<Callout type="note">
   Missing required variables will cause the build to fail immediately. Variables
   that are required only when a feature or gateway is enabled are validated based
   on your `chat.config.ts` settings.
-</Note>
+</Callout>
 
 ## Required
 
@@ -84,9 +84,9 @@ Provides access to 120+ models from OpenAI, Anthropic, Google, xAI, Meta, and mo
 | `AI_GATEWAY_API_KEY` | Self-hosted / local dev | API key for Vercel AI Gateway |
 | `VERCEL_OIDC_TOKEN` | Auto-set on Vercel | OIDC token injected automatically on Vercel deployments |
 
-<Tip>
+<Callout type="tip">
   On Vercel deployments, `VERCEL_OIDC_TOKEN` is injected automatically. You only need `AI_GATEWAY_API_KEY` for local development or non-Vercel hosting.
-</Tip>
+</Callout>
 
 **Setup:** Go to [Vercel AI Gateway](https://vercel.com/ai-gateway) and create an API key.
 
@@ -155,9 +155,9 @@ features: {
 | `FIRECRAWL_API_KEY` | `webSearch`, `urlRetrieval` | Firecrawl API key for web search and URL content extraction | [firecrawl.dev](https://www.firecrawl.dev) |
 | `EXA_API_KEY` | _none_ | Recognized by env schema but not used by build-time `webSearch` validation | [dashboard.exa.ai](https://dashboard.exa.ai) |
 
-<Note>
+<Callout type="note">
   If both `TAVILY_API_KEY` and `FIRECRAWL_API_KEY` are set, Tavily is used for regular chat web search. Firecrawl is always used for URL retrieval.
-</Note>
+</Callout>
 
 ### MCP Connectors
 
@@ -179,9 +179,9 @@ features: {
 openssl rand -base64 32
 ```
 
-<Note>
+<Callout type="note">
   The key must be exactly 44 characters (32 bytes encoded as base64). Changing this key after deployment will invalidate all stored MCP connector credentials.
-</Note>
+</Callout>
 
 ### File Storage
 
@@ -207,11 +207,11 @@ credential chain. Non-secret adapter options belong in
 [Files SDK provider reference](https://files-sdk.dev/docs/providers) for the
 requirements of your selected provider.
 
-<Tip>
+<Callout type="tip">
   When using Vercel Blob, connect a store in your project dashboard under
   **Storage**. `BLOB_READ_WRITE_TOKEN` is added to your environment
   automatically.
-</Tip>
+</Callout>
 
 ### Code Execution Sandbox
 
@@ -231,12 +231,12 @@ features: {
 | `VERCEL_TOKEN` | Self-hosted only | Vercel API token with sandbox permissions |
 | `VERCEL_SANDBOX_RUNTIME` | Optional | Sandbox runtime identifier (default: `python3.13`) |
 
-<Note>
+<Callout type="note">
   On Vercel deployments, sandbox authentication happens automatically via OIDC,
   so no additional variables are needed. Set `VERCEL_TEAM_ID`,
   `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN` only when running ChatJS outside of
   Vercel.
-</Note>
+</Callout>
 
 ---
 

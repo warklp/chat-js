@@ -69,7 +69,7 @@ The CLI walks you through gateway, features, and auth choices, generates `chat.c
 
 - `apps/site`: Landing page ([chatjs.dev](https://chatjs.dev))
 - `apps/chat`: Next.js chat app ([demo.chatjs.dev](https://demo.chatjs.dev))
-- `apps/docs`: Mintlify docs ([chatjs.dev/docs](https://chatjs.dev/docs))
+- `apps/docs`: Blume docs ([chatjs.dev/docs](https://chatjs.dev/docs))
 - `packages/cli`: interactive scaffold CLI
 
 ## Development

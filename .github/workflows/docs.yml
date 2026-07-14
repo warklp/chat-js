@@ -53,8 +53,9 @@ jobs:
           restore-keys: ${{ runner.os }}-bun-
       - if: steps.affected.outputs.run == 'true'
         run: bun install --frozen-lockfile
-      - if: steps.affected.outputs.run == 'true'
+      - name: Validate and build docs
+        if: steps.affected.outputs.run == 'true'
         env:
           TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
           TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha }}
-        run: bunx turbo run docs:links --affected --filter=@chatjs/docs
+        run: bunx turbo run docs:links build --affected --filter=@chatjs/docs

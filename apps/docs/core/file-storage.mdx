@@ -14,10 +14,10 @@ Durable file storage is required when you enable any of these capabilities:
 - [Image generation](../features/image-generation)
 - [Video generation](../features/video-generation)
 
-<Warning>
+<Callout type="warning">
   The in-memory adapter is suitable for projects that do not use file-backed
   features. Do not use it for persistent files in production.
-</Warning>
+</Callout>
 
 ## Choose a provider
 
@@ -49,12 +49,12 @@ production credentials must be embedded in constructor options. You can still
 integrate those adapters manually when your runtime and secret-management model
 support them.
 
-<Note>
+<Callout type="note">
   `--storage-config` is only for non-secret adapter options such as a bucket,
   region, endpoint, or runtime binding. Keep tokens, passwords, private keys,
   and other credentials in environment variables or your provider SDK's
   credential chain.
-</Note>
+</Callout>
 
 ## Generated configuration
 
@@ -141,11 +141,11 @@ npx @chat-js/cli@latest create my-app \
 
 ## Changing providers
 
-<Warning>
+<Callout type="warning">
   Changing `lib/storage-provider.ts` does not copy existing files. Do not switch
   a deployed app to a new provider until every referenced object exists under
   the same ChatJS key in the destination provider.
-</Warning>
+</Callout>
 
 Deploying a provider change only changes where future runtime operations read
 and write. It does not migrate stored objects or database references.
@@ -167,22 +167,22 @@ enabling the scheduled cleanup job.
 
 ## Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="The environment check reports missing storage variables">
+<Accordion>
+  <AccordionItem title="The environment check reports missing storage variables">
     Review the provider block generated in `.env.example`. Satisfy one complete
     credential mode, or configure the provider-supported SDK credential chain.
     Do not place credentials in `--storage-config`.
-  </Accordion>
-  <Accordion title="Files disappear after restarting the app">
+  </AccordionItem>
+  <AccordionItem title="Files disappear after restarting the app">
     Your project is probably using the in-memory adapter. Configure a durable
     Files SDK provider before enabling attachments or generated media.
-  </Accordion>
-  <Accordion title="Existing files fail after changing providers">
+  </AccordionItem>
+  <AccordionItem title="Existing files fail after changing providers">
     The new adapter cannot read objects that remain in the previous provider.
     Restore the previous adapter, then copy and verify the existing objects
     before switching again.
-  </Accordion>
-</AccordionGroup>
+  </AccordionItem>
+</Accordion>
 
 ## Related
 

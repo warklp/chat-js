@@ -55,6 +55,11 @@ packages/*/dist
 packages/cli/templates
 templates
 
+# Blume
+apps/docs/.blume/
+apps/docs/.blume-verify/
+apps/docs/dist/
+
 # Evalite DB
 evals/db/
 apps/*/evals/db/

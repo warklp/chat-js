@@ -1,6 +1,6 @@
 ---
 name: review-docs
-description: Review and fix ChatJS Mintlify documentation and MDX files. Use when checking docs for correctness, broken links, stale examples, unclear prose, or consistency with the implementation.
+description: Review and fix ChatJS Blume documentation and MDX files. Use when checking docs for correctness, broken links, stale examples, unclear prose, or consistency with the implementation.
 ---
 
 # Review ChatJS documentation

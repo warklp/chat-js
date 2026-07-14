@@ -76,9 +76,9 @@ openssl rand -base64 32
    ```
 6. Enable in `chat.config.ts`: `authentication: { github: true }`
 
-<Note>
+<Callout type="note">
 For local development, create a separate GitHub OAuth App with the callback URL set to `http://localhost:3000/api/auth/callback/github`.
-</Note>
+</Callout>
 
 ---
 
@@ -99,9 +99,9 @@ For local development, create a separate GitHub OAuth App with the callback URL 
    ```
 6. Enable in `chat.config.ts`: `authentication: { google: true }`
 
-<Note>
+<Callout type="note">
 The Google OAuth consent screen must be configured and published before users outside your Google Workspace can sign in. For testing, add yourself as a test user without publishing.
-</Note>
+</Callout>
 
 ---
 
@@ -120,9 +120,9 @@ The Google OAuth consent screen must be configured and published before users ou
    ```
 5. Enable in `chat.config.ts`: `authentication: { vercel: true }`
 
-<Note>
+<Callout type="note">
 The Vercel provider is useful when your users are Vercel teams and you want to authenticate using their Vercel account. It is off by default.
-</Note>
+</Callout>
 
 ---
 

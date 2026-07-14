@@ -97,7 +97,7 @@ export const config = {
      * - Images and other static assets (.svg, .png, .jpg, .jpeg, .gif, .webp, .ico)
      * - models
      * - compare
-     * - docs (Mintlify documentation)
+     * - docs (Blume documentation)
      */
     "/((?!api|docs|_next/static|_next/image|favicon.ico|opengraph-image|manifest|models|compare|privacy|terms|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|webmanifest)$).*)",
   ],
