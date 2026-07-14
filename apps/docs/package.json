@@ -8,7 +8,12 @@
     "node": "22.22.2"
   },
   "scripts": {
-    "dev": "bunx mintlify@latest dev",
-    "docs:links": "bunx mintlify@latest broken-links"
+    "build": "blume build",
+    "dev": "blume dev --port ${PORT:-4321}",
+    "docs:links": "blume validate --strict",
+    "lint": "blume doctor"
+  },
+  "devDependencies": {
+    "blume": "^1.0.3"
   }
 }

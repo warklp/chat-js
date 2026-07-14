@@ -21,10 +21,10 @@ ai: {
 }
 ```
 
-<Note>
+<Callout type="note">
   Video generation requires a durable
   [file storage provider](../core/file-storage) for generated videos.
-</Note>
+</Callout>
 
 Configure the default video model:
 
@@ -72,7 +72,7 @@ mov, resolved from the response media type.
 
 | State             | Shows                                    |
 | ----------------- | ---------------------------------------- |
-| `input-available` | Pulsing placeholder + "Generating video: {prompt}" |
+| `input-available` | Pulsing placeholder + `Generating video: {prompt}` |
 | `output-available` | Inline video player with controls, autoplay, loop, and mute |
 | `failed`          | Error message with suggestion to try a different prompt |
 

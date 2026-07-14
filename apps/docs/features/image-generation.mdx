@@ -8,7 +8,7 @@ description: AI-powered image creation in your chat app
 Generate images directly in chat using AI models. Supports both generation from text prompts and iterative editing of existing images.
 
 <Frame>
-  <img src="/images/image-generation.gif" alt="Generating an image from a text prompt in chat" />
+  <img src="/docs/images/image-generation.gif" alt="Generating an image from a text prompt in chat" />
 </Frame>
 
 ## Quick Start
@@ -25,10 +25,10 @@ ai: {
 }
 ```
 
-<Note>
+<Callout type="note">
   Image generation requires a durable
   [file storage provider](../core/file-storage) for generated images.
-</Note>
+</Callout>
 
 Configure the default image model:
 
@@ -160,7 +160,7 @@ the ChatJS file URL is returned.
 
 | State              | Shows                                   |
 | ------------------ | --------------------------------------- |
-| `input-available`  | Skeleton + "Generating image: {prompt}" |
+| `input-available`  | Skeleton + `Generating image: {prompt}` |
 | `output-available` | Image + copy button + prompt            |
 
 ## Configuration

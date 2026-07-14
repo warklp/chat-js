@@ -160,12 +160,12 @@ export class MyGateway implements GatewayProvider<
 }
 ```
 
-<Tip>
+<Callout type="tip">
   If your provider uses a dedicated SDK (not OpenAI-compatible), replace
   `createOpenAICompatible` with the provider-specific factory. See the [OpenAI
   gateway](https://github.com/franciscomoretti/chat-js/blob/main/lib/ai/gateways/openai-gateway.ts)
   for an example that uses `createOpenAI`.
-</Tip>
+</Callout>
 
 ### 4. Register in the gateway registry
 
@@ -213,10 +213,10 @@ export const modelsConfigSchema = z.discriminatedUnion("gateway", [
 ]);
 ```
 
-<Note>
+<Callout type="note">
   The `gatewaySchemaMap` record is typed as `[G in GatewayType]`, so TypeScript
   shows an error if you add a gateway to the registry but forget to add it here.
-</Note>
+</Callout>
 
 ### 6. Configure your app
 

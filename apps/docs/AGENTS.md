@@ -4,8 +4,8 @@ These instructions apply to `apps/docs/`.
 
 ## Project
 
-- Author Mintlify MDX with YAML frontmatter.
-- Keep navigation, theme, and settings in `docs.json`.
+- Author Blume MDX with YAML frontmatter.
+- Keep navigation, theme, and settings in `blume.config.ts`.
 - Search existing pages before adding content and make the smallest complete
   change.
 - Run `bun docs:links` after changing internal links or navigation.
@@ -19,7 +19,7 @@ These instructions apply to `apps/docs/`.
   defaults.
 - Keep pages single-purpose and cross-link concepts, recipes, and references
   when readers need both.
-- Update `docs.json` and relevant overview pages when adding, moving, or
+- Update `blume.config.ts` and relevant overview pages when adding, moving, or
   removing pages.
 
 ## Writing

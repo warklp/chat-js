@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "bunx ultracite@7.4.3 check",
+    "lint": "ultracite check",
     "test:types": "next typegen . && tsc --noEmit",
-    "format": "bunx ultracite@7.4.3 fix"
+    "format": "ultracite fix"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",

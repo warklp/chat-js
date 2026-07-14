@@ -6,7 +6,7 @@ description: "Access hundreds of AI models through a pluggable gateway abstracti
 ChatJS provides access to hundreds of models from multiple providers through a pluggable [gateway system](/gateways/overview). Set `models.gateway` in `chat.config.ts` to choose your backend, then configure which models are available and how they behave.
 
 <Frame>
-  <img src="/images/ai-models.gif" alt="Switching between AI models in the model selector" />
+  <img src="/docs/images/ai-models.gif" alt="Switching between AI models in the model selector" />
 </Frame>
 
 See [Gateways](/gateways/overview) for setup instructions and the full gateway comparison.
@@ -49,9 +49,9 @@ models: {
 | `anonymousModels` | Models available to anonymous users     |
 | `defaults.*`      | Default model for each task type        |
 
-<Note>
+<Callout type="note">
 Image generation uses a separate `defaults.image` setting. Language models with the `image-generation` tag can also generate images inline. See [Image Generation](/features/image-generation) for details.
-</Note>
+</Callout>
 
 ## Reasoning Variants
 

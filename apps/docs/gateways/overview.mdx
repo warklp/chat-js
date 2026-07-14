@@ -38,9 +38,9 @@ const config: ConfigInput = {
 };
 ```
 
-<Note>
+<Callout type="note">
 The `gateway` field lives inside the `ai` key and defaults to `"vercel"` when omitted.
-</Note>
+</Callout>
 
 ## How Model Fetching Works
 
@@ -81,9 +81,9 @@ This is caught at two levels:
 - **Build time**: `bun check-env` prints the warning shown above.
 - **Runtime**: each gateway checks `generatedForGateway` before using the fallback. If it doesn't match, the fallback is skipped and an empty model list is returned instead of stale model IDs.
 
-<Tip>
+<Callout type="tip">
 After changing `gateway` in `chat.config.ts`, always run `bun fetch:models` to keep the fallback snapshot in sync.
-</Tip>
+</Callout>
 
 See [Auto-Updating Models](/cookbook/auto-updating-models) for the full implementation pattern.
 
