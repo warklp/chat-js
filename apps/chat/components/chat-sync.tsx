@@ -8,6 +8,7 @@ import { useSaveMessageMutation } from "@/hooks/chat-sync-hooks";
 import { useCompleteDataPart } from "@/hooks/use-complete-data-part";
 import { getStreamErrorToastContent } from "@/lib/ai/stream-errors";
 import type { ChatMessage } from "@/lib/ai/types";
+import { acknowledgeProvisionalUserMessagePersistence } from "@/lib/provisional-chat-confirmations";
 import { useChat } from "@/lib/stores/base";
 import { useChatPersistenceActions } from "@/lib/stores/hooks-chat-persistence";
 import { useDataStream } from "@/lib/stores/hooks-data-stream";
@@ -94,11 +95,16 @@ export function ChatSync({
     onData: (dataPart) => {
       if (
         !hasReportedConfirmationRef.current &&
-        dataPart.type === "data-chatConfirmed" &&
+        dataPart.type === "data-userMessagePersisted" &&
         dataPart.data.chatId === id
       ) {
-        hasReportedConfirmationRef.current = true;
-        setChatPersisted(true);
+        const matchesPendingChat = acknowledgeProvisionalUserMessagePersistence(
+          dataPart.data
+        );
+        if (matchesPendingChat) {
+          hasReportedConfirmationRef.current = true;
+          setChatPersisted(true);
+        }
       }
       setDataStream((ds) =>
         ds ? [...ds, dataPart as (typeof ds)[number]] : []
