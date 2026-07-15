@@ -6,7 +6,7 @@ import {
 	type UIMessage,
 	type UIMessageChunk,
 } from "ai";
-import { getMessageText, ThreadRuntime } from "../src/thread-runtime";
+import { getMessageText, ThreadChat } from "../src/thread-chat";
 
 type PendingRequest = {
 	abortSignal: AbortSignal | undefined;
@@ -154,7 +154,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 			id: "chat-standard",
 			transport: standardTransport,
 		});
-		const threadRuntime = new ThreadRuntime({
+		const threadChat = new ThreadChat({
 			id: "chat-thread",
 			transport: threadTransport,
 		});
@@ -163,7 +163,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 		const standardPromise = standardChat.sendMessage(input, {
 			body: { assistantMessageId: "assistant-same" },
 		});
-		const threadPromise = threadRuntime.sendMessage(input, {
+		const threadPromise = threadChat.sendMessage(input, {
 			body: { assistantMessageId: "assistant-same" },
 		});
 		await waitFor(
@@ -177,7 +177,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 		await standardPromise;
 		await threadPromise;
 
-		expect(threadRuntime.getMessage("assistant-same")).toEqual(
+		expect(threadChat.getMessage("assistant-same")).toEqual(
 			standardChat.messages.at(-1),
 		);
 	});
@@ -189,7 +189,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 		const finishedMessageIds: string[] = [];
 		const finishedPaths: string[][] = [];
 		const toolCalls: unknown[] = [];
-		const runtime = new ThreadRuntime({
+		const chat = new ThreadChat({
 			onData: (part) => dataParts.push(part),
 			onFinish: ({ message, messages }) => {
 				finishedMessageIds.push(message.id);
@@ -200,9 +200,9 @@ describe("integration: per-stream AbstractChat engines", () => {
 			},
 			transport,
 		});
-		runtime.subscribe(() => events.push(runtime.getSnapshot().lastEvent));
+		chat.subscribe(() => events.push(chat.getSnapshot().lastEvent));
 
-		const runPromise = runtime.sendMessage(userMessage("user-a", "A"), {
+		const runPromise = chat.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-reserved" },
 		});
 		await waitFor(() => transport.requests.has("assistant-reserved"));
@@ -226,19 +226,18 @@ describe("integration: per-stream AbstractChat engines", () => {
 		emitText(transport, "assistant-reserved", "text-1", "identity-safe");
 		await waitFor(
 			() =>
-				getMessageText(
-					runtime.getMessage("assistant-reserved") as UIMessage,
-				) === "identity-safe",
+				getMessageText(chat.getMessage("assistant-reserved") as UIMessage) ===
+				"identity-safe",
 		);
 		events.length = 0;
 		transport.finish("assistant-reserved");
 		await runPromise;
 
-		expect(runtime.getMessage("server-tried-to-replace-id")).toBeUndefined();
+		expect(chat.getMessage("server-tried-to-replace-id")).toBeUndefined();
 		expect(finishedMessageIds).toEqual(["assistant-reserved"]);
 		expect(finishedPaths).toEqual([["user-a", "assistant-reserved"]]);
 		expect(events).not.toContain("Upserted assistant-reserved");
-		expect(runtime.getMessage("assistant-reserved")).toEqual(
+		expect(chat.getMessage("assistant-reserved")).toEqual(
 			expect.objectContaining({ id: "assistant-reserved", role: "assistant" }),
 		);
 		expect(dataParts).toEqual([
@@ -255,15 +254,15 @@ describe("integration: per-stream AbstractChat engines", () => {
 
 	test("streams concurrently into separate leaves and keeps cursor selection independent", async () => {
 		const transport = new ControlledTransport();
-		const runtime = new ThreadRuntime({
+		const chat = new ThreadChat({
 			concurrency: { maxActiveRunsPerMessage: 1 },
 			transport,
 		});
 
-		const runAPromise = runtime.sendMessage(userMessage("user-a", "A"), {
+		const runAPromise = chat.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-a" },
 		});
-		const runBPromise = runtime.sendMessage(userMessage("user-b", "B"), {
+		const runBPromise = chat.sendMessage(userMessage("user-b", "B"), {
 			body: { assistantMessageId: "assistant-b" },
 			tree: { follow: false, from: null },
 		});
@@ -275,19 +274,18 @@ describe("integration: per-stream AbstractChat engines", () => {
 		expect(
 			transport.requests.get("assistant-b")?.messages.map((m) => m.id),
 		).toEqual(["user-b"]);
-		expect(runtime.getSnapshot().activeRuns).toHaveLength(2);
+		expect(chat.getSnapshot().activeRuns).toHaveLength(2);
 
 		emitText(transport, "assistant-a", "text-a", "alpha");
 		emitText(transport, "assistant-b", "text-b", "beta");
 		await waitFor(
 			() =>
-				getMessageText(runtime.getMessage("assistant-a") as UIMessage) ===
+				getMessageText(chat.getMessage("assistant-a") as UIMessage) ===
 					"alpha" &&
-				getMessageText(runtime.getMessage("assistant-b") as UIMessage) ===
-					"beta",
+				getMessageText(chat.getMessage("assistant-b") as UIMessage) === "beta",
 		);
 
-		runtime.setCursor("user-b");
+		chat.setCursor("user-b");
 		transport.emit("assistant-a", {
 			delta: "-hidden",
 			id: "text-a",
@@ -300,19 +298,21 @@ describe("integration: per-stream AbstractChat engines", () => {
 		});
 		await waitFor(
 			() =>
-				getMessageText(runtime.getMessage("assistant-a") as UIMessage) ===
+				getMessageText(chat.getMessage("assistant-a") as UIMessage) ===
 					"alpha-hidden" &&
-				getMessageText(runtime.getMessage("assistant-b") as UIMessage) ===
+				getMessageText(chat.getMessage("assistant-b") as UIMessage) ===
 					"beta-visible",
 		);
 
-		expect(runtime.getSnapshot().cursorId).toBe("user-b");
-		expect(runtime.getPath("assistant-a").map((message) => message.id)).toEqual(
-			["user-a", "assistant-a"],
-		);
-		expect(runtime.getPath("assistant-b").map((message) => message.id)).toEqual(
-			["user-b", "assistant-b"],
-		);
+		expect(chat.getSnapshot().cursorId).toBe("user-b");
+		expect(chat.getPath("assistant-a").map((message) => message.id)).toEqual([
+			"user-a",
+			"assistant-a",
+		]);
+		expect(chat.getPath("assistant-b").map((message) => message.id)).toEqual([
+			"user-b",
+			"assistant-b",
+		]);
 
 		transport.finish("assistant-a");
 		transport.finish("assistant-b");
@@ -321,43 +321,43 @@ describe("integration: per-stream AbstractChat engines", () => {
 
 	test("stopping one branch does not abort another branch", async () => {
 		const transport = new ControlledTransport();
-		const runtime = new ThreadRuntime({ transport });
+		const chat = new ThreadChat({ transport });
 
-		const runAPromise = runtime.sendMessage(userMessage("user-a", "A"), {
+		const runAPromise = chat.sendMessage(userMessage("user-a", "A"), {
 			body: { assistantMessageId: "assistant-a" },
 		});
-		const runBPromise = runtime.sendMessage(userMessage("user-b", "B"), {
+		const runBPromise = chat.sendMessage(userMessage("user-b", "B"), {
 			body: { assistantMessageId: "assistant-b" },
 			tree: { follow: false, from: null },
 		});
 		await waitFor(() => transport.requests.size === 2);
 
-		await runtime.stopRun("assistant-a");
+		await chat.stopRun("assistant-a");
 		await waitFor(() => transport.aborted.has("assistant-a"));
 		expect(transport.aborted.has("assistant-b")).toBe(false);
 
 		emitText(transport, "assistant-b", "text-b", "still-running");
 		transport.finish("assistant-b");
 		await Promise.all([runAPromise, runBPromise]);
-		expect(getMessageText(runtime.getMessage("assistant-b") as UIMessage)).toBe(
+		expect(getMessageText(chat.getMessage("assistant-b") as UIMessage)).toBe(
 			"still-running",
 		);
 	});
 
 	test("keeps selected-path status separate from aggregate run status", async () => {
 		const transport = new ControlledTransport();
-		const runtime = new ThreadRuntime({ transport });
-		const run = await runtime.startRun({
+		const chat = new ThreadChat({ transport });
+		const run = await chat.startRun({
 			message: userMessage("user-a", "A"),
 			request: { body: { assistantMessageId: "assistant-a" } },
 		});
 		await waitFor(() => transport.requests.has("assistant-a"));
 
-		expect(runtime.getSnapshot().status).toBe("submitted");
-		expect(runtime.getSnapshot().treeStatus).toBe("submitted");
-		runtime.setCursor("user-a");
-		expect(runtime.getSnapshot().status).toBe("ready");
-		expect(runtime.getSnapshot().treeStatus).toBe("submitted");
+		expect(chat.getSnapshot().status).toBe("submitted");
+		expect(chat.getSnapshot().treeStatus).toBe("submitted");
+		chat.setCursor("user-a");
+		expect(chat.getSnapshot().status).toBe("ready");
+		expect(chat.getSnapshot().treeStatus).toBe("submitted");
 
 		transport.finish("assistant-a");
 		await run.finished;
@@ -366,12 +366,12 @@ describe("integration: per-stream AbstractChat engines", () => {
 
 	test("routes tool output to the run that owns the tool call", async () => {
 		const transport = new ControlledTransport();
-		const runtime = new ThreadRuntime({ transport });
-		const runA = await runtime.startRun({
+		const chat = new ThreadChat({ transport });
+		const runA = await chat.startRun({
 			message: userMessage("user-a", "A"),
 			request: { body: { assistantMessageId: "assistant-a" } },
 		});
-		const runB = await runtime.startRun({
+		const runB = await chat.startRun({
 			follow: false,
 			from: null,
 			message: userMessage("user-b", "B"),
@@ -398,18 +398,18 @@ describe("integration: per-stream AbstractChat engines", () => {
 		});
 		await waitFor(
 			() =>
-				runtime.getMessage("assistant-a")?.parts.length === 1 &&
-				runtime.getMessage("assistant-b")?.parts.length === 1,
+				chat.getMessage("assistant-a")?.parts.length === 1 &&
+				chat.getMessage("assistant-b")?.parts.length === 1,
 		);
 
 		transport.finish("assistant-a");
 		transport.finish("assistant-b");
 		await Promise.all([runA.finished, runB.finished]);
-		await runtime.addToolApprovalResponse({
+		await chat.addToolApprovalResponse({
 			approved: true,
 			id: "approval-a",
 		});
-		expect(runtime.getMessage("assistant-a")?.parts).toContainEqual(
+		expect(chat.getMessage("assistant-a")?.parts).toContainEqual(
 			expect.objectContaining({
 				approval: { approved: true, id: "approval-a", reason: undefined },
 				state: "approval-responded",
@@ -417,16 +417,16 @@ describe("integration: per-stream AbstractChat engines", () => {
 			}),
 		);
 
-		await runtime.addToolOutput({
+		await chat.addToolOutput({
 			output: "A only",
 			tool: "branch-tool",
 			toolCallId: "tool-a",
 		});
 
-		expect(runtime.getMessage("assistant-a")?.parts).toContainEqual(
+		expect(chat.getMessage("assistant-a")?.parts).toContainEqual(
 			expect.objectContaining({ output: "A only", toolCallId: "tool-a" }),
 		);
-		expect(runtime.getMessage("assistant-b")?.parts).toContainEqual(
+		expect(chat.getMessage("assistant-b")?.parts).toContainEqual(
 			expect.not.objectContaining({ output: "A only" }),
 		);
 	});
@@ -435,7 +435,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 		const transport = new ControlledTransport();
 		const automaticChecks: string[][] = [];
 		let didRequestFollowup = false;
-		const runtime = new ThreadRuntime({
+		const chat = new ThreadChat({
 			sendAutomaticallyWhen: ({ messages }) => {
 				automaticChecks.push(
 					messages
@@ -460,7 +460,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 			},
 			transport,
 		});
-		const run = await runtime.startRun({
+		const run = await chat.startRun({
 			message: userMessage("user-a", "A"),
 			request: { body: { assistantMessageId: "assistant-a" } },
 		});
@@ -475,7 +475,7 @@ describe("integration: per-stream AbstractChat engines", () => {
 		transport.finish("assistant-a");
 		await run.finished;
 
-		await runtime.addToolOutput({
+		await chat.addToolOutput({
 			output: "continue",
 			tool: "branch-tool",
 			toolCallId: "tool-a",
@@ -487,8 +487,8 @@ describe("integration: per-stream AbstractChat engines", () => {
 		);
 		emitText(transport, "assistant-a", "text-2", "follow-up");
 		transport.finish("assistant-a");
-		await waitFor(() => runtime.getRun("assistant-a")?.status === "ready");
-		expect(runtime.getSnapshot().activeRuns).toHaveLength(0);
+		await waitFor(() => chat.getRun("assistant-a")?.status === "ready");
+		expect(chat.getSnapshot().activeRuns).toHaveLength(0);
 	});
 });
 

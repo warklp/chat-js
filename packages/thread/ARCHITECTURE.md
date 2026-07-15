@@ -1,157 +1,52 @@
-# Thread Runtime Architecture
+# Thread Architecture
 
-## Design goal
+## Target
 
-Can a canonical message tree support concurrent branch streams while reusing AI
-SDK's message-stream behavior instead of copying or approximating it?
+`@chatjs/thread` adds branching and concurrent responses to the AI SDK chat
+model without reimplementing the AI SDK request lifecycle.
 
-Run the architecture and compatibility coverage with:
-
-```bash
-bun --filter @chatjs/thread test
-```
-
-The tests run against the AI SDK versions installed by the workspace lockfile.
-
-## AI SDK surfaces
-
-### `ai`
-
-`ChatTransport` is the request/stream boundary. It accepts a linear path and
-returns a `ReadableStream<UIMessageChunk>`. `DefaultChatTransport` implements
-HTTP and SSE parsing, while `DirectChatTransport` invokes an agent in-process.
-
-`AbstractChat` owns the client request lifecycle above the transport:
-
-- user message creation and replacement
-- response status and cancellation
-- UI message stream reduction
-- serialized updates
-- metadata and data schema handling
-- `onData`, `onToolCall`, `onFinish`, and `onError`
-- tool output and approval mutation
-- `sendAutomaticallyWhen`
-- reconnection
-
-`readUIMessageStream` is a supported public reducer. It converts a stream of
-`UIMessageChunk` values into successive, accumulated `UIMessage` snapshots,
-including text, reasoning, tools, sources, files, and data parts.
-
-Other useful public surfaces include:
-
-- `createUIMessageStream` and `UIMessageStreamWriter` for producing or merging
-  UI streams
-- `validateUIMessages` and `safeValidateUIMessages` for persistence boundaries
-- `convertToModelMessages` for server/model conversion
-- `lastAssistantMessageIsCompleteWithToolCalls` and
-  `lastAssistantMessageIsCompleteWithApprovalResponses` for automatic sends
-- `uiMessageChunkSchema` for protocol validation
-
-Primary installed sources:
-
-- `ai/dist/index.d.ts`: `ChatTransport`, `ChatState`, `AbstractChat`, and the
-  exported helpers
-- `ai/docs/04-ai-sdk-ui/24-reading-ui-message-streams.mdx`:
-  `readUIMessageStream` examples and tool handling
-- `ai/docs/07-reference/02-ai-sdk-ui/40-create-ui-message-stream.mdx`:
-  stream creation, merging, error handling, and finish callbacks
-
-### `@ai-sdk/react`
-
-The React package is deliberately thin:
-
-- `Chat` extends `AbstractChat` with a reactive `ChatState`.
-- `useChat` creates or accepts a `Chat` instance.
-- `useSyncExternalStore` subscribes to message, status, and error callbacks.
-- Message throttling happens at the React subscription boundary.
-
-`Chat` and its three subscription methods are public exports. They are useful
-for understanding the React contract, but they do not solve tree ownership or
-multi-stream concurrency.
-
-Primary installed source:
-
-- `@ai-sdk/react/dist/index.d.ts` and `dist/index.mjs`
-
-## Alternatives evaluated
-
-### Per-stream `AbstractChat`
-
-The existing `ThreadRuntime` already uses this design. Every active response
-gets an isolated `ThreadRunChat extends AbstractChat` and a tree-backed
-`ThreadChatState`.
+The architecture has three layers:
 
 ```text
-ThreadRuntime (canonical tree)
-  -> stream registry
-     -> ThreadRunChat A -> shared ChatTransport
-     -> ThreadRunChat B -> shared ChatTransport
+useThread (React compatibility facade)
+  -> ThreadChat (canonical conversation tree)
+     -> RunRecord A -> ThreadRunChat A -> ChatTransport
+     -> RunRecord B -> ThreadRunChat B -> ChatTransport
 ```
 
-The implementation is split across two modules with different lifetimes:
+Applications use one `ThreadChat` per conversation. `useThread` owns or
+accepts that chat and exposes the active path through a `useChat`-compatible
+interface. Tree navigation and parallel-run controls are exposed under
+`chat.tree`.
 
-- `thread-runtime.ts` owns the canonical tree, cursor, run registry,
-  concurrency limits, and public snapshots. Applications create one runtime
-  per conversation.
-- `ai-sdk-run-chat.ts` adapts one branch run to AI SDK's linear `AbstractChat`
-  contract. The runtime creates one `ThreadRunChat` per active response and
-  discards it when that request lifecycle is no longer needed.
+## State Ownership
 
-`ThreadChatState` is the internal bridge between them. It presents one linear
-path to `AbstractChat`, then writes streamed assistant updates back into the
-runtime's shared tree using the run's reserved message identities.
+### `ThreadChat`
 
-The integration suite proves:
+`ThreadChat` is the canonical state owner. It stores:
 
-- Rich text, reasoning, tool, and data output matches `@ai-sdk/react`'s `Chat`
-  for the same chunk sequence.
-- Two streams can update separate leaves concurrently through one transport.
-- Interleaved updates continue on hidden branches after cursor changes.
-- Stopping one stream does not abort another stream.
-- The runtime can enforce a reserved assistant ID even if the server sends a
-  different start ID.
-- AI SDK still invokes `onData` and `onToolCall` through the branch engine.
+- messages by ID
+- parent and child edges
+- the active cursor
+- run records and per-run status
+- tool-call and approval ownership
+- concurrency limits
+- the observable snapshot consumed by React
 
-This approach reuses AI SDK's complete orchestration behavior. The package owns
-tree topology, cursor selection, stream registration, and identity binding.
+The tree is independent of rendering. The active linear chat history is
+derived from it:
 
-### Direct `readUIMessageStream`
+```ts
+messages = chat.getPath(cursorId);
+```
 
-The integration suite also proves that the public reducer correctly accumulates:
+Changing the cursor selects another path or an ancestor slice. It does not
+delete hidden descendants or stop streams on other branches.
 
-- text and reasoning parts
-- dynamic tool input and output
-- custom data parts
-- the assistant message identity from the stream's `start` chunk
+### `RunRecord`
 
-This is a solid public primitive and a useful fallback if `AbstractChat` becomes
-unsuitable. However, it only reduces a stream. A runtime built directly on it
-would still need to implement:
-
-- request statuses and errors
-- abort controller ownership
-- `onData` and `onToolCall` dispatch
-- tool output and approval mutations
-- `sendAutomaticallyWhen`
-- regeneration and reconnection
-- serialized request jobs
-- finish callback parity
-
-It also accepts a server-provided start ID over a supplied assistant shell ID.
-The tree runtime would need an explicit ID reconciliation policy.
-
-## Recommendation
-
-Keep the canonical tree and the per-stream `AbstractChat` engines for the first
-package architecture. Do not introduce a custom "AI SDK transport adapter" and
-do not manually parse `UIMessageChunk` values.
-
-The user's `ChatTransport` should pass through unchanged. Tree request context
-belongs in `ChatRequestOptions.body` and is optional for transports such as
-`DirectChatTransport` that ignore HTTP request bodies.
-
-The internal concepts should be named explicitly. The runtime stores each request
-lifecycle as:
+Each assistant response has one run identity and one isolated AI SDK chat
+engine:
 
 ```ts
 type RunRecord<TMessage extends UIMessage> = {
@@ -164,38 +59,131 @@ type RunRecord<TMessage extends UIMessage> = {
 };
 ```
 
-```text
-ThreadRuntime
-  owns nodes, edges, cursor, and RunRecord registry
+The assistant message ID is also the run ID. This gives requests, stream
+updates, stop operations, reconnection, tool output, and rendered response
+cards one stable identity.
 
-RunRecord
-  owns one AI SDK request lifecycle and one AbortController
+Completed records are currently retained as conversation run history and to
+support later run operations. A bounded retention policy can be added without
+changing tree ownership.
 
-ChatTransport
-  remains the user-provided AI SDK request/stream implementation
+### `ThreadRunChat`
+
+`ThreadRunChat` is an internal adapter, not a second public chat model. It
+extends AI SDK's `AbstractChat` for one branch and delegates its state to a
+`ThreadChatState` backed by `ThreadChat`.
+
+This lets the package reuse AI SDK behavior for:
+
+- request status and cancellation
+- UI message stream reduction
+- serialized updates
+- metadata and data schemas
+- `onData`, `onToolCall`, `onFinish`, and `onError`
+- tool output and approval mutation
+- `sendAutomaticallyWhen`
+- regeneration and reconnection
+
+`ThreadChatState` presents the run's linear path to `AbstractChat`. Assistant
+writes are rebound to the run's reserved assistant ID and committed to the
+shared tree. A stream therefore keeps updating its branch even when that branch
+is not selected in the UI.
+
+### `ChatTransport`
+
+The caller's AI SDK `ChatTransport` remains the request/stream implementation.
+The package does not introduce a new wire protocol or manually parse
+`UIMessageChunk` values.
+
+Each `ThreadRunChat` uses a delegating transport so later requests and
+reconnections use the latest transport configured on `ThreadChat`. The
+request receives only the selected linear path plus optional tree context in
+`ChatRequestOptions.body`.
+
+## Request Lifecycle
+
+A send from the active path follows this sequence:
+
+1. Resolve the origin from the explicit `tree.from` value or active cursor.
+2. Create or update the user message under that origin.
+3. Reserve an assistant message ID and create its tree node.
+4. Create a `RunRecord` with an isolated `ThreadRunChat`.
+5. Send the selected path through the caller's `ChatTransport`.
+6. Commit streamed assistant snapshots to the reserved tree node.
+7. Publish status and finish events for that run.
+8. Move the cursor with the run only when `follow` is enabled.
+
+Starting multiple runs from the same user message creates assistant siblings.
+Starting runs from different leaves streams into those leaves concurrently.
+Each run has its own AI SDK state and abort controller, so stopping or hiding
+one run does not affect another.
+
+## React Contract
+
+`useThread` is a strict superset of `useChat` for the selected path:
+
+```ts
+const chat = useThread({ transport });
+
+chat.messages;
+chat.status;
+chat.error;
+chat.sendMessage({ text: "Continue" });
+chat.stop();
+
+chat.tree.cursorId;
+chat.tree.setCursor(messageId);
+chat.tree.getChildren(messageId);
+chat.tree.startRun({ from: messageId });
+chat.tree.stopRun(runId);
 ```
 
-`readUIMessageStream` should remain a documented alternative, not the initial
-engine.
+The standard fields describe only the selected path. Aggregate state and
+branch operations live under `chat.tree`, including `tree.status`,
+`tree.activeRuns`, and `tree.runs`.
 
-## Implementation follow-up
+## Persistence Boundary
 
-The package now routes tool output and approval responses to durable runs,
-reconciles `setMessages` without deleting hidden branches, and exposes AI SDK
-statuses per run. Runs use their assistant message ID as identity. HTTP
-reconnection should route that message ID through
-`prepareReconnectToStreamRequest`; the server can then resolve its private
-resumable stream ID.
+The chat exports and restores serializable tree state:
 
-Remaining differential coverage should focus on metadata schemas, malformed
-streams, and abort timing.
+- `messagesById`
+- `parentById`
+- `childrenByParentId`
+- `rootIds`
+- `cursorId`
 
-## Decision
+Applications persist that snapshot with their conversation data. Active
+request machinery is process-local and is not serialized. Restoring a tree
+therefore requires no reconstruction of completed `AbstractChat` instances;
+reconnection creates the run adapter needed for the selected assistant.
 
-The high-confidence boundary is:
+## Guarantees
 
-> Canonical tree state plus one isolated `AbstractChat` engine per active
-> branch request, using the caller's `ChatTransport` directly.
+The integration suite verifies that:
 
-This avoids both failure modes we wanted to eliminate: one global linear chat
-state pretending to be a tree, and a custom copy of AI SDK's stream reducer.
+- rich text, reasoning, tool, and data output matches `@ai-sdk/react`'s `Chat`
+  for the same stream
+- concurrent streams update separate leaves
+- hidden branches continue receiving interleaved updates
+- cursor changes do not reorder or duplicate messages
+- stopping one run does not abort another
+- tool output and approvals route to their owning run
+- finish callbacks receive the committed assistant path
+- transport replacement applies to resumed runs
+
+Run the package coverage with:
+
+```bash
+bun --filter @chatjs/thread test
+```
+
+## Boundaries
+
+The package owns tree topology, cursor selection, run registration, and
+identity binding. AI SDK owns each request lifecycle and stream semantics. The
+application owns persistence, server-side conversation authorization, model
+selection, and presentation such as sibling switchers or parallel response
+cards.
+
+This division avoids a global linear chat pretending to be a tree and avoids a
+custom copy of AI SDK's stream reducer.

@@ -1,17 +1,17 @@
 export {
-	createThreadRuntime,
+	createThreadChat,
 	getMessageText,
 	ROOT_PARENT_ID,
-	ThreadRuntime,
-} from "./thread-runtime";
+	ThreadChat,
+} from "./thread-chat";
 
 export type {
 	MessageTreeSnapshot,
+	ThreadChatOptions,
 	ThreadConcurrency,
 	ThreadEvent,
 	ThreadRun,
 	ThreadRunHandle,
-	ThreadRuntimeOptions,
 	ThreadStartRunOptions,
 	ThreadStateSnapshot,
 	TreeSendOptions,

@@ -5,19 +5,19 @@ import {
 	type ChatTransport,
 	type UIMessage,
 } from "ai";
-import type { ThreadRuntime } from "./thread-runtime";
+import type { ThreadChat } from "./thread-chat";
 import type { ThreadRunSpec } from "./types";
 
 class ThreadChatState<TMessage extends UIMessage>
 	implements ChatState<TMessage>
 {
 	#error: Error | undefined;
-	readonly #runtime: ThreadRuntime<TMessage>;
+	readonly #chat: ThreadChat<TMessage>;
 	readonly #spec: ThreadRunSpec;
 	#status: ChatStatus = "ready";
 
-	constructor(runtime: ThreadRuntime<TMessage>, spec: ThreadRunSpec) {
-		this.#runtime = runtime;
+	constructor(chat: ThreadChat<TMessage>, spec: ThreadRunSpec) {
+		this.#chat = chat;
 		this.#spec = spec;
 	}
 
@@ -27,20 +27,18 @@ class ThreadChatState<TMessage extends UIMessage>
 
 	set error(error: Error | undefined) {
 		this.#error = error;
-		this.#runtime.setRunError(this.#spec.runId, error);
+		this.#chat.setRunError(this.#spec.runId, error);
 	}
 
 	get messages() {
-		const leafId = this.#runtime.hasAssistantStarted(
-			this.#spec.assistantMessageId,
-		)
+		const leafId = this.#chat.hasAssistantStarted(this.#spec.assistantMessageId)
 			? this.#spec.assistantMessageId
 			: this.#spec.userMessageId;
-		return this.#runtime.getPath(leafId);
+		return this.#chat.getPath(leafId);
 	}
 
 	set messages(messages: TMessage[]) {
-		this.#runtime.mergeRunPath(messages);
+		this.#chat.mergeRunPath(messages);
 	}
 
 	get status() {
@@ -49,13 +47,13 @@ class ThreadChatState<TMessage extends UIMessage>
 
 	set status(status: ChatStatus) {
 		this.#status = status;
-		this.#runtime.setRunStatus(this.#spec.runId, status);
+		this.#chat.setRunStatus(this.#spec.runId, status);
 	}
 
 	popMessage = () => {
 		const lastMessage = this.messages.at(-1);
 		if (lastMessage) {
-			this.#runtime.removeMessage(lastMessage.id);
+			this.#chat.removeMessage(lastMessage.id);
 		}
 	};
 
@@ -75,58 +73,57 @@ class ThreadChatState<TMessage extends UIMessage>
 				...message,
 				id: this.#spec.assistantMessageId,
 			};
-			this.#runtime.markAssistantStarted(this.#spec.assistantMessageId);
-			this.#runtime.upsertMessage(assistantMessage, this.#spec.userMessageId);
-			this.#runtime.indexMessageOwnership(this.#spec.runId, assistantMessage);
+			this.#chat.markAssistantStarted(this.#spec.assistantMessageId);
+			this.#chat.upsertMessage(assistantMessage, this.#spec.userMessageId);
+			this.#chat.indexMessageOwnership(this.#spec.runId, assistantMessage);
 			return;
 		}
 
-		this.#runtime.upsertMessage(message, this.#spec.parentMessageId);
+		this.#chat.upsertMessage(message, this.#spec.parentMessageId);
 	}
 }
 
 export class ThreadRunChat<
 	TMessage extends UIMessage,
 > extends AbstractChat<TMessage> {
-	constructor(runtime: ThreadRuntime<TMessage>, spec: ThreadRunSpec) {
+	constructor(chat: ThreadChat<TMessage>, spec: ThreadRunSpec) {
 		const transport: ChatTransport<TMessage> = {
-			reconnectToStream: (options) =>
-				runtime.transport.reconnectToStream(options),
-			sendMessages: (options) => runtime.transport.sendMessages(options),
+			reconnectToStream: (options) => chat.transport.reconnectToStream(options),
+			sendMessages: (options) => chat.transport.sendMessages(options),
 		};
 		super({
-			dataPartSchemas: runtime.dataPartSchemas,
+			dataPartSchemas: chat.dataPartSchemas,
 			generateId: () => spec.assistantMessageId,
-			id: runtime.chatId,
-			messageMetadataSchema: runtime.messageMetadataSchema,
-			onData: (event) => runtime.onData?.(event),
+			id: chat.id,
+			messageMetadataSchema: chat.messageMetadataSchema,
+			onData: (event) => chat.onData?.(event),
 			onError: (error) => {
-				runtime.setRunError(spec.runId, error);
-				runtime.onError?.(error);
+				chat.setRunError(spec.runId, error);
+				chat.onError?.(error);
 			},
 			onFinish: (event) => {
 				const assistantMessage = {
 					...event.message,
 					id: spec.assistantMessageId,
 				};
-				runtime.upsertMessage(assistantMessage, spec.userMessageId, {
+				chat.upsertMessage(assistantMessage, spec.userMessageId, {
 					silent: true,
 				});
-				runtime.indexMessageOwnership(spec.runId, assistantMessage);
-				runtime.finishRequest(spec.runId, event.isAbort);
-				runtime.onFinish?.({
+				chat.indexMessageOwnership(spec.runId, assistantMessage);
+				chat.finishRequest(spec.runId, event.isAbort);
+				chat.onFinish?.({
 					...event,
 					message: assistantMessage,
-					messages: runtime.getPath(spec.assistantMessageId),
+					messages: chat.getPath(spec.assistantMessageId),
 				});
 			},
 			onToolCall: async (event) => {
-				runtime.registerToolCall(spec.runId, event.toolCall.toolCallId);
-				await runtime.onToolCall?.(event);
+				chat.registerToolCall(spec.runId, event.toolCall.toolCallId);
+				await chat.onToolCall?.(event);
 			},
 			sendAutomaticallyWhen: (event) =>
-				runtime.sendAutomaticallyWhen?.(event) ?? false,
-			state: new ThreadChatState(runtime, spec),
+				chat.sendAutomaticallyWhen?.(event) ?? false,
+			state: new ThreadChatState(chat, spec),
 			transport,
 		});
 	}

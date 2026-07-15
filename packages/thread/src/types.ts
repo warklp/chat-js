@@ -78,7 +78,7 @@ export type ThreadStateSnapshot<TMessage extends UIMessage = UIMessage> =
 		treeStatus: ChatStatus;
 	};
 
-export type ThreadRuntimeOptions<TMessage extends UIMessage = UIMessage> = Omit<
+export type ThreadChatOptions<TMessage extends UIMessage = UIMessage> = Omit<
 	ChatInit<TMessage>,
 	"messages"
 > & {

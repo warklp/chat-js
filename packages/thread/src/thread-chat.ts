@@ -13,12 +13,12 @@ import { ThreadRunChat } from "./ai-sdk-run-chat";
 import type {
 	MessageTreeSnapshot,
 	SendMessageInput,
+	ThreadChatOptions,
 	ThreadConcurrency,
 	ThreadEvent,
 	ThreadRun,
 	ThreadRunHandle,
 	ThreadRunSpec,
-	ThreadRuntimeOptions,
 	ThreadStartRunOptions,
 	ThreadStateSnapshot,
 	TreeSendOptions,
@@ -123,19 +123,19 @@ async function createUserMessageFromInput<TMessage extends UIMessage>({
 	} as TMessage;
 }
 
-export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
-	readonly chatId: string;
-	readonly dataPartSchemas: ThreadRuntimeOptions<TMessage>["dataPartSchemas"];
+export class ThreadChat<TMessage extends UIMessage = UIMessage> {
+	readonly id: string;
+	readonly dataPartSchemas: ThreadChatOptions<TMessage>["dataPartSchemas"];
 	readonly generateMessageId: NonNullable<
-		ThreadRuntimeOptions<TMessage>["generateId"]
+		ThreadChatOptions<TMessage>["generateId"]
 	>;
-	readonly messageMetadataSchema: ThreadRuntimeOptions<TMessage>["messageMetadataSchema"];
-	onData: ThreadRuntimeOptions<TMessage>["onData"];
-	onError: ThreadRuntimeOptions<TMessage>["onError"];
-	onFinish: ThreadRuntimeOptions<TMessage>["onFinish"];
-	onThreadEvent: ThreadRuntimeOptions<TMessage>["onThreadEvent"];
-	onToolCall: ThreadRuntimeOptions<TMessage>["onToolCall"];
-	sendAutomaticallyWhen: ThreadRuntimeOptions<TMessage>["sendAutomaticallyWhen"];
+	readonly messageMetadataSchema: ThreadChatOptions<TMessage>["messageMetadataSchema"];
+	onData: ThreadChatOptions<TMessage>["onData"];
+	onError: ThreadChatOptions<TMessage>["onError"];
+	onFinish: ThreadChatOptions<TMessage>["onFinish"];
+	onThreadEvent: ThreadChatOptions<TMessage>["onThreadEvent"];
+	onToolCall: ThreadChatOptions<TMessage>["onToolCall"];
+	sendAutomaticallyWhen: ThreadChatOptions<TMessage>["sendAutomaticallyWhen"];
 	transport: ChatTransport<TMessage>;
 
 	readonly #assistantStarted = new Set<string>();
@@ -152,8 +152,8 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 	#snapshot: ThreadStateSnapshot<TMessage>;
 	#storeVersion = 0;
 
-	constructor(options: ThreadRuntimeOptions<TMessage> = {}) {
-		this.chatId = options.id ?? generateId();
+	constructor(options: ThreadChatOptions<TMessage> = {}) {
+		this.id = options.id ?? generateId();
 		this.dataPartSchemas = options.dataPartSchemas;
 		this.generateMessageId = options.generateId ?? generateId;
 		this.messageMetadataSchema = options.messageMetadataSchema;
@@ -183,7 +183,7 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 
 	getSnapshot = () => this.#snapshot;
 
-	updateOptions(options: ThreadRuntimeOptions<TMessage>) {
+	updateOptions(options: ThreadChatOptions<TMessage>) {
 		if ("onData" in options) {
 			this.onData = options.onData;
 		}
@@ -1141,8 +1141,8 @@ export class ThreadRuntime<TMessage extends UIMessage = UIMessage> {
 	}
 }
 
-export function createThreadRuntime<TMessage extends UIMessage = UIMessage>(
-	options: ThreadRuntimeOptions<TMessage> = {},
+export function createThreadChat<TMessage extends UIMessage = UIMessage>(
+	options: ThreadChatOptions<TMessage> = {},
 ) {
-	return new ThreadRuntime(options);
+	return new ThreadChat(options);
 }
