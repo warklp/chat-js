@@ -7,7 +7,7 @@ The desktop integration wraps your ChatJS web app in an Electron shell. The Elec
 
 ## Installing a prebuilt release
 
-Prebuilt installers for the ChatJS reference app are published on the [GitHub Releases page](https://github.com/franciscomoretti/chat-js/releases/latest).
+Prebuilt installers for the ChatJS reference app are published with the Electron package. The current installers are in the [`@chat-js/electron@0.3.2` release](https://github.com/FranciscoMoretti/chat-js/releases/tag/%40chat-js%2Felectron%400.3.2).
 
 <Callout type="warning">
   The current releases are **not code-signed or notarized**. Your operating system will show a security warning on first launch. This is expected for unsigned builds and does not mean the app is malicious, but you should only install builds from a source you trust.
@@ -17,7 +17,7 @@ Pick your platform below for the install steps.
 
 ### macOS
 
-1. Download [`ChatJS-mac.dmg`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-mac.dmg) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
+1. Download `ChatJS-mac.dmg` from the Electron release linked above.
 2. Open the `.dmg` and drag **ChatJS** into `Applications`.
 3. The first time you launch it, macOS will say the app "cannot be opened because Apple cannot check it for malicious software". Close that dialog.
 4. Open **System Settings** and go to **Privacy & Security**. Scroll to the **Security** section. You will see a message about ChatJS being blocked, with an **Open Anyway** button. Click it.
@@ -33,25 +33,24 @@ Only run that command on a build you downloaded yourself from the official relea
 
 ### Windows
 
-1. Download [`ChatJS-windows.exe`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-windows.exe) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
+1. Download `ChatJS-windows.exe` from the Electron release linked above.
 2. Windows SmartScreen will show a **Windows protected your PC** dialog because the installer is unsigned.
 3. Click **More info**, then **Run anyway**.
 4. Complete the installer as usual.
 
 ### Linux
 
-1. Download [`ChatJS-linux.AppImage`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-linux.AppImage) or [`ChatJS-linux.deb`](https://github.com/franciscomoretti/chat-js/releases/latest/download/ChatJS-linux.deb) (or browse [all assets](https://github.com/franciscomoretti/chat-js/releases/latest)).
-2. For the `.AppImage`, make it executable and run it:
+1. Download `chat-js-electron_0.3.2_amd64.deb` or `chat-js-electron-0.3.2-1.x86_64.rpm` from the Electron release linked above.
+2. Install the `.deb` on Debian or Ubuntu:
 
    ```bash
-   chmod +x ChatJS-linux.AppImage
-   ./ChatJS-linux.AppImage
+   sudo apt install ./chat-js-electron_0.3.2_amd64.deb
    ```
 
-3. For the `.deb`, install it with `apt` or your package manager of choice:
+3. Install the `.rpm` on Fedora or another RPM-based distribution:
 
    ```bash
-   sudo apt install ./ChatJS-linux.deb
+   sudo dnf install ./chat-js-electron-0.3.2-1.x86_64.rpm
    ```
 
 Linux does not enforce code signing for desktop apps the same way macOS and Windows do, so there is usually no extra warning step.

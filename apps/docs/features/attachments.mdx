@@ -93,4 +93,4 @@ if (model.input?.pdf) {
 }
 ```
 
-When a user attaches a file that the current model doesn't support, ChatJS automatically switches to a compatible model (configured via `config.models.defaults.pdf` and `config.models.defaults.chatImageCompatible`).
+When a user attaches a file that the current model doesn't support, ChatJS automatically switches to the compatible model configured in `config.ai.workflows.pdf` or `config.ai.workflows.chatImageCompatible`.

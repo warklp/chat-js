@@ -10,10 +10,10 @@
   "scripts": {
     "build": "blume build",
     "dev": "blume dev --port ${PORT:-4321}",
-    "docs:links": "blume validate --strict",
+    "docs:links": "blume validate --external --strict",
     "lint": "blume doctor"
   },
   "devDependencies": {
-    "blume": "^1.0.3"
+    "blume": "^1.0.4"
   }
 }

@@ -20,7 +20,7 @@ These two variables must always be set. Without them the app will not start.
 | `DATABASE_URL` | PostgreSQL connection string | [Neon](https://neon.tech), [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres/quickstart), or any Postgres provider |
 | `AUTH_SECRET` | Secret used to sign and encrypt session tokens (Better Auth) | Run `openssl rand -base64 32` or use [generate-secret.vercel.app/32](https://generate-secret.vercel.app/32) |
 
-In addition to the two variables above, **at least one AI gateway key** and **at least one OAuth provider** must be configured. See the sections below.
+In addition to the two variables above, **at least one AI gateway credential** and **at least one OAuth provider** must be configured. See the sections below.
 
 ---
 
@@ -108,7 +108,7 @@ Direct connection to the OpenAI API. Use when you only need OpenAI models.
 |----------|----------|-------------|
 | `OPENAI_API_KEY` | Yes | Your OpenAI API key (`sk-...`) |
 
-**Setup:** Go to [OpenAI Platform](https://platform.openai.com/api-keys) and create an API key.
+**Setup:** Follow the [OpenAI quickstart](https://developers.openai.com/api/docs/quickstart) to create an API key.
 
 ### OpenAI Compatible
 
@@ -136,16 +136,18 @@ Routes requests through a LiteLLM proxy for centralized model access, key manage
 
 ## Features
 
-Feature flags live under `features` in `chat.config.ts`. Each flag has an associated environment variable requirement validated at build time.
+Tool flags live under `ai.tools` in `chat.config.ts`. File attachments remain under `features.attachments`. Each enabled capability has an associated environment variable requirement validated at build time.
 
 ### Web Search
 
 Enable real-time web search with citations. Requires at least one search provider key.
 
 ```typescript title="chat.config.ts"
-features: {
-  webSearch: true,    // Requires TAVILY_API_KEY or FIRECRAWL_API_KEY
-  urlRetrieval: true, // Requires FIRECRAWL_API_KEY
+ai: {
+  tools: {
+    webSearch: { enabled: true },    // Requires TAVILY_API_KEY or FIRECRAWL_API_KEY
+    urlRetrieval: { enabled: true }, // Requires FIRECRAWL_API_KEY
+  },
 }
 ```
 
@@ -153,7 +155,7 @@ features: {
 |----------|---------|-------------|--------|
 | `TAVILY_API_KEY` | `webSearch` | Tavily API key for web search (recommended) | [app.tavily.com](https://app.tavily.com) |
 | `FIRECRAWL_API_KEY` | `webSearch`, `urlRetrieval` | Firecrawl API key for web search and URL content extraction | [firecrawl.dev](https://www.firecrawl.dev) |
-| `EXA_API_KEY` | _none_ | Recognized by env schema but not used by build-time `webSearch` validation | [dashboard.exa.ai](https://dashboard.exa.ai) |
+| `EXA_API_KEY` | _none_ | Recognized by env schema but not used by build-time `webSearch` validation | [Exa API key guide](https://docs.exa.ai/reference/getting-started) |
 
 <Callout type="note">
   If both `TAVILY_API_KEY` and `FIRECRAWL_API_KEY` are set, Tavily is used for regular chat web search. Firecrawl is always used for URL retrieval.
@@ -164,8 +166,10 @@ features: {
 Enable [Model Context Protocol](https://modelcontextprotocol.io) server connections to expose custom tools and data sources to the AI.
 
 ```typescript title="chat.config.ts"
-features: {
-  mcp: true, // Requires MCP_ENCRYPTION_KEY
+ai: {
+  tools: {
+    mcp: { enabled: true }, // Requires MCP_ENCRYPTION_KEY
+  },
 }
 ```
 
@@ -215,11 +219,13 @@ requirements of your selected provider.
 
 ### Code Execution Sandbox
 
-Enable secure Python code execution using [Vercel Sandbox](https://vercel.com/docs/functions/runtimes/vercel-sandbox).
+Enable secure Python and JavaScript execution using [Vercel Sandbox](https://vercel.com/docs/sandbox).
 
 ```typescript title="chat.config.ts"
-features: {
-  sandbox: true,
+ai: {
+  tools: {
+    codeExecution: { enabled: true },
+  },
 }
 ```
 
@@ -229,7 +235,9 @@ features: {
 | `VERCEL_TEAM_ID` | Self-hosted only | Your Vercel team ID (`team_...`) |
 | `VERCEL_PROJECT_ID` | Self-hosted only | Your Vercel project ID (`prj_...`) |
 | `VERCEL_TOKEN` | Self-hosted only | Vercel API token with sandbox permissions |
-| `VERCEL_SANDBOX_RUNTIME` | Optional | Sandbox runtime identifier (default: `python3.13`) |
+| `VERCEL_SANDBOX_RUNTIME_PYTHON` | Optional | Python runtime identifier (default: `python3.13`) |
+| `VERCEL_SANDBOX_RUNTIME_JAVASCRIPT` | Optional | JavaScript runtime identifier (default: `node22`) |
+| `VERCEL_SANDBOX_RUNTIME` | Optional | Legacy Python runtime fallback. Prefer `VERCEL_SANDBOX_RUNTIME_PYTHON` |
 
 <Callout type="note">
   On Vercel deployments, sandbox authentication happens automatically via OIDC,
@@ -312,14 +320,16 @@ All variables in one place:
 | `VERCEL_APP_CLIENT_ID` | Auth | If `authentication.vercel: true` |
 | `VERCEL_APP_CLIENT_SECRET` | Auth | If `authentication.vercel: true` |
 | `BLOB_READ_WRITE_TOKEN` | Storage | When Vercel Blob is the selected provider |
-| `TAVILY_API_KEY` | Feature | If `webSearch` enabled (one search key required) |
-| `FIRECRAWL_API_KEY` | Feature | If `webSearch` or `urlRetrieval` enabled |
+| `TAVILY_API_KEY` | Feature | If `ai.tools.webSearch.enabled` (one search key required) |
+| `FIRECRAWL_API_KEY` | Feature | If `ai.tools.webSearch.enabled` or `ai.tools.urlRetrieval.enabled` |
 | `EXA_API_KEY` | Optional | Recognized by env schema but not required by current validation |
-| `MCP_ENCRYPTION_KEY` | Feature | If `mcp` enabled |
-| `VERCEL_TEAM_ID` | Feature | If `sandbox` enabled on non-Vercel hosting |
-| `VERCEL_PROJECT_ID` | Feature | If `sandbox` enabled on non-Vercel hosting |
-| `VERCEL_TOKEN` | Feature | If `sandbox` enabled on non-Vercel hosting |
-| `VERCEL_SANDBOX_RUNTIME` | Feature | Optional sandbox runtime override |
+| `MCP_ENCRYPTION_KEY` | Feature | If `ai.tools.mcp.enabled` |
+| `VERCEL_TEAM_ID` | Feature | If `ai.tools.codeExecution.enabled` on non-Vercel hosting |
+| `VERCEL_PROJECT_ID` | Feature | If `ai.tools.codeExecution.enabled` on non-Vercel hosting |
+| `VERCEL_TOKEN` | Feature | If `ai.tools.codeExecution.enabled` on non-Vercel hosting |
+| `VERCEL_SANDBOX_RUNTIME_PYTHON` | Feature | Optional Python sandbox runtime override |
+| `VERCEL_SANDBOX_RUNTIME_JAVASCRIPT` | Feature | Optional JavaScript sandbox runtime override |
+| `VERCEL_SANDBOX_RUNTIME` | Feature | Legacy Python sandbox runtime override |
 | `REDIS_URL` | Optional | Resumable streams |
 | `CRON_SECRET` | Optional | Secure cleanup cron endpoint |
 | `APP_URL` | Optional | Required on non-Vercel deployments |
