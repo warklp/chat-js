@@ -307,8 +307,12 @@ type MessageTreeSnapshot<TMessage> = {
 
 The snapshot can be supplied later as `initialTree`. Active request objects,
 abort controllers, and `ThreadRunChat` instances are not serialized.
-Reconnection creates the internal run adapter needed for the restored
-assistant message.
+Restoration rebuilds tool-call and approval ownership from the serialized
+assistant messages. When a standard tool-output or approval helper targets a
+restored message, `ThreadChat` lazily creates the owning branch's internal run
+adapter before applying the mutation. Reconnection uses the same lazy adapter
+creation. This preserves `useChat` tool behavior without eagerly retaining an
+adapter for every historical assistant message.
 
 ## Concurrency
 
@@ -355,6 +359,7 @@ The package integration suite must verify that:
 - cursor changes do not reorder or duplicate messages
 - stopping one run does not abort another
 - tool output and approvals route to their owning run
+- restored pending tools accept output before stream reconnection
 - finish callbacks receive the committed assistant path
 - transport replacement applies to resumed runs
 
