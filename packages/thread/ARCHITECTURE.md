@@ -24,6 +24,23 @@ The three layers have separate responsibilities:
 - `ThreadChat` is the observable, tree-backed chat engine.
 - `ThreadRunChat` is an internal AI SDK request engine for one response.
 
+## Compatibility Decision Rule
+
+`useThread` is a strict behavioral superset of `useChat` on the selected path.
+Before defining a lifecycle, status, tool, persistence, or callback behavior,
+the implementation and tests for the supported `@ai-sdk/react` and `ai`
+versions must be checked first.
+
+- When `useChat` has an observable linear equivalent, `useThread` preserves
+  that behavior and adds only the routing needed to apply it to the selected or
+  owning branch.
+- The package defines new semantics only when the behavior exists because of
+  tree topology or multiple concurrent runs, such as cursor movement, sibling
+  ordering, aggregate status, and run-specific cancellation.
+- Compatibility concerns observable behavior, not incidental implementation
+  mechanics. Internal construction, indexing, and subscription strategies may
+  differ when the public lifecycle remains equivalent.
+
 ## React Surface
 
 The normal usage is the same shape as `useChat`:
