@@ -267,9 +267,20 @@ Runs use the AI SDK `ChatStatus` values:
 - `ready`
 - `error`
 
-`chat.status` projects the selected run's status. `chat.tree.status` aggregates
-all runs. A run is included in `tree.activeRuns` while it is `submitted` or
-`streaming`.
+`chat.status` is the selected path's `useChat`-compatible projection. Together
+with `chat.messages` and `chat.error`, it always describes the active path and
+never aggregates hidden branches.
+
+`chat.tree.status` aggregates all runs with active work taking precedence:
+
+1. `streaming` when any run is streaming
+2. `submitted` when no run is streaming and any run is submitted
+3. `error` when no run is active and any run has failed
+4. `ready` otherwise
+
+A run is included in `tree.activeRuns` while it is `submitted` or `streaming`.
+Consumers that need to distinguish simultaneous states inspect `tree.runs`;
+the aggregate is intentionally only a whole-tree activity projection.
 
 Cancellation is scoped by run:
 
@@ -295,15 +306,28 @@ branch from being applied to another.
 `chat.tree.getSnapshot()` returns the serializable tree state:
 
 ```ts
+type MessageTreeNode<TMessage> = {
+  message: TMessage;
+  parentId: string | null;
+};
+
 type MessageTreeSnapshot<TMessage> = {
   version: 1;
   cursorId: string | null;
-  messagesById: Record<string, TMessage>;
-  parentById: Record<string, string | null>;
-  childrenByParentId: Record<string, string[]>;
-  rootIds: string[];
+  nodes: MessageTreeNode<TMessage>[];
 };
 ```
+
+`nodes` is the canonical ordered representation. Each message ID appears once,
+parents appear before their children, and `parentId: null` identifies a root.
+For nodes with the same parent, relative array order defines sibling order;
+relative root-node order defines root order. `cursorId` is either `null` or the
+ID of one listed message.
+
+`messagesById`, `parentById`, `childrenByParentId`, and `rootIds` are derived
+runtime indexes exposed through `chat.tree`; they are not independently
+serialized sources of truth. Restoration validates the node invariants while
+building those indexes.
 
 The snapshot can be supplied later as `initialTree`. Active request objects,
 abort controllers, and `ThreadRunChat` instances are not serialized.
