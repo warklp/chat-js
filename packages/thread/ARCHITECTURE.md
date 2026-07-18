@@ -51,6 +51,21 @@ chat.tree.startRun({ from: messageId });
 chat.tree.stopRun(runId);
 ```
 
+Branch origin and cursor following are per-operation options:
+
+```ts
+await chat.sendMessage(
+	{ text: "Create a branch" },
+	{ tree: { follow: false, from: messageId } },
+);
+
+await chat.tree.startRun({ follow: false, from: userMessageId });
+```
+
+`from` selects the node that receives the new user message. `follow` controls
+whether the cursor moves with the new user and assistant nodes; it defaults to
+`true` when the operation starts from the active cursor and `false` otherwise.
+
 Top-level fields always describe the selected path:
 
 - `messages` is the root-to-cursor path.
@@ -69,9 +84,11 @@ Whole-conversation state is exposed through `tree`:
 
 By default, `useThread` creates one `ThreadChat` and keeps it in a React ref:
 
-```text
-useThread(options)
-  -> useRef(new ThreadChat(options))
+```ts
+const chatRef = useRef<ThreadChat | null>(null);
+if (chatRef.current === null) {
+	chatRef.current = new ThreadChat(options);
+}
 ```
 
 The same `ThreadChat` is used for the lifetime of that hook instance. Updated
@@ -252,8 +269,9 @@ Tool output and approval APIs retain their standard `useChat` signatures.
 `ThreadChat` indexes each tool call and approval ID to the run that emitted it,
 then routes subsequent mutations back to that run's `ThreadRunChat`.
 
-Tool-call and approval IDs must be unique across active runs. This prevents a
-result submitted while viewing one branch from being applied to another.
+Tool-call and approval IDs must be unique across all retained, addressable
+runs. This prevents a delayed result or a result submitted while viewing one
+branch from being applied to another.
 
 ## Persistence Boundary
 
