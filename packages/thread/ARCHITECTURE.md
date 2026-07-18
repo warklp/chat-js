@@ -81,7 +81,8 @@ await chat.tree.startRun({ follow: false, from: userMessageId });
 
 `from` selects the node that receives the new user message. `follow` controls
 whether the cursor moves with the new user and assistant nodes; it defaults to
-`true` when the operation starts from the active cursor and `false` otherwise.
+`true` when the resolved origin equals the active cursor and `false` otherwise.
+This includes an explicit `from` whose value equals the current `cursorId`.
 
 Top-level fields always describe the selected path:
 
@@ -246,13 +247,14 @@ messages.
 A normal `sendMessage` follows this sequence:
 
 1. Resolve the origin from the active cursor or an explicit `tree.from` value.
-2. Create or update the user message under that origin.
-3. Reserve an assistant message ID and add an assistant shell to the tree.
-4. Create a `RunRecord` and its internal `ThreadRunChat`.
-5. Send the selected path through the configured `ChatTransport`.
-6. Commit each accumulated assistant snapshot to the reserved tree node.
-7. Publish status, error, and finish events for that run.
-8. Move the cursor with the run when `follow` is enabled.
+2. Check concurrency limits and reject without mutating the tree when exceeded.
+3. Create or update the user message under that origin.
+4. Reserve an assistant message ID and add an assistant shell to the tree.
+5. Create a `RunRecord` and its internal `ThreadRunChat`.
+6. Send the selected path through the configured `ChatTransport`.
+7. Commit each accumulated assistant snapshot to the reserved tree node.
+8. Publish status, error, and finish events for that run.
+9. Move the cursor with the run when `follow` is enabled.
 
 `sendMessage` waits for the request and automatic follow-ups to finish, matching
 the AI SDK contract. `tree.startRun` returns a handle immediately for callers
