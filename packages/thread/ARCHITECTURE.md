@@ -161,6 +161,26 @@ Tree mutations enforce these invariants:
 - parent links cannot form cycles
 - replacing or restoring the tree cannot occur while runs are active
 
+## Identity and Continuity
+
+`ThreadChat.id` identifies the complete threaded conversation. It has the same
+role as AI SDK's `Chat.id`, remains stable as messages are added, and is sent to
+the transport as `chatId` on every request.
+
+Within that conversation, each `message.id` identifies one immutable tree node.
+An assistant message ID also identifies the run that produces that node. A
+branch does not have another stored ID: a message ID identifies its current
+head, and following parent links identifies the complete root-to-head path.
+
+`cursorId` is the mutable selection of one such head. A followed send attaches
+the new user and assistant nodes beneath the selected head and advances the
+cursor to those nodes. Starting from an earlier node creates siblings without
+changing existing identities or ancestry.
+
+Tree snapshots persist topology and cursor selection, but not `ThreadChat.id`.
+Callers that restore a conversation associate the snapshot with its stable
+conversation ID and supply that ID to the new `ThreadChat` instance.
+
 ## React Subscription
 
 `useThread` subscribes to `ThreadChat` with `useSyncExternalStore`. A tree
